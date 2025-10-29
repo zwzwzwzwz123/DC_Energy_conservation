@@ -1,0 +1,19 @@
+#----------------需要修改为真实环境配置--------------------
+
+# 空调可设置参数
+minimum_air_conditioner_setting_temperature: 16
+maximum_air_conditioner_setting_temperature: 30
+minimum_air_conditioner_setting_humidity: 30
+maximum_air_conditioner_setting_humidity: 70
+minimum_number_of_on_cooling_model: 0
+maximum_number_of_on_cooling_model: 8
+
+
+# 空调不可设置参数
+maximum_safe_indoor_temperature: 28.0    # 室内温度安全上限（℃）
+minimum_safe_indoor_temperature: 0.0    # 室内温度安全下限（℃）
+maximum_safe_indoor_humidity: 70.0       # 室内湿度安全上限（%）
+minimum_safe_indoor_humidity: 30.0       # 室内湿度安全下限（%）
+# maximum_energy_consumption: 10000
+temperature_safety_tolerance: 1        # 温度安全容差（℃）
+humidity_safety_tolerance: 5.0           # 湿度安全容差（%）
