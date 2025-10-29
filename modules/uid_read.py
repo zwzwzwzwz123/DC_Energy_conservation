@@ -10,7 +10,7 @@ class AirConditioner:
         self.measurement_points[point_name] = uid  # 添加测点及其对应的UID
 
 # 读取Excel文件
-df = pd.read_excel("C:\\Users\\zouwei\\Desktop\\1号楼IDC机房空调AO量及DO量测点_0617(2).xlsx")
+df = pd.read_excel("C:\\Users\\21118\\Desktop\\DC-Energy_conservation\\uid\\1号楼IDC机房空调AO量及DO量测点.xlsx")
 
 # 去掉空行
 df = df.dropna(subset=["设备名称", "测点名称", "uid"])
