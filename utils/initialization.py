@@ -1,7 +1,40 @@
 import logging
 from logging.handlers import TimedRotatingFileHandler
 import os
+import yaml
+import atexit
+from pathlib import Path
 from influxdb import InfluxDBClient
+
+
+def load_configs(project_root):
+    """
+    加载所有配置文件
+    
+    Args:
+        project_root: 项目根目录路径
+        
+    Returns:
+        dict: 包含所有配置的字典
+    """
+    config_dir = Path(project_root) / "configs"
+    
+    configs = {}
+    config_files = {
+        'influxdb': 'influxdb_config.yaml',
+        'security_boundary': 'security_boundary_config.yaml',
+        'uid': 'uid_config.yaml'
+    }
+    
+    for config_name, filename in config_files.items():
+        config_path = config_dir / filename
+        if config_path.exists():
+            with open(config_path, 'r', encoding='utf-8') as f:
+                configs[config_name] = yaml.safe_load(f)
+        else:
+            raise FileNotFoundError(f"配置文件不存在: {config_path}")
+    
+    return configs
 
 
 def init_logger():
@@ -70,3 +103,67 @@ def init_influxdb_client(config):
             reference_data_client)  # 参考数据写入client
 
 # endregion
+
+
+def init_system(project_root):
+    """
+    完整的系统初始化
+    
+    Args:
+        project_root: 项目根目录路径
+        
+    Returns:
+        tuple: (logger, configs, clients)
+            - logger: 日志对象
+            - configs: 配置字典
+            - clients: 数据库客户端字典
+    """
+    # 1. 初始化日志
+    logger = init_logger()
+    logger.info("="*60)
+    logger.info("系统启动")
+    logger.info("="*60)
+    logger.info("成功初始化日志系统")
+    
+    # 2. 加载配置文件
+    logger.info("开始加载配置文件...")
+    configs = load_configs(project_root)
+    logger.info(f"成功加载配置文件: {list(configs.keys())}")
+    
+    # 3. 打印配置信息
+    if 'uid' in configs:
+        room_name = configs['uid'].get('room_name', '未知')
+        ac_count = len(configs['uid'].get('air_conditioners', {}))
+        logger.info(f"机房: {room_name}, 空调数量: {ac_count}")
+    
+    # 4. 初始化InfluxDB客户端
+    logger.info("开始初始化 InfluxDB 客户端...")
+    influxdb_config = configs['influxdb']
+    dc_status_data_client, prediction_data_client, setting_data_client, reference_data_client = (
+        init_influxdb_client(influxdb_config)
+    )
+    
+    # 5. 注册客户端关闭回调
+    atexit.register(lambda: [
+        client.close() for client in [
+            dc_status_data_client,
+            prediction_data_client,
+            setting_data_client,
+            reference_data_client
+        ] if hasattr(client, 'close')
+    ])
+    logger.info("成功初始化 InfluxDB 客户端")
+    
+    # 6. 构建客户端字典
+    clients = {
+        'dc_status': dc_status_data_client,
+        'prediction': prediction_data_client,
+        'setting': setting_data_client,
+        'reference': reference_data_client
+    }
+    
+    logger.info("="*60)
+    logger.info("系统初始化完成")
+    logger.info("="*60)
+    
+    return logger, configs, clients
