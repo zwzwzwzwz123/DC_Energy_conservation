@@ -64,8 +64,20 @@ class InfluxDBClientWrapper:
 
             # 测试连接
             self.client.ping()
-            self.logger.info(f"[{self.client_name}] InfluxDB 连接成功: {host}:{port}")
+            self.logger.info(f"[{self.client_name}] InfluxDB 连接成功: {host}:{port}/{database}")
 
+        except KeyError as e:
+            error_msg = f"配置参数缺失: {e}"
+            self.logger.error(f"[{self.client_name}] InfluxDB 连接失败: {error_msg}")
+            raise KeyError(error_msg)
+        except requests.exceptions.ConnectionError as e:
+            error_msg = f"网络连接错误，无法连接到 {self.client_config.get('host', 'unknown')}:{self.client_config.get('port', 'unknown')}"
+            self.logger.error(f"[{self.client_name}] InfluxDB 连接失败: {error_msg}")
+            raise ConnectionError(error_msg) from e
+        except requests.exceptions.Timeout as e:
+            error_msg = f"连接超时（timeout={timeout}秒）"
+            self.logger.error(f"[{self.client_name}] InfluxDB 连接失败: {error_msg}")
+            raise TimeoutError(error_msg) from e
         except Exception as e:
             self.logger.error(f"[{self.client_name}] InfluxDB 连接失败: {e}")
             raise
@@ -112,10 +124,8 @@ class InfluxDBClientWrapper:
         try:
             return self.client.query(query_str, *args, **kwargs)
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout,
-                requests.exceptions.RequestException) as e:
-            self.logger.warning(f"[{self.client_name}] 查询操作失败，网络错误，尝试重连: {e}")
-        except Exception as e:
-            self.logger.error(f"[{self.client_name}] 查询操作失败，尝试重连: {e}")
+                requests.exceptions.RequestException, Exception) as e:
+            self.logger.warning(f"[{self.client_name}] 查询操作失败，尝试重连: {e}")
 
             # 尝试重连
             if self._reconnect():
@@ -145,7 +155,8 @@ class InfluxDBClientWrapper:
         """
         try:
             return self.client.write_points(points, *args, **kwargs)
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout, Exception) as e:
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout,
+                requests.exceptions.RequestException, Exception) as e:
             self.logger.warning(f"[{self.client_name}] 写入操作失败，尝试重连: {e}")
 
             # 尝试重连

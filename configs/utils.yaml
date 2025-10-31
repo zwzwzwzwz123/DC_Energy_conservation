@@ -39,22 +39,49 @@ InfluxDB:
 
 
 # 日志配置
-
 logging:
-  # 是否输出到控制台（true/false）
-  console_output: True
+  # 默认配置（所有日志器的默认设置）
+  default:
+    # 是否输出到控制台（true/false）
+    console_output: true
 
-  # 日志轮转配置
-  # rotation_when: 轮转时间单位
-  #   - "midnight": 每天午夜轮转
-  #   - "H": 每小时轮转
-  #   - "D": 每天轮转
-  #   - "W0"-"W6": 每周的某一天轮转（0=周一, 6=周日）
-  rotation_when: "midnight"
+    # 日志轮转配置
+    # rotation_when: 轮转时间单位
+    #   - "midnight": 每天午夜轮转
+    #   - "H": 每小时轮转
+    #   - "D": 每天轮转
+    #   - "W0"-"W6": 每周的某一天轮转（0=周一, 6=周日）
+    rotation_when: "midnight"
 
-  # 轮转间隔（配合 rotation_when 使用）
-  # 例如：rotation_when="H", rotation_interval=6 表示每6小时轮转一次
-  rotation_interval: 1
+    # 轮转间隔（配合 rotation_when 使用）
+    # 例如：rotation_when="H", rotation_interval=6 表示每6小时轮转一次
+    rotation_interval: 1
 
-  # 保留的备份文件数量（超过此数量的旧日志将被删除）
-  backup_count: 7
+    # 保留的备份文件数量（超过此数量的旧日志将被删除）
+    backup_count: 7
+
+  # 各日志器的独立配置（可选，用于覆盖默认配置）
+  # 如果某个日志器没有在这里配置，则使用 default 中的配置
+  loggers:
+    # 全局日志保留更久（30天）
+    total:
+      backup_count: 14
+
+    # 主程序日志保留14天
+    main:
+      backup_count: 3
+
+    # InfluxDB 日志保留14天
+    influxdb:
+      backup_count: 3
+
+    # 预测训练日志保留14天
+    prediction_training:
+      backup_count: 3
+    # 预测推理日志保留14天
+    prediction_inference:
+      backup_count: 3
+
+    # 优化日志保留14天
+    optimization:
+      backup_count: 14

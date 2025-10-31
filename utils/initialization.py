@@ -87,10 +87,14 @@ def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
     参数:
         log_config: 日志配置字典，从 utils.yaml 读取
                    包含以下键:
-                   - console_output: 是否输出到控制台 (true/false)
-                   - rotation_when: 日志轮转时间单位 (midnight, H, D, W0-W6)
-                   - rotation_interval: 日志轮转间隔
-                   - backup_count: 保留的备份文件数量
+                   - default: 默认配置字典
+                     - console_output: 是否输出到控制台 (true/false)
+                     - rotation_when: 日志轮转时间单位 (midnight, H, D, W0-W6)
+                     - rotation_interval: 日志轮转间隔
+                     - backup_count: 保留的备份文件数量
+                   - loggers: 各日志器的独立配置（可选）
+                     - 键为日志器名称（如 "total", "main"）
+                     - 值为该日志器的配置字典，用于覆盖默认配置
 
     返回:
         Dict[str, logging.Logger]: 包含所有日志器的字典
@@ -116,12 +120,16 @@ def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
         Exception: 日志系统初始化失败
     """
     try:
-        # 获取配置参数
+        # 获取默认配置
+        default_config = log_config.get("default", {})
         log_dir = "./logs"
-        console_output = log_config.get("console_output", True)
-        rotation_when = log_config.get("rotation_when", "midnight")
-        rotation_interval = log_config.get("rotation_interval", 1)
-        backup_count = log_config.get("backup_count", 7)
+        default_console_output = default_config.get("console_output", True)
+        default_rotation_when = default_config.get("rotation_when", "midnight")
+        default_rotation_interval = default_config.get("rotation_interval", 1)
+        default_backup_count = default_config.get("backup_count", 7)
+
+        # 获取各日志器的独立配置
+        loggers_config = log_config.get("loggers", {})
 
         # 创建日志目录
         log_path = Path(log_dir)
@@ -145,9 +153,16 @@ def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
         # 存储所有日志器
         loggers = {}
 
-        # 创建根日志器（total_running_log）
+        # 创建根日志器（total_log）
         root_logger_name, root_log_file = logger_configs["total"]
         root_logger = logging.getLogger(root_logger_name)
+
+        # 获取根日志器的配置（如果有独立配置则使用，否则使用默认配置）
+        root_config = loggers_config.get("total", {})
+        root_console_output = root_config.get("console_output", default_console_output)
+        root_rotation_when = root_config.get("rotation_when", default_rotation_when)
+        root_rotation_interval = root_config.get("rotation_interval", default_rotation_interval)
+        root_backup_count = root_config.get("backup_count", default_backup_count)
 
         # 避免重复初始化
         if not root_logger.handlers:
@@ -155,7 +170,7 @@ def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
             root_logger.propagate = False  # 根日志器不向上传播
 
             # 根日志器添加控制台处理器（避免重复输出，只在根日志器添加）
-            if console_output:
+            if root_console_output:
                 console_handler = logging.StreamHandler()
                 console_handler.setLevel(logging.INFO)  # 控制台只显示 INFO 及以上级别
                 console_handler.setFormatter(formatter)
@@ -165,9 +180,9 @@ def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
             root_file_handler = TimedRotatingFileHandler(
                 filename=str(log_path / root_log_file),
                 encoding="utf-8",
-                when=rotation_when,
-                interval=rotation_interval,
-                backupCount=backup_count
+                when=root_rotation_when,
+                interval=root_rotation_interval,
+                backupCount=root_backup_count
             )
             root_file_handler.setLevel(logging.DEBUG)  # 文件记录所有级别
             root_file_handler.setFormatter(formatter)
@@ -182,6 +197,12 @@ def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
 
             child_logger = logging.getLogger(logger_name)
 
+            # 获取该日志器的配置（如果有独立配置则使用，否则使用默认配置）
+            child_config = loggers_config.get(key, {})
+            child_rotation_when = child_config.get("rotation_when", default_rotation_when)
+            child_rotation_interval = child_config.get("rotation_interval", default_rotation_interval)
+            child_backup_count = child_config.get("backup_count", default_backup_count)
+
             # 避免重复初始化
             if not child_logger.handlers:
                 child_logger.setLevel(logging.DEBUG)  # 收集所有级别的日志
@@ -191,9 +212,9 @@ def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
                 child_file_handler = TimedRotatingFileHandler(
                     filename=str(log_path / log_file),
                     encoding="utf-8",
-                    when=rotation_when,
-                    interval=rotation_interval,
-                    backupCount=backup_count
+                    when=child_rotation_when,
+                    interval=child_rotation_interval,
+                    backupCount=child_backup_count
                 )
                 child_file_handler.setLevel(logging.DEBUG)  # 文件记录所有级别
                 child_file_handler.setFormatter(formatter)
@@ -206,7 +227,13 @@ def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
         root_logger.info("多层级日志系统初始化成功")
         root_logger.info("日志文件列表:")
         for key, (_, log_file) in logger_configs.items():
-            root_logger.info(f"  - {key:25s} -> {log_file}")
+            # 获取该日志器的实际配置
+            if key == "total":
+                actual_backup = root_backup_count
+            else:
+                child_config = loggers_config.get(key, {})
+                actual_backup = child_config.get("backup_count", default_backup_count)
+            root_logger.info(f"  - {key:25s} -> {log_file:30s} (保留 {actual_backup} 天)")
         root_logger.info("=" * 80)
 
         return loggers
