@@ -111,8 +111,11 @@ class InfluxDBClientWrapper:
         """
         try:
             return self.client.query(query_str, *args, **kwargs)
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout, Exception) as e:
-            self.logger.warning(f"[{self.client_name}] 查询操作失败，尝试重连: {e}")
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout,
+                requests.exceptions.RequestException) as e:
+            self.logger.warning(f"[{self.client_name}] 查询操作失败，网络错误，尝试重连: {e}")
+        except Exception as e:
+            self.logger.error(f"[{self.client_name}] 查询操作失败，尝试重连: {e}")
 
             # 尝试重连
             if self._reconnect():

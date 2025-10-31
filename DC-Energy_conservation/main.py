@@ -80,11 +80,12 @@ def optimization_thread(logger):
         try:
             # TODO: 实现优化逻辑
             # 1. 从 prediction_client 读取预测数据
-            # 2. 执行优化算法
-            # 3. 从 dc_status_client 读取状态数据
-            # 4. 执行优化算法
-            # 5. 生成控制指令
-            # 6. 将控制指令写入 optimization_client
+            # 2. 根据预测数据执行优化算法
+            # 3. 生成控制指令
+            # 4. 将控制指令写入 optimization_client
+            # 5. 从 dc_status_client 读取状态数据，与环境不断交互进行强化学习
+            # 6. 不断生成控制指令
+            # 7. 不断将控制指令写入 optimization_client
             logger.info("优化线程运行中...")
             time.sleep(600)  # 每10分钟优化一次
         except Exception as e:
@@ -104,7 +105,7 @@ def main():
 
     # 1. 加载配置文件
     print("\n[1/3] 加载配置文件...")
-    main_config, models_config, modules_config, utils_config, security_boundary_config, uid_config = load_configs()
+    main_config, models_config, modules_config, security_boundary_config, uid_config, utils_config = load_configs()
     print("✓ 配置文件加载成功")
 
     # 2. 初始化多层级日志系统

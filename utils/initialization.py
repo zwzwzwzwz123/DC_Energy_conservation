@@ -129,12 +129,12 @@ def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
 
         # 定义日志器配置：{简化名称: (完整logger名称, 日志文件名)}
         logger_configs = {
-            "total": ("log_total_running", "total_running_log.log"),
-            "main": ("log_main", "main_log.log"),
-            "influxdb": ("log_influxdb", "influxdb_log.log"),
-            "prediction_training": ("log_prediction_training", "prediction_training_log.log"),
-            "prediction_inference": ("log_prediction_inference", "prediction_inference_log.log"),
-            "optimization": ("log_optimization", "optimization_log.log")
+            "total": ("log_total", "total_log.log"),
+            "main": ("log_total.main", "main_log.log"),
+            "influxdb": ("log_total.influxdb", "influxdb_log.log"),
+            "prediction_training": ("log_total.prediction_training", "prediction_training_log.log"),
+            "prediction_inference": ("log_total.prediction_inference", "prediction_inference_log.log"),
+            "optimization": ("log_total.optimization", "optimization_log.log")
         }
 
         # 日志格式：包含时间、logger名称、级别、消息
