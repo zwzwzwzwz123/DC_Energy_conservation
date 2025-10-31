@@ -1,0 +1,113 @@
+# ========================================
+# 数据中心节能项目 - 参数配置文件
+# ========================================
+# 说明：本文件包含所有需要用户手动配置的参数
+# 修改参数后无需修改代码，重启程序即可生效
+
+# ========================================
+# 日志配置
+# ========================================
+logging:
+  # 日志文件名
+  log_filename: "run.log"
+
+  # 是否输出到控制台（true/false）
+  console_output: True
+
+  # 日志轮转配置
+  # rotation_when: 轮转时间单位
+  #   - "midnight": 每天午夜轮转
+  #   - "H": 每小时轮转
+  #   - "D": 每天轮转
+  #   - "W0"-"W6": 每周的某一天轮转（0=周一, 6=周日）
+  rotation_when: "midnight"
+
+  # 轮转间隔（配合 rotation_when 使用）
+  # 例如：rotation_when="H", rotation_interval=6 表示每6小时轮转一次
+  rotation_interval: 1
+
+  # 保留的备份文件数量（超过此数量的旧日志将被删除）
+  backup_count: 7
+
+
+# ========================================
+# 模型配置
+# ========================================
+model:
+  # 模型保存路径
+  model_save_dir: "./models/saved"
+
+  # 模型检查点保存间隔（单位：epoch）
+  checkpoint_interval: 10
+
+  # 是否使用 GPU（true/false）
+  use_gpu: true
+
+  # GPU 设备 ID（如果有多个 GPU，可以指定使用哪个）
+  # 例如：0, 1, 2 等，或者 "0,1" 使用多个 GPU
+  gpu_device: 0
+
+
+# ========================================
+# 数据处理配置
+# ========================================
+data:
+  # 数据采样间隔（单位：秒）
+  sampling_interval: 60
+
+  # 数据缓存大小（单位：条）
+  cache_size: 1000
+
+  # 数据预处理方法
+  # 可选值：normalize, standardize, minmax
+  preprocessing_method: "normalize"
+
+
+# ========================================
+# 预测模块配置
+# ========================================
+prediction:
+  # 预测时间窗口（单位：分钟）
+  prediction_window: 60
+
+  # 预测间隔（单位：分钟）
+  prediction_interval: 5
+
+  # 历史数据窗口（单位：小时）
+  history_window: 24
+
+
+# ========================================
+# 优化模块配置
+# ========================================
+optimization:
+  # 优化算法
+  # 可选值：genetic_algorithm, particle_swarm, gradient_descent
+  algorithm: "genetic_algorithm"
+
+  # 优化目标
+  # 可选值：energy_saving, cost_reduction, comfort_optimization
+  objective: "energy_saving"
+
+  # 优化间隔（单位：分钟）
+  optimization_interval: 10
+
+  # 最大迭代次数
+  max_iterations: 100
+
+  # 收敛阈值
+  convergence_threshold: 0.001
+
+
+# ========================================
+# 系统运行配置
+# ========================================
+system:
+  # 主循环间隔（单位：秒）
+  main_loop_interval: 60
+
+  # 是否启用调试模式（true/false）
+  debug_mode: false
+
+  # 线程池大小
+  thread_pool_size: 4
