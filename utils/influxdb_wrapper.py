@@ -9,8 +9,6 @@ from typing import Dict, Tuple, List, Any
 from influxdb import InfluxDBClient
 import requests.exceptions
 
-logger = logging.getLogger(__name__)
-
 
 class InfluxDBClientWrapper:
     """
@@ -20,7 +18,7 @@ class InfluxDBClientWrapper:
     重连机制在执行查询或写入操作时触发（懒加载重连）
     """
 
-    def __init__(self, client_config: Dict, reconnect_config: Dict):
+    def __init__(self, client_config: Dict, reconnect_config: Dict, logger: logging.Logger, client_name: str):
         """
         初始化 InfluxDB 客户端包装器
 
@@ -29,9 +27,13 @@ class InfluxDBClientWrapper:
                           包含 host, port, username, password, database
             reconnect_config: 重连配置字典
                             包含 max_retries, retry_interval, timeout
+            logger: 日志器（从调用方传入，通常是 loggers["influxdb"]）
+            client_name: 客户端名称，用于日志标识（如 "dc_status_data", "prediction_data"）
         """
         self.client_config = client_config
         self.reconnect_config = reconnect_config
+        self.logger = logger
+        self.client_name = client_name  # 保存客户端名称用于日志标识
         self.client = None
         self._connect()
 
@@ -62,10 +64,10 @@ class InfluxDBClientWrapper:
 
             # 测试连接
             self.client.ping()
-            logger.info(f"InfluxDB 连接成功: {host}:{port}/{database}")
+            self.logger.info(f"[{self.client_name}] InfluxDB 连接成功: {host}:{port}")
 
         except Exception as e:
-            logger.error(f"InfluxDB 连接失败: {e}")
+            self.logger.error(f"[{self.client_name}] InfluxDB 连接失败: {e}")
             raise
 
     def _reconnect(self) -> bool:
@@ -80,17 +82,17 @@ class InfluxDBClientWrapper:
 
         for attempt in range(1, max_retries + 1):
             try:
-                logger.warning(f"尝试重新连接 InfluxDB (第 {attempt}/{max_retries} 次)...")
+                self.logger.warning(f"[{self.client_name}] 尝试重新连接 InfluxDB (第 {attempt}/{max_retries} 次)...")
                 self._connect()
-                logger.info("InfluxDB 重连成功")
+                self.logger.info(f"[{self.client_name}] InfluxDB 重连成功")
                 return True
             except Exception as e:
-                logger.error(f"重连失败 (第 {attempt}/{max_retries} 次): {e}")
+                self.logger.error(f"[{self.client_name}] 重连失败 (第 {attempt}/{max_retries} 次): {e}")
                 if attempt < max_retries:
-                    logger.info(f"等待 {retry_interval} 秒后重试...")
+                    self.logger.info(f"[{self.client_name}] 等待 {retry_interval} 秒后重试...")
                     time.sleep(retry_interval)
 
-        logger.error(f"InfluxDB 重连失败，已达到最大重试次数 ({max_retries})")
+        self.logger.error(f"[{self.client_name}] InfluxDB 重连失败，已达到最大重试次数 ({max_retries})")
         return False
 
     def query(self, query_str: str, *args, **kwargs) -> Any:
@@ -110,7 +112,7 @@ class InfluxDBClientWrapper:
         try:
             return self.client.query(query_str, *args, **kwargs)
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout, Exception) as e:
-            logger.warning(f"查询操作失败，尝试重连: {e}")
+            self.logger.warning(f"[{self.client_name}] 查询操作失败，尝试重连: {e}")
 
             # 尝试重连
             if self._reconnect():
@@ -118,11 +120,11 @@ class InfluxDBClientWrapper:
                 try:
                     return self.client.query(query_str, *args, **kwargs)
                 except Exception as retry_error:
-                    logger.error(f"重连后查询仍然失败: {retry_error}")
+                    self.logger.error(f"[{self.client_name}] 重连后查询仍然失败: {retry_error}")
                     raise
             else:
                 # 重连失败
-                raise Exception(f"查询失败且重连失败: {e}")
+                raise Exception(f"[{self.client_name}] 查询失败且重连失败: {e}")
 
     def write_points(self, points: List[Dict], *args, **kwargs) -> bool:
         """
@@ -141,7 +143,7 @@ class InfluxDBClientWrapper:
         try:
             return self.client.write_points(points, *args, **kwargs)
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout, Exception) as e:
-            logger.warning(f"写入操作失败，尝试重连: {e}")
+            self.logger.warning(f"[{self.client_name}] 写入操作失败，尝试重连: {e}")
 
             # 尝试重连
             if self._reconnect():
@@ -149,20 +151,21 @@ class InfluxDBClientWrapper:
                 try:
                     return self.client.write_points(points, *args, **kwargs)
                 except Exception as retry_error:
-                    logger.error(f"重连后写入仍然失败: {retry_error}")
+                    self.logger.error(f"[{self.client_name}] 重连后写入仍然失败: {retry_error}")
                     raise
             else:
                 # 重连失败
-                raise Exception(f"写入失败且重连失败: {e}")
+                raise Exception(f"[{self.client_name}] 写入失败且重连失败: {e}")
 
     def close(self) -> None:
         """关闭 InfluxDB 连接"""
         if self.client:
             self.client.close()
-            logger.info("InfluxDB 连接已关闭")
+            self.logger.info(f"[{self.client_name}] InfluxDB 连接已关闭")
 
 
-def _init_single_influxdb_client(client_config: Dict, reconnect_config: Dict) -> InfluxDBClientWrapper:
+def _init_single_influxdb_client(client_config: Dict, reconnect_config: Dict,
+                                 logger: logging.Logger, client_name: str) -> InfluxDBClientWrapper:
     """
     初始化单个 InfluxDB 客户端（内部函数）
 
@@ -171,6 +174,8 @@ def _init_single_influxdb_client(client_config: Dict, reconnect_config: Dict) ->
                       包含 host, port, username, password, database
         reconnect_config: 重连配置字典
                         包含 max_retries, retry_interval, timeout
+        logger: 日志器（从调用方传入）
+        client_name: 客户端名称，用于日志标识
 
     返回:
         InfluxDBClientWrapper: 包装后的 InfluxDB 客户端对象
@@ -180,14 +185,16 @@ def _init_single_influxdb_client(client_config: Dict, reconnect_config: Dict) ->
         Exception: 数据库连接失败
     """
     try:
-        return InfluxDBClientWrapper(client_config, reconnect_config)
+        client = InfluxDBClientWrapper(client_config, reconnect_config, logger, client_name)
+        logger.info(f"[{client_name}] InfluxDB 客户端初始化成功")
+        return client
     except KeyError as e:
         raise KeyError(f"InfluxDB 配置参数缺失: {e}")
     except Exception as e:
-        raise Exception(f"InfluxDB 客户端初始化失败 (database: {client_config.get('database', 'unknown')}): {e}")
+        raise Exception(f"InfluxDB 客户端初始化失败 (client: {client_name}): {e}")
 
 
-def init_influxdb_clients(utils_config: Dict) -> Tuple[
+def init_influxdb_clients(utils_config: Dict, logger: logging.Logger) -> Tuple[
     InfluxDBClientWrapper, InfluxDBClientWrapper, InfluxDBClientWrapper]:
     """
     初始化 InfluxDB 1.8 客户端（带自动重连功能）
@@ -199,6 +206,7 @@ def init_influxdb_clients(utils_config: Dict) -> Tuple[
                      - InfluxDB.influxdb_prediction_data: 预测数据客户端配置
                      - InfluxDB.influxdb_optimization_data: 优化数据客户端配置
                      - InfluxDB.influxdb_reconnect: 重连配置
+        logger: 日志器（从调用方传入，通常是 loggers["influxdb"]）
 
     返回:
         Tuple[InfluxDBClientWrapper, InfluxDBClientWrapper, InfluxDBClientWrapper]:
@@ -224,17 +232,17 @@ def init_influxdb_clients(utils_config: Dict) -> Tuple[
 
         # 初始化数据中心状态数据客户端（读取）
         dc_status_data_client = _init_single_influxdb_client(
-            utils_config["InfluxDB"]["influxdb_dc_status_data"], reconnect_config
+            utils_config["InfluxDB"]["influxdb_dc_status_data"], reconnect_config, logger, "dc_status_data_client"
         )
 
         # 初始化预测数据客户端（读写）
         prediction_data_client = _init_single_influxdb_client(
-            utils_config["InfluxDB"]["influxdb_prediction_data"], reconnect_config
+            utils_config["InfluxDB"]["influxdb_prediction_data"], reconnect_config, logger, "prediction_data_client"
         )
 
         # 初始化优化数据客户端（写入）
         optimization_data_client = _init_single_influxdb_client(
-            utils_config["InfluxDB"]["influxdb_optimization_data"], reconnect_config
+            utils_config["InfluxDB"]["influxdb_optimization_data"], reconnect_config, logger, "optimization_data_client"
         )
 
         return (

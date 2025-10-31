@@ -71,90 +71,147 @@ def load_configs() -> Tuple[Dict, Dict, Dict, Dict, Dict, Dict]:
         raise Exception(f"加载配置文件失败: {e}")
 
 
-def init_logger(log_config: Dict) -> logging.Logger:
+def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
     """
-    初始化日志系统
+    初始化多层级日志系统
+
+    创建一个根日志器和5个子日志器，形成层级结构：
+    - 根日志器（total_running_log）：捕获所有模块的日志
+    - 子日志器：各自记录对应模块的日志，同时自动传播到根日志器
+
+    优势：
+    - 只需调用一次 logger.info()，日志会自动写入模块日志和全局日志
+    - 避免重复代码：logger_total.info() 和 logger_module.info()
+    - 线程安全：logging 模块本身是线程安全的
 
     参数:
         log_config: 日志配置字典，从 utils.yaml 读取
                    包含以下键:
-                   - logger_name: 日志器名称
-                   - log_level: 日志级别 (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-                   - log_dir: 日志目录路径（相对于项目根目录）
-                   - log_filename: 日志文件名
                    - console_output: 是否输出到控制台 (true/false)
-                   - console_level: 控制台日志级别
-                   - file_level: 文件日志级别
-                   - log_format: 日志格式字符串
-                   - date_format: 日期格式字符串
                    - rotation_when: 日志轮转时间单位 (midnight, H, D, W0-W6)
                    - rotation_interval: 日志轮转间隔
                    - backup_count: 保留的备份文件数量
 
     返回:
-        logging.Logger: 配置好的日志器对象
+        Dict[str, logging.Logger]: 包含所有日志器的字典
+            {
+                "total": 根日志器（记录所有日志）,
+                "main": main.py 日志器,
+                "influxdb": influxdb_wrapper.py 日志器,
+                "prediction_training": 预测训练线程日志器,
+                "prediction_inference": 预测推理线程日志器,
+                "optimization": 优化线程日志器
+            }
+
+    使用示例:
+        # 在 main.py 中初始化
+        loggers = init_multi_level_loggers(utils_config["logging"])
+
+        # 在各个模块中使用
+        loggers["main"].info("主程序启动")  # 同时写入 main_log.log 和 total_running_log.log
+        loggers["optimization"].info("优化完成")  # 同时写入 optimization_log.log 和 total_running_log.log
 
     异常:
-        KeyError: 配置参数缺失
         OSError: 日志目录创建失败
+        Exception: 日志系统初始化失败
     """
     try:
         # 获取配置参数
-        logger_name = "dc_logger"
-        log_level = "INFO"
         log_dir = "./logs"
-        log_filename = log_config.get("log_filename", "run.log")
         console_output = log_config.get("console_output", True)
-        console_level = "DEBUG"
-        file_level = "INFO"
-        log_format = "%(asctime)s - %(levelname)s - %(message)s"
-        date_format = "%Y-%m-%d %H:%M:%S"
         rotation_when = log_config.get("rotation_when", "midnight")
         rotation_interval = log_config.get("rotation_interval", 1)
         backup_count = log_config.get("backup_count", 7)
 
-        # 创建日志器
-        logger = logging.getLogger(logger_name)
-
-        # 避免重复添加处理器
-        if logger.handlers:
-            return logger
-
-        logger.setLevel(getattr(logging, log_level.upper()))  # 设置日志器级别（收集所有级别的日志）
-        formatter = logging.Formatter(log_format, datefmt=date_format)  # 创建日志格式器
-
-        # 创建日志目录（兼容 Windows 和 Linux）
+        # 创建日志目录
         log_path = Path(log_dir)
         log_path.mkdir(parents=True, exist_ok=True)
 
-        # 完整的日志文件路径
-        log_file_path = log_path / log_filename
+        # 定义日志器配置：{简化名称: (完整logger名称, 日志文件名)}
+        logger_configs = {
+            "total": ("log_total_running", "total_running_log.log"),
+            "main": ("log_main", "main_log.log"),
+            "influxdb": ("log_influxdb", "influxdb_log.log"),
+            "prediction_training": ("log_prediction_training", "prediction_training_log.log"),
+            "prediction_inference": ("log_prediction_inference", "prediction_inference_log.log"),
+            "optimization": ("log_optimization", "optimization_log.log")
+        }
 
-        # 添加控制台处理器
-        if console_output:
-            console_handler = logging.StreamHandler()
-            console_handler.setLevel(getattr(logging, console_level.upper()))
-            console_handler.setFormatter(formatter)
-            logger.addHandler(console_handler)
+        # 日志格式：包含时间、logger名称、级别、消息
+        log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        date_format = "%Y-%m-%d %H:%M:%S"
+        formatter = logging.Formatter(log_format, datefmt=date_format)
 
-        # 添加文件处理器（支持按时间轮转）
-        file_handler = TimedRotatingFileHandler(
-            filename=str(log_file_path),
-            encoding="utf-8",
-            when=rotation_when,
-            interval=rotation_interval,
-            backupCount=backup_count
-        )
-        file_handler.setLevel(getattr(logging, file_level.upper()))
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+        # 存储所有日志器
+        loggers = {}
 
-        logger.info(f"日志系统初始化成功，日志文件: {log_file_path}")
-        return logger
+        # 创建根日志器（total_running_log）
+        root_logger_name, root_log_file = logger_configs["total"]
+        root_logger = logging.getLogger(root_logger_name)
 
-    except KeyError as e:
-        raise KeyError(f"日志配置参数缺失: {e}")
+        # 避免重复初始化
+        if not root_logger.handlers:
+            root_logger.setLevel(logging.DEBUG)  # 收集所有级别的日志
+            root_logger.propagate = False  # 根日志器不向上传播
+
+            # 根日志器添加控制台处理器（避免重复输出，只在根日志器添加）
+            if console_output:
+                console_handler = logging.StreamHandler()
+                console_handler.setLevel(logging.INFO)  # 控制台只显示 INFO 及以上级别
+                console_handler.setFormatter(formatter)
+                root_logger.addHandler(console_handler)
+
+            # 根日志器添加文件处理器
+            root_file_handler = TimedRotatingFileHandler(
+                filename=str(log_path / root_log_file),
+                encoding="utf-8",
+                when=rotation_when,
+                interval=rotation_interval,
+                backupCount=backup_count
+            )
+            root_file_handler.setLevel(logging.DEBUG)  # 文件记录所有级别
+            root_file_handler.setFormatter(formatter)
+            root_logger.addHandler(root_file_handler)
+
+        loggers["total"] = root_logger
+
+        # 创建子日志器（main, influxdb, prediction_training, prediction_inference, optimization）
+        for key, (logger_name, log_file) in logger_configs.items():
+            if key == "total":
+                continue  # 跳过根日志器
+
+            child_logger = logging.getLogger(logger_name)
+
+            # 避免重复初始化
+            if not child_logger.handlers:
+                child_logger.setLevel(logging.DEBUG)  # 收集所有级别的日志
+                child_logger.propagate = True  # 子日志器向父日志器传播（关键设置）
+
+                # 子日志器只添加文件处理器（不添加控制台处理器，避免重复输出）
+                child_file_handler = TimedRotatingFileHandler(
+                    filename=str(log_path / log_file),
+                    encoding="utf-8",
+                    when=rotation_when,
+                    interval=rotation_interval,
+                    backupCount=backup_count
+                )
+                child_file_handler.setLevel(logging.DEBUG)  # 文件记录所有级别
+                child_file_handler.setFormatter(formatter)
+                child_logger.addHandler(child_file_handler)
+
+            loggers[key] = child_logger
+
+        # 记录初始化成功信息
+        root_logger.info("=" * 80)
+        root_logger.info("多层级日志系统初始化成功")
+        root_logger.info("日志文件列表:")
+        for key, (_, log_file) in logger_configs.items():
+            root_logger.info(f"  - {key:25s} -> {log_file}")
+        root_logger.info("=" * 80)
+
+        return loggers
+
     except OSError as e:
         raise OSError(f"日志目录创建失败: {e}")
     except Exception as e:
-        raise Exception(f"日志系统初始化失败: {e}")
+        raise Exception(f"多层级日志系统初始化失败: {e}")

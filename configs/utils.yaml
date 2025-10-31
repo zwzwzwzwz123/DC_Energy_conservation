@@ -41,9 +41,6 @@ InfluxDB:
 # 日志配置
 
 logging:
-  # 日志文件名
-  log_filename: "total_running.log"
-
   # 是否输出到控制台（true/false）
   console_output: True
 
