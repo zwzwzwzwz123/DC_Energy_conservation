@@ -74,10 +74,14 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "influxdb" },
+    { name = "requests" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "influxdb", specifier = ">=5.3.2" }]
+requires-dist = [
+    { name = "influxdb", specifier = ">=5.3.2" },
+    { name = "requests", specifier = ">=2.32.5" },
+]
 
 [[package]]
 name = "idna"
