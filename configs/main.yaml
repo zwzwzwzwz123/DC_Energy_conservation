@@ -6,3 +6,30 @@ shutdown:
   # 程序接收到 Ctrl+C 后，会等待所有关键操作完成
   # 如果超过此时间，将强制关闭并清理资源
   timeout: 30
+
+# 线程配置
+threads:
+  # 预测训练线程配置
+  prediction_training:
+    # 运行模式: "fixed_interval" 或 "continuous"
+    # - fixed_interval: 固定时间间隔模式,每个循环的时长是固定的
+    #   如果代码执行时间 < interval,则等待到 interval 秒
+    #   如果代码执行时间 >= interval,则立即开始下一次循环
+    # - continuous: 连续运行模式,当前循环结束后立即进入下一次循环,不等待
+    mode: "fixed_interval"
+    # 固定间隔模式下的循环时间(秒)
+    interval: 3600
+    # 出错后重试等待时间(秒)
+    error_retry_wait: 60
+
+  # 预测推理线程配置
+  prediction_inference:
+    mode: "fixed_interval"
+    interval: 300
+    error_retry_wait: 60
+
+  # 优化线程配置
+  optimization:
+    mode: "fixed_interval"
+    interval: 600
+    error_retry_wait: 60

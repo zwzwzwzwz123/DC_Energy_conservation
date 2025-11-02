@@ -31,6 +31,7 @@ class AppContext:
         prediction_client: 预测数据客户端
         optimization_client: 优化数据客户端
         shutdown_event: 关闭事件，用于优雅关闭线程
+        main_config: 主配置字典，从 main.yaml 加载
         critical_operation_lock: 保护关键操作计数器的锁
         critical_operation_count: 当前正在执行的关键操作数量
 
@@ -45,6 +46,7 @@ class AppContext:
     prediction_client: InfluxDBClientWrapper
     optimization_client: InfluxDBClientWrapper
     shutdown_event: Event
+    main_config: Dict
     critical_operation_lock: Lock = field(default_factory=Lock)
     critical_operation_count: int = 0
 
@@ -59,7 +61,17 @@ def prediction_training_thread(ctx: AppContext):
     logger = ctx.loggers["prediction_training"]
     logger.info("预测训练线程已启动")
 
+    # 从配置中读取线程参数
+    thread_config = ctx.main_config.get("threads", {}).get("prediction_training", {})
+    mode = thread_config.get("mode", "fixed_interval")
+    interval = thread_config.get("interval", 3600)
+    error_retry_wait = thread_config.get("error_retry_wait", 60)
+
+    logger.info(f"预测训练线程配置: mode={mode}, interval={interval}秒, error_retry_wait={error_retry_wait}秒")
+
     while not ctx.shutdown_event.is_set():
+        loop_start_time = time.time()  # 记录循环开始时间
+
         try:
             # TODO: 实现预测训练逻辑
             # 1. 从 ctx.dc_status_client 读取数据中心状态数据
@@ -92,12 +104,34 @@ def prediction_training_thread(ctx: AppContext):
             # 只在真正关键的操作（如数据库写入、模型保存）处使用。
             logger.info("预测训练线程运行中...")
 
-            # 使用 wait() 代替 sleep()，以便能够响应 shutdown_event
-            if ctx.shutdown_event.wait(timeout=3600):  # 每小时训练一次
-                break  # 收到关闭信号，退出循环
+            # 根据运行模式决定是否等待
+            if mode == "fixed_interval":
+                # 固定时间间隔模式
+                elapsed_time = time.time() - loop_start_time
+                remaining_time = interval - elapsed_time
+
+                if remaining_time > 0:
+                    # 如果执行时间 < interval，等待剩余时间
+                    logger.info(f"预测训练完成，已用时 {elapsed_time:.2f}秒，等待 {remaining_time:.2f}秒后开始下一次训练")
+                    if ctx.shutdown_event.wait(timeout=remaining_time):
+                        break  # 收到关闭信号，退出循环
+                else:
+                    # 如果执行时间 >= interval，立即开始下一次循环
+                    logger.info(f"预测训练完成，已用时 {elapsed_time:.2f}秒（超过间隔 {interval}秒），立即开始下一次训练")
+                    # 检查是否有关闭信号
+                    if ctx.shutdown_event.is_set():
+                        break
+            else:
+                # 连续运行模式 - 立即开始下一次循环
+                elapsed_time = time.time() - loop_start_time
+                logger.info(f"预测训练完成，已用时 {elapsed_time:.2f}秒，立即开始下一次训练（连续模式）")
+                # 检查是否有关闭信号
+                if ctx.shutdown_event.is_set():
+                    break
+
         except Exception as e:
             logger.error(f"预测训练线程出错: {e}", exc_info=True)
-            if ctx.shutdown_event.wait(timeout=60):  # 出错后等待1分钟再重试
+            if ctx.shutdown_event.wait(timeout=error_retry_wait):  # 出错后等待再重试
                 break
 
     logger.info("预测训练线程已退出")
@@ -113,7 +147,17 @@ def prediction_inference_thread(ctx: AppContext):
     logger = ctx.loggers["prediction_inference"]
     logger.info("预测推理线程已启动")
 
+    # 从配置中读取线程参数
+    thread_config = ctx.main_config.get("threads", {}).get("prediction_inference", {})
+    mode = thread_config.get("mode", "fixed_interval")
+    interval = thread_config.get("interval", 60)
+    error_retry_wait = thread_config.get("error_retry_wait", 60)
+
+    logger.info(f"预测推理线程配置: mode={mode}, interval={interval}秒, error_retry_wait={error_retry_wait}秒")
+
     while not ctx.shutdown_event.is_set():
+        loop_start_time = time.time()  # 记录循环开始时间
+
         try:
             # TODO: 实现预测推理逻辑
             # 1. 从 ctx.dc_status_client 读取最新数据
@@ -139,12 +183,34 @@ def prediction_inference_thread(ctx: AppContext):
             #       ctx.prediction_client.write_points(prediction_results)
             logger.info("预测推理线程运行中...")
 
-            # 使用 wait() 代替 sleep()，以便能够响应 shutdown_event
-            if ctx.shutdown_event.wait(timeout=300):  # 每5分钟预测一次
-                break  # 收到关闭信号，退出循环
+            # 根据运行模式决定是否等待
+            if mode == "fixed_interval":
+                # 固定时间间隔模式
+                elapsed_time = time.time() - loop_start_time
+                remaining_time = interval - elapsed_time
+
+                if remaining_time > 0:
+                    # 如果执行时间 < interval，等待剩余时间
+                    logger.info(f"预测推理完成，已用时 {elapsed_time:.2f}秒，等待 {remaining_time:.2f}秒后开始下一次推理")
+                    if ctx.shutdown_event.wait(timeout=remaining_time):
+                        break  # 收到关闭信号，退出循环
+                else:
+                    # 如果执行时间 >= interval，立即开始下一次循环
+                    logger.info(f"预测推理完成，已用时 {elapsed_time:.2f}秒（超过间隔 {interval}秒），立即开始下一次推理")
+                    # 检查是否有关闭信号
+                    if ctx.shutdown_event.is_set():
+                        break
+            else:
+                # 连续运行模式 - 立即开始下一次循环
+                elapsed_time = time.time() - loop_start_time
+                logger.info(f"预测推理完成，已用时 {elapsed_time:.2f}秒，立即开始下一次推理（连续模式）")
+                # 检查是否有关闭信号
+                if ctx.shutdown_event.is_set():
+                    break
+
         except Exception as e:
             logger.error(f"预测推理线程出错: {e}", exc_info=True)
-            if ctx.shutdown_event.wait(timeout=60):  # 出错后等待1分钟再重试
+            if ctx.shutdown_event.wait(timeout=error_retry_wait):  # 出错后等待再重试
                 break
 
     logger.info("预测推理线程已退出")
@@ -160,7 +226,17 @@ def optimization_thread(ctx: AppContext):
     logger = ctx.loggers["optimization"]
     logger.info("优化线程已启动")
 
+    # 从配置中读取线程参数
+    thread_config = ctx.main_config.get("threads", {}).get("optimization", {})
+    mode = thread_config.get("mode", "fixed_interval")
+    interval = thread_config.get("interval", 600)
+    error_retry_wait = thread_config.get("error_retry_wait", 60)
+
+    logger.info(f"优化线程配置: mode={mode}, interval={interval}秒, error_retry_wait={error_retry_wait}秒")
+
     while not ctx.shutdown_event.is_set():
+        loop_start_time = time.time()  # 记录循环开始时间
+
         try:
             # TODO: 实现优化逻辑
             # 1. 从 ctx.prediction_client 读取预测数据
@@ -194,12 +270,34 @@ def optimization_thread(ctx: AppContext):
             #       rl_agent.save("rl_checkpoint.pth")
             logger.info("优化线程运行中...")
 
-            # 使用 wait() 代替 sleep()，以便能够响应 shutdown_event
-            if ctx.shutdown_event.wait(timeout=600):  # 每10分钟优化一次
-                break  # 收到关闭信号，退出循环
+            # 根据运行模式决定是否等待
+            if mode == "fixed_interval":
+                # 固定时间间隔模式
+                elapsed_time = time.time() - loop_start_time
+                remaining_time = interval - elapsed_time
+
+                if remaining_time > 0:
+                    # 如果执行时间 < interval，等待剩余时间
+                    logger.info(f"优化完成，已用时 {elapsed_time:.2f}秒，等待 {remaining_time:.2f}秒后开始下一次优化")
+                    if ctx.shutdown_event.wait(timeout=remaining_time):
+                        break  # 收到关闭信号，退出循环
+                else:
+                    # 如果执行时间 >= interval，立即开始下一次循环
+                    logger.info(f"优化完成，已用时 {elapsed_time:.2f}秒（超过间隔 {interval}秒），立即开始下一次优化")
+                    # 检查是否有关闭信号
+                    if ctx.shutdown_event.is_set():
+                        break
+            else:
+                # 连续运行模式 - 立即开始下一次循环
+                elapsed_time = time.time() - loop_start_time
+                logger.info(f"优化完成，已用时 {elapsed_time:.2f}秒，立即开始下一次优化（连续模式）")
+                # 检查是否有关闭信号
+                if ctx.shutdown_event.is_set():
+                    break
+
         except Exception as e:
             logger.error(f"优化线程出错: {e}", exc_info=True)
-            if ctx.shutdown_event.wait(timeout=60):  # 出错后等待1分钟再重试
+            if ctx.shutdown_event.wait(timeout=error_retry_wait):  # 出错后等待再重试
                 break
 
     logger.info("优化线程已退出")
@@ -269,7 +367,8 @@ def main():
         dc_status_client=dc_status_client,
         prediction_client=prediction_client,
         optimization_client=optimization_client,
-        shutdown_event=shutdown_event
+        shutdown_event=shutdown_event,
+        main_config=main_config
     )
 
     print("\n" + "=" * 60)
