@@ -1,0 +1,87 @@
+# InfluxDB 1.8 配置文件
+# 说明：配置三个 InfluxDB 客户端的连接参数
+# 使用 YAML 锚点(&)和别名(*)来复用公共配置
+InfluxDB:
+  # 公共配置（使用锚点定义，可被其他配置引用）
+  _common: &common_config
+    host: "10.0.0.6"        # InfluxDB 服务器地址
+    port: 8086              # InfluxDB 默认端口
+    username: "admin"       # 用户名
+    password: "Laimi@168"   # 密码
+
+
+  # 客户端 1：数据中心状态数据客户端（读取）
+  # 用途：读取数据中心内所有空调、环境传感器的实时状态数据
+  influxdb_dc_status_data:
+    <<: *common_config
+    database: "iot_origin_database"
+
+
+  # 客户端 2：预测数据客户端（读写）
+  # 用途：写入预测模块的输出结果，读取历史预测数据
+  influxdb_prediction_data:
+    <<: *common_config
+    database: "iot_origin_database"
+
+
+  # 客户端 3：优化数据客户端（写入）
+  # 用途：写入优化模块的实际控制输出（用于调控设备）
+  influxdb_optimization_data:
+    <<: *common_config
+    database: "iot_origin_database"
+
+
+  # InfluxDB 自动重连配置
+  influxdb_reconnect:
+    max_retries: 3          # 最大重试次数
+    retry_interval: 5       # 重试间隔（秒）
+    timeout: 10             # 连接超时时间（秒）
+
+
+# 日志配置
+logging:
+  # 默认配置（所有日志器的默认设置）
+  default:
+    # 是否输出到控制台（true/false）
+    console_output: true
+
+    # 日志轮转配置
+    # rotation_when: 轮转时间单位
+    #   - "midnight": 每天午夜轮转
+    #   - "H": 每小时轮转
+    #   - "D": 每天轮转
+    #   - "W0"-"W6": 每周的某一天轮转（0=周一, 6=周日）
+    rotation_when: "midnight"
+
+    # 轮转间隔（配合 rotation_when 使用）
+    # 例如：rotation_when="H", rotation_interval=6 表示每6小时轮转一次
+    rotation_interval: 1
+
+    # 保留的备份文件数量（超过此数量的旧日志将被删除）
+    backup_count: 7
+
+  # 各日志器的独立配置（可选，用于覆盖默认配置）
+  # 如果某个日志器没有在这里配置，则使用 default 中的配置
+  loggers:
+    # 全局日志保留更久（30天）
+    total:
+      backup_count: 14
+
+    # 主程序日志保留14天
+    main:
+      backup_count: 3
+
+    # InfluxDB 日志保留14天
+    influxdb:
+      backup_count: 3
+
+    # 预测训练日志保留14天
+    prediction_training:
+      backup_count: 3
+    # 预测推理日志保留14天
+    prediction_inference:
+      backup_count: 3
+
+    # 优化日志保留14天
+    optimization:
+      backup_count: 14
