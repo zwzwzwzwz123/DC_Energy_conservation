@@ -122,7 +122,7 @@ def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
     try:
         # 获取默认配置
         default_config = log_config.get("default", {})
-        log_dir = "./logs"
+        log_dir = "../logs"
         default_console_output = default_config.get("console_output", True)
         default_rotation_when = default_config.get("rotation_when", "midnight")
         default_rotation_interval = default_config.get("rotation_interval", 1)
