@@ -397,7 +397,7 @@ def main():
 
         # 保持主线程存活，等待中断信号
         while True:
-            time.sleep(1)  # 短暂休眠，以便快速响应中断信号
+            time.sleep(3600)
 
     except KeyboardInterrupt:
         ctx.loggers["main"].info("接收到中断信号，开始关闭系统...")
