@@ -20,12 +20,12 @@ def load_configs() -> Tuple[Dict, Dict, Dict, Dict, Dict, Dict]:
         Tuple[Dict, Dict, Dict, Dict, Dict, Dict]:
             (main_config, models_config, modules_config, utils_config,
              security_boundary_config, uid_config)
-            - main_config: main.py 配置（从 main.yaml 加载）
-            - models_config: 模型配置（从 models.yaml 加载）
-            - modules_config: 模块配置（从 modules.yaml 加载）
+            - main_config: main.py 配置（从 main_config.yaml 加载）
+            - models_config: 模型配置（从 models_config.yaml 加载）
+            - modules_config: 模块配置（从 modules_config.yaml 加载）
             - security_boundary_config: 安全边界配置（从 security_boundary_config.yaml 加载）
             - uid_config: UID 配置（从 uid_config.yaml 加载）
-            - utils_config: 工具配置，包含 InfluxDB 和日志配置（从 utils.yaml 加载）
+            - utils_config: 工具配置，包含 InfluxDB 和日志配置（从 utils_config.yaml 加载）
 
     异常:
         FileNotFoundError: 配置文件未找到
@@ -37,16 +37,16 @@ def load_configs() -> Tuple[Dict, Dict, Dict, Dict, Dict, Dict]:
     config_dir = project_root / "configs"
 
     try:
-        # 加载 main.yaml
-        with open(config_dir / "main.yaml", "r", encoding="utf-8") as f:
+        # 加载 main_config.yaml
+        with open(config_dir / "main_config.yaml", "r", encoding="utf-8") as f:
             main_config = yaml.safe_load(f) or {}
 
-        # 加载 models.yaml
-        with open(config_dir / "models.yaml", "r", encoding="utf-8") as f:
+        # 加载 models_config.yaml
+        with open(config_dir / "models_config.yaml", "r", encoding="utf-8") as f:
             models_config = yaml.safe_load(f) or {}
 
-        # 加载 modules.yaml
-        with open(config_dir / "modules.yaml", "r", encoding="utf-8") as f:
+        # 加载 modules_config.yaml
+        with open(config_dir / "modules_config.yaml", "r", encoding="utf-8") as f:
             modules_config = yaml.safe_load(f) or {}
 
         # 加载 security_boundary_config.yaml
@@ -57,8 +57,8 @@ def load_configs() -> Tuple[Dict, Dict, Dict, Dict, Dict, Dict]:
         with open(config_dir / "uid_config.yaml", "r", encoding="utf-8") as f:
             uid_config = yaml.safe_load(f) or {}
 
-        # 加载 utils.yaml（包含 InfluxDB 和日志配置）
-        with open(config_dir / "utils.yaml", "r", encoding="utf-8") as f:
+        # 加载 utils_config.yaml（包含 InfluxDB 和日志配置）
+        with open(config_dir / "utils_config.yaml", "r", encoding="utf-8") as f:
             utils_config = yaml.safe_load(f) or {}
 
         return main_config, models_config, modules_config, security_boundary_config, uid_config, utils_config
@@ -85,7 +85,7 @@ def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
     - 线程安全：logging 模块本身是线程安全的
 
     参数:
-        log_config: 日志配置字典，从 utils.yaml 读取
+        log_config: 日志配置字典，从 utils_config.yaml 读取
                    包含以下键:
                    - default: 默认配置字典
                      - console_output: 是否输出到控制台 (true/false)
