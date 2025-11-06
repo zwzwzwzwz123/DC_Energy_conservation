@@ -4,10 +4,10 @@
 InfluxDB:
   # 公共配置（使用锚点定义，可被其他配置引用）
   _common: &common_config
-    host: "10.0.0.6"        # InfluxDB 服务器地址
+    host: "121.237.18.5"        # InfluxDB 服务器地址
     port: 8086              # InfluxDB 默认端口
     username: "admin"       # 用户名
-    password: "Laimi@168"   # 密码
+    password: "admin123"   # 密码
 
 
   # 客户端 1：数据中心状态数据客户端（读取）
@@ -21,14 +21,14 @@ InfluxDB:
   # 用途：写入预测模块的输出结果，读取历史预测数据
   influxdb_prediction_data:
     <<: *common_config
-    database: "iot_origin_database"
+    database: "iot_origin_prediction"
 
 
   # 客户端 3：优化数据客户端（写入）
   # 用途：写入优化模块的实际控制输出（用于调控设备）
   influxdb_optimization_data:
     <<: *common_config
-    database: "iot_origin_database"
+    database: "iot_origin_optimization"
 
 
   # InfluxDB 自动重连配置
