@@ -1191,98 +1191,111 @@ if not ac.is_available:
 
 ### 8.1 概述
 
-`architecture_module.py` 中提供了丰富的查询函数，用于获取设备、UID、房间和系统等信息。这些函数对 `is_available` 字段的处理方式各不相同，理解这些差异对于正确使用模块至关重要。
+`architecture_module.py` 中提供了丰富的查询函数，用于获取设备、UID、房间和系统等信息。**从版本 3.0 开始，所有查询函数都采用统一的过滤机制**，通过 `include_unavailable` 参数来控制是否包含不可用项目。
 
-**关键发现**：
-- ✅ **获取所有项目的函数**（如 `get_all_devices()`、`get_all_rooms()`、`get_all_systems()`）默认返回所有项目，**包括** `is_available=False` 的项目
-- ⚠️ **获取 UID 的函数**（如 `get_all_observable_uids()`、`get_all_regulable_uids()`）会**自动过滤**掉 `is_available=False` 的设备
-- 🎯 **专门的过滤函数**（如 `get_available_devices()`、`get_unavailable_devices()`）提供明确的过滤功能
+**🎯 核心改进（版本 3.0）**：
+- ✅ **统一的参数名称**：所有查询函数都使用 `include_unavailable: bool = False` 参数
+- ✅ **一致的默认行为**：默认只返回可用项目（`is_available=True`），更符合实际使用场景
+- ✅ **灵活的控制**：需要所有项目时，显式传入 `include_unavailable=True`
+- ✅ **级联传递**：参数在函数调用链中正确传递（DataCenter → ComputerRoom → CoolingSystem）
+
+**关键变化总结**：
+- ⚠️ **默认行为改变**：所有 `get_all_*()` 函数现在默认只返回可用项目（之前是返回所有项目）
+- 🎯 **更安全**：避免意外操作不可用设备
+- 📊 **统计函数不受影响**：`get_statistics()` 内部会显式传入 `include_unavailable=True`，确保统计准确
 
 ### 8.2 设备查询函数
 
 以下函数用于获取设备对象：
 
-| 函数名称 | 所在类 | 是否过滤 is_available=False | 说明 |
-|---------|--------|---------------------------|------|
-| `get_all_devices(include_unavailable=True)` | `CoolingSystem` | 可选过滤 | 默认返回所有设备（包括不可用）；当 `include_unavailable=False` 时过滤掉不可用设备 |
-| `get_all_devices()` | `ComputerRoom` | ❌ 不过滤 | 返回机房内所有设备，**包括** `is_available=False` 的设备 |
-| `get_available_devices()` | `ComputerRoom` | ✅ 过滤 | 只返回 `is_available=True` 的设备 |
-| `get_unavailable_devices()` | `ComputerRoom` | ✅ 反向过滤 | 只返回 `is_available=False` 的设备 |
-| `get_all_devices()` | `DataCenter` | ❌ 不过滤 | 返回数据中心内所有设备，**包括** `is_available=False` 的设备 |
+| 函数名称 | 所在类 | 默认行为 | 参数说明 |
+|---------|--------|---------|---------|
+| `get_all_devices(include_unavailable=False)` | `CoolingSystem` | 只返回可用设备 | `include_unavailable=True` 时返回所有设备 |
+| `get_all_devices(include_unavailable=False)` | `ComputerRoom` | 只返回可用设备 | `include_unavailable=True` 时返回所有设备 |
+| `get_all_devices(include_unavailable=False)` | `DataCenter` | 只返回可用设备 | `include_unavailable=True` 时返回所有设备 |
+| `get_available_devices()` | `ComputerRoom` | 只返回可用设备 | 内部调用 `get_all_devices(include_unavailable=False)` |
+| `get_unavailable_devices()` | `ComputerRoom` | 只返回不可用设备 | 内部调用 `get_all_devices(include_unavailable=True)` 然后过滤 |
 
 **代码示例**：
 
 <augment_code_snippet path="modules/architecture_module.py" mode="EXCERPT">
 ````python
-# CoolingSystem.get_all_devices() - 第390-408行
-def get_all_devices(self, include_unavailable: bool = True) -> List[Device]:
-    all_devices = []
-    for device_list in self.devices.values():
-        all_devices.extend(device_list)
+# ComputerRoom.get_all_devices() - 新版本
+def get_all_devices(self, include_unavailable: bool = False) -> List[Device]:
+    """
+    获取机房内所有设备
 
-    # 根据参数过滤不可用的设备
-    if not include_unavailable:
-        all_devices = [d for d in all_devices if d.is_available]
+    参数:
+        include_unavailable: 是否包含不可用的设备，默认 False（只返回可用设备）
 
-    return all_devices
-````
-</augment_code_snippet>
-
-<augment_code_snippet path="modules/architecture_module.py" mode="EXCERPT">
-````python
-# ComputerRoom.get_all_devices() - 第517-527行
-def get_all_devices(self) -> List[Device]:
+    返回:
+        List[Device]: 设备列表（根据参数过滤）
+    """
     devices = []
-    for system in self.get_all_systems():
-        devices.extend(system.get_all_devices(include_unavailable=True))  # 包含不可用设备
+    for system in self.get_all_systems(include_unavailable=include_unavailable):
+        devices.extend(system.get_all_devices(include_unavailable=include_unavailable))
     return devices
 ````
 </augment_code_snippet>
 
 <augment_code_snippet path="modules/architecture_module.py" mode="EXCERPT">
 ````python
-# ComputerRoom.get_available_devices() - 第598-605行
+# ComputerRoom.get_available_devices() - 简化版本
 def get_available_devices(self) -> List[Device]:
-    return [device for device in self.get_all_devices() if device.is_available]
+    """获取机房内所有可用的设备"""
+    return self.get_all_devices(include_unavailable=False)
 ````
 </augment_code_snippet>
+
+**使用示例**：
+
+```python
+# 获取可用设备（默认行为）
+available_devices = room.get_all_devices()  # 只返回可用设备
+
+# 获取所有设备（包括不可用）
+all_devices = room.get_all_devices(include_unavailable=True)
+
+# 使用专门的函数
+available_devices = room.get_available_devices()  # 等同于 get_all_devices(include_unavailable=False)
+unavailable_devices = room.get_unavailable_devices()  # 只返回不可用设备
+```
 
 ### 8.3 UID 查询函数
 
 以下函数用于获取属性的唯一标识符（UID）列表：
 
-| 函数名称 | 所在类 | 是否过滤 is_available=False | 说明 |
-|---------|--------|---------------------------|------|
-| `get_observable_uids()` | `Device` | ❌ 不过滤 | 返回该设备的所有可观测属性 UID，不检查设备的 `is_available` 状态 |
-| `get_regulable_uids()` | `Device` | ❌ 不过滤 | 返回该设备的所有可调控属性 UID，不检查设备的 `is_available` 状态 |
-| `get_all_observable_uids()` | `ComputerRoom` | ✅ **过滤** | **只收集** `is_available=True` 的设备的可观测属性 UID |
-| `get_all_regulable_uids()` | `ComputerRoom` | ✅ **过滤** | **只收集** `is_available=True` 的设备的可调控属性 UID |
-| `get_all_observable_uids()` | `DataCenter` | ✅ **过滤** | 通过调用 `ComputerRoom.get_all_observable_uids()`，间接过滤掉不可用设备 |
-| `get_all_regulable_uids()` | `DataCenter` | ✅ **过滤** | 通过调用 `ComputerRoom.get_all_regulable_uids()`，间接过滤掉不可用设备 |
+| 函数名称 | 所在类 | 默认行为 | 参数说明 |
+|---------|--------|---------|---------|
+| `get_observable_uids()` | `Device` | 返回该设备的所有可观测属性 UID | 无参数，不检查设备的 `is_available` 状态 |
+| `get_regulable_uids()` | `Device` | 返回该设备的所有可调控属性 UID | 无参数，不检查设备的 `is_available` 状态 |
+| `get_all_observable_uids(include_unavailable=False)` | `ComputerRoom` | 只返回可用设备的 UID | `include_unavailable=True` 时返回所有设备的 UID |
+| `get_all_regulable_uids(include_unavailable=False)` | `ComputerRoom` | 只返回可用设备的 UID | `include_unavailable=True` 时返回所有设备的 UID |
+| `get_all_observable_uids(include_unavailable=False)` | `DataCenter` | 只返回可用设备的 UID | `include_unavailable=True` 时返回所有设备的 UID |
+| `get_all_regulable_uids(include_unavailable=False)` | `DataCenter` | 只返回可用设备的 UID | `include_unavailable=True` 时返回所有设备的 UID |
 
-**⚠️ 重要提示**：`ComputerRoom` 和 `DataCenter` 级别的 UID 查询函数会**自动过滤**掉 `is_available=False` 的设备，这是为了确保只读取和控制可用的设备。
+**✅ 关键改进**：UID 查询函数现在通过调用 `get_all_devices(include_unavailable)` 来统一过滤逻辑，不再需要显式的 `if device.is_available` 检查。
 
 **代码示例**：
 
 <augment_code_snippet path="modules/architecture_module.py" mode="EXCERPT">
 ````python
-# Device.get_observable_uids() - 第102-110行
-def get_observable_uids(self) -> List[str]:
-    return [attr.uid for attr in self.attributes.values()
-            if attr.attr_type in ["telemetry", "telesignaling"]]
-````
-</augment_code_snippet>
+# ComputerRoom.get_all_observable_uids() - 新版本
+def get_all_observable_uids(self, include_unavailable: bool = False) -> List[str]:
+    """
+    获取机房内所有可观测属性的uid列表
 
-<augment_code_snippet path="modules/architecture_module.py" mode="EXCERPT">
-````python
-# ComputerRoom.get_all_observable_uids() - 第529-552行
-def get_all_observable_uids(self) -> List[str]:
+    参数:
+        include_unavailable: 是否包含不可用设备的属性，默认 False（只返回可用设备的属性）
+
+    返回:
+        List[str]: 所有可观测属性的 uid 列表
+    """
     uids = []
 
-    # 设备属性（只收集可用设备的属性）
-    for device in self.get_all_devices():
-        if device.is_available:  # ⚠️ 关键：这里过滤掉不可用设备
-            uids.extend(device.get_observable_uids())
+    # 设备属性（根据参数决定是否包含不可用设备）
+    for device in self.get_all_devices(include_unavailable=include_unavailable):
+        uids.extend(device.get_observable_uids())
 
     # 环境传感器属性
     for sensor in self.environment_sensors:
@@ -1297,107 +1310,163 @@ def get_all_observable_uids(self) -> List[str]:
 ````
 </augment_code_snippet>
 
-<augment_code_snippet path="modules/architecture_module.py" mode="EXCERPT">
-````python
-# ComputerRoom.get_all_regulable_uids() - 第554-566行
-def get_all_regulable_uids(self) -> List[str]:
-    uids = []
-    # 只收集可用设备的可调控属性
-    for device in self.get_all_devices():
-        if device.is_available:  # ⚠️ 关键：这里过滤掉不可用设备
-            uids.extend(device.get_regulable_uids())
-    return uids
-````
-</augment_code_snippet>
+**使用示例**：
+
+```python
+# 获取可用设备的 UID（默认行为，最常用）
+observable_uids = datacenter.get_all_observable_uids()  # 只返回可用设备的 UID
+regulable_uids = datacenter.get_all_regulable_uids()    # 只返回可用设备的 UID
+
+# 获取所有设备的 UID（包括不可用）
+all_observable_uids = datacenter.get_all_observable_uids(include_unavailable=True)
+all_regulable_uids = datacenter.get_all_regulable_uids(include_unavailable=True)
+```
 
 ### 8.4 房间查询函数
 
 以下函数用于获取机房对象：
 
-| 函数名称 | 所在类 | 是否过滤 is_available=False | 说明 |
-|---------|--------|---------------------------|------|
-| `get_all_rooms()` | `DataCenter` | ❌ 不过滤 | 返回所有机房，**包括** `is_available=False` 的机房 |
-| `get_available_rooms()` | `DataCenter` | ✅ 过滤 | 只返回 `is_available=True` 的机房 |
-| `get_unavailable_rooms()` | `DataCenter` | ✅ 反向过滤 | 只返回 `is_available=False` 的机房 |
+| 函数名称 | 所在类 | 默认行为 | 参数说明 |
+|---------|--------|---------|---------|
+| `get_all_rooms(include_unavailable=False)` | `DataCenter` | 只返回可用机房 | `include_unavailable=True` 时返回所有机房 |
+| `get_available_rooms()` | `DataCenter` | 只返回可用机房 | 内部调用 `get_all_rooms(include_unavailable=False)` |
+| `get_unavailable_rooms()` | `DataCenter` | 只返回不可用机房 | 内部调用 `get_all_rooms(include_unavailable=True)` 然后过滤 |
 
 **代码示例**：
 
 <augment_code_snippet path="modules/architecture_module.py" mode="EXCERPT">
 ````python
-# DataCenter.get_all_rooms() - 第679-686行
-def get_all_rooms(self) -> List[ComputerRoom]:
-    return self.computer_rooms  # 直接返回所有机房，不过滤
+# DataCenter.get_all_rooms() - 新版本
+def get_all_rooms(self, include_unavailable: bool = False) -> List[ComputerRoom]:
+    """
+    获取所有机房
+
+    参数:
+        include_unavailable: 是否包含不可用的机房，默认 False（只返回可用机房）
+
+    返回:
+        List[ComputerRoom]: 机房列表（根据参数过滤）
+    """
+    if not include_unavailable:
+        return [room for room in self.computer_rooms if room.is_available]
+    return self.computer_rooms
 ````
 </augment_code_snippet>
 
-<augment_code_snippet path="modules/architecture_module.py" mode="EXCERPT">
-````python
-# DataCenter.get_available_rooms() - 第751-758行
-def get_available_rooms(self) -> List[ComputerRoom]:
-    return [room for room in self.computer_rooms if room.is_available]
-````
-</augment_code_snippet>
+**使用示例**：
+
+```python
+# 获取可用机房（默认行为）
+available_rooms = datacenter.get_all_rooms()  # 只返回可用机房
+
+# 获取所有机房（包括不可用）
+all_rooms = datacenter.get_all_rooms(include_unavailable=True)
+
+# 使用专门的函数
+available_rooms = datacenter.get_available_rooms()  # 等同于 get_all_rooms(include_unavailable=False)
+unavailable_rooms = datacenter.get_unavailable_rooms()  # 只返回不可用机房
+```
 
 ### 8.5 系统查询函数
 
 以下函数用于获取空调系统对象：
 
-| 函数名称 | 所在类 | 是否过滤 is_available=False | 说明 |
-|---------|--------|---------------------------|------|
-| `get_all_systems()` | `ComputerRoom` | ❌ 不过滤 | 返回所有空调系统，**包括** `is_available=False` 的系统 |
-| `get_available_systems()` | `ComputerRoom` | ✅ 过滤 | 只返回 `is_available=True` 的系统 |
-| `get_unavailable_systems()` | `ComputerRoom` | ✅ 反向过滤 | 只返回 `is_available=False` 的系统 |
+| 函数名称 | 所在类 | 默认行为 | 参数说明 |
+|---------|--------|---------|---------|
+| `get_all_systems(include_unavailable=False)` | `ComputerRoom` | 只返回可用系统 | `include_unavailable=True` 时返回所有系统 |
+| `get_available_systems()` | `ComputerRoom` | 只返回可用系统 | 内部调用 `get_all_systems(include_unavailable=False)` |
+| `get_unavailable_systems()` | `ComputerRoom` | 只返回不可用系统 | 内部调用 `get_all_systems(include_unavailable=True)` 然后过滤 |
 
 **代码示例**：
 
 <augment_code_snippet path="modules/architecture_module.py" mode="EXCERPT">
 ````python
-# ComputerRoom.get_all_systems() - 第508-515行
-def get_all_systems(self) -> List[CoolingSystem]:
-    return self.air_cooled_systems + self.water_cooled_systems  # 直接返回所有系统，不过滤
+# ComputerRoom.get_all_systems() - 新版本
+def get_all_systems(self, include_unavailable: bool = False) -> List[CoolingSystem]:
+    """
+    获取机房内所有空调系统
+
+    参数:
+        include_unavailable: 是否包含不可用的系统，默认 False（只返回可用系统）
+
+    返回:
+        List[CoolingSystem]: 空调系统列表（根据参数过滤）
+    """
+    all_systems = self.air_cooled_systems + self.water_cooled_systems
+
+    if not include_unavailable:
+        all_systems = [s for s in all_systems if s.is_available]
+
+    return all_systems
 ````
 </augment_code_snippet>
 
-<augment_code_snippet path="modules/architecture_module.py" mode="EXCERPT">
-````python
-# ComputerRoom.get_available_systems() - 第616-623行
-def get_available_systems(self) -> List[CoolingSystem]:
-    return [system for system in self.get_all_systems() if system.is_available]
-````
-</augment_code_snippet>
-
-### 8.6 过滤机制总结表
-
-| 查询类型 | 默认行为 | 是否过滤不可用项 | 推荐使用场景 |
-|---------|---------|----------------|-------------|
-| **获取设备对象** | 返回所有设备 | ❌ 不过滤 | 需要完整设备列表时（如统计、审计） |
-| **获取 UID 列表** | 只返回可用设备的 UID | ✅ **自动过滤** | 数据采集、设备控制（这是最常用的场景） |
-| **获取房间对象** | 返回所有房间 | ❌ 不过滤 | 需要完整机房列表时 |
-| **获取系统对象** | 返回所有系统 | ❌ 不过滤 | 需要完整系统列表时 |
-
-### 8.7 使用建议
-
-#### 8.7.1 数据采集场景
+**使用示例**：
 
 ```python
-# ✅ 推荐：使用 get_all_observable_uids() 自动过滤不可用设备
-observable_uids = datacenter.get_all_observable_uids()
-# 这些 UID 只包含可用设备的属性，可以直接用于数据读取
+# 获取可用系统（默认行为）
+available_systems = room.get_all_systems()  # 只返回可用系统
+
+# 获取所有系统（包括不可用）
+all_systems = room.get_all_systems(include_unavailable=True)
+
+# 使用专门的函数
+available_systems = room.get_available_systems()  # 等同于 get_all_systems(include_unavailable=False)
+unavailable_systems = room.get_unavailable_systems()  # 只返回不可用系统
 ```
 
-#### 8.7.2 设备控制场景
+### 8.6 统一过滤机制总结表
+
+| 查询类型 | 默认行为（v3.0） | 参数控制 | 推荐使用场景 |
+|---------|----------------|---------|-------------|
+| **获取设备对象** | 只返回可用设备 | `include_unavailable=False` | 数据采集、设备控制（最常用） |
+| **获取 UID 列表** | 只返回可用设备的 UID | `include_unavailable=False` | 数据采集、设备控制（最常用） |
+| **获取房间对象** | 只返回可用机房 | `include_unavailable=False` | 机房管理、设备分配 |
+| **获取系统对象** | 只返回可用系统 | `include_unavailable=False` | 系统监控、能耗分析 |
+| **统计分析** | 需要所有项目 | `include_unavailable=True` | 完整统计、审计、报表 |
+
+**🎯 关键优势**：
+
+1. **统一性**：所有查询函数使用相同的参数名和默认值
+2. **安全性**：默认只返回可用项目，避免意外操作不可用设备
+3. **灵活性**：需要所有项目时，显式传入 `include_unavailable=True`
+4. **可读性**：代码意图更清晰，不需要额外的过滤逻辑
+
+### 8.7 实际使用场景与示例
+
+#### 8.7.1 数据采集场景（最常用）
 
 ```python
-# ✅ 推荐：使用 get_all_regulable_uids() 自动过滤不可用设备
+# ✅ 推荐：默认行为就是只获取可用设备的 UID
+observable_uids = datacenter.get_all_observable_uids()
+# 这些 UID 只包含可用设备的属性，可以直接用于数据读取
+
+# 等同于（显式指定）
+observable_uids = datacenter.get_all_observable_uids(include_unavailable=False)
+```
+
+#### 8.7.2 设备控制场景（最常用）
+
+```python
+# ✅ 推荐：默认行为就是只获取可用设备的控制点
 regulable_uids = datacenter.get_all_regulable_uids()
 # 这些 UID 只包含可用设备的可调控属性，避免向不可用设备发送控制指令
+
+# 等同于（显式指定）
+regulable_uids = datacenter.get_all_regulable_uids(include_unavailable=False)
 ```
 
 #### 8.7.3 统计分析场景
 
 ```python
-# ✅ 推荐：使用 get_all_devices() 获取完整列表，然后手动分类
-all_devices = datacenter.get_all_devices()
+# ✅ 推荐：使用 get_statistics() 函数，它会自动处理
+stats = datacenter.get_statistics()
+print(f"可用设备: {stats['available_devices']}")
+print(f"不可用设备: {stats['unavailable_devices']}")
+print(f"设备总数: {stats['total_devices']}")
+
+# 或者手动统计
+all_devices = datacenter.get_all_devices(include_unavailable=True)  # 获取所有设备
 available_count = sum(1 for d in all_devices if d.is_available)
 unavailable_count = sum(1 for d in all_devices if not d.is_available)
 
@@ -1409,30 +1478,113 @@ unavailable_devices = room.get_unavailable_devices()
 #### 8.7.4 设备查找场景
 
 ```python
-# ⚠️ 注意：get_device_by_uid() 不检查 is_available
+# ⚠️ 注意：get_device_by_uid() 会搜索所有设备（包括不可用的）
 device = datacenter.get_device_by_uid("ac_001")
 if device:
     # 需要手动检查设备是否可用
     if device.is_available:
         print(f"设备 {device.device_name} 可用")
     else:
-        print(f"设备 {device.device_name} 不可用")
+        print(f"设备 {device.device_name} 不可用，跳过操作")
 ```
 
-### 8.8 关键注意事项
+#### 8.7.5 级联过滤示例
 
-1. **UID 查询函数的特殊行为**：
-   - `ComputerRoom.get_all_observable_uids()` 和 `get_all_regulable_uids()` 会**自动过滤**不可用设备
-   - 这是设计上的考虑，确保数据采集和控制只针对可用设备
-   - 如果需要获取所有设备（包括不可用）的 UID，需要先用 `get_all_devices()` 获取所有设备，然后手动调用每个设备的 `get_observable_uids()`
+```python
+# 示例：只获取可用机房中的可用设备
+available_rooms = datacenter.get_all_rooms(include_unavailable=False)
+for room in available_rooms:
+    available_devices = room.get_all_devices(include_unavailable=False)
+    print(f"机房 {room.room_name} 有 {len(available_devices)} 个可用设备")
 
-2. **设备对象查询的默认行为**：
-   - `get_all_devices()`、`get_all_rooms()`、`get_all_systems()` 默认返回所有项目
-   - 如果需要只获取可用项目，使用专门的 `get_available_*()` 函数
+# 等同于（更简洁）
+available_devices = datacenter.get_all_devices(include_unavailable=False)
+print(f"数据中心共有 {len(available_devices)} 个可用设备")
+```
 
-3. **一致性建议**：
-   - 在数据采集和控制场景中，使用 `get_all_observable_uids()` 和 `get_all_regulable_uids()`，它们会自动处理可用性过滤
-   - 在统计和审计场景中，使用 `get_all_*()` 函数获取完整列表，然后根据需要手动过滤
+### 8.8 关键注意事项与最佳实践
+
+#### 8.8.1 默认行为的变化（v3.0）
+
+⚠️ **重要**：从版本 3.0 开始，所有 `get_all_*()` 函数的默认行为已改变：
+
+| 版本 | 默认行为 | 影响 |
+|------|---------|------|
+| **v2.0 及之前** | 返回所有项目（包括不可用） | 需要手动过滤或使用 `get_available_*()` |
+| **v3.0 及之后** | 只返回可用项目 | 更安全，符合最常见的使用场景 |
+
+**迁移建议**：
+- 如果你的代码依赖于获取所有项目（包括不可用），需要显式传入 `include_unavailable=True`
+- 大多数情况下，默认行为的改变会让代码更简洁、更安全
+
+#### 8.8.2 统一的参数传递
+
+✅ **优势**：参数在函数调用链中自动传递
+
+```python
+# 参数会自动级联传递
+datacenter.get_all_devices(include_unavailable=True)
+    └─> room.get_all_devices(include_unavailable=True)
+            └─> system.get_all_devices(include_unavailable=True)
+```
+
+#### 8.8.3 get_statistics() 的特殊处理
+
+✅ **自动处理**：`get_statistics()` 函数内部会显式传入 `include_unavailable=True`，确保统计准确
+
+```python
+# get_statistics() 内部实现
+def get_statistics(self) -> Dict[str, Any]:
+    # 遍历所有机房（包括不可用的）
+    for room in self.get_all_rooms(include_unavailable=True):
+        # 统计所有设备（包括不可用的）
+        for device in room.get_all_devices(include_unavailable=True):
+            # 统计逻辑...
+```
+
+#### 8.8.4 查找函数的行为
+
+⚠️ **注意**：`get_device_by_uid()` 和 `get_system_by_uid()` 等查找函数会搜索所有项目（包括不可用的）
+
+```python
+# 这些函数内部使用 include_unavailable=True
+def get_device_by_uid(self, device_uid: str) -> Optional[Device]:
+    for device in self.get_all_devices(include_unavailable=True):  # 搜索所有设备
+        if device.device_uid == device_uid:
+            return device
+    return None
+```
+
+**原因**：查找函数的目的是定位特定项目，无论其是否可用。
+
+#### 8.8.5 最佳实践总结
+
+1. **数据采集和控制**：使用默认参数即可
+   ```python
+   uids = datacenter.get_all_observable_uids()  # 默认只获取可用设备
+   ```
+
+2. **统计和审计**：显式传入 `include_unavailable=True`
+   ```python
+   all_devices = datacenter.get_all_devices(include_unavailable=True)
+   ```
+
+3. **设备查找**：使用查找函数后，手动检查 `is_available`
+   ```python
+   device = datacenter.get_device_by_uid("ac_001")
+   if device and device.is_available:
+       # 操作设备
+   ```
+
+4. **代码可读性**：显式指定参数值，让意图更清晰
+   ```python
+   # 好的做法：显式指定
+   available_devices = datacenter.get_all_devices(include_unavailable=False)
+   all_devices = datacenter.get_all_devices(include_unavailable=True)
+
+   # 也可以：使用默认值
+   available_devices = datacenter.get_all_devices()  # 默认 False
+   ```
 
 ---
 
@@ -1488,8 +1640,11 @@ if device:
 
 ---
 
-**文档版本**: 2.0
+**文档版本**: 3.0
 **最后更新**: 2025-11-08
-**适用于**: architecture_module.py
-**更新内容**: 新增第8章"查询函数与 is_available 过滤机制详解"，详细说明所有查询函数对 is_available 字段的处理方式
+**适用于**: architecture_module.py (v3.0)
+**更新内容**:
+- **v3.0 (2025-11-08)**: 完全重写第8章，反映统一的 `include_unavailable` 参数机制；所有查询函数现在默认只返回可用项目
+- v2.0 (2025-11-08): 新增第8章"查询函数与 is_available 过滤机制详解"
+- v1.0: 初始版本
 

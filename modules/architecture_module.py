@@ -505,40 +505,53 @@ class ComputerRoom:
         """添加机房级别属性"""
         self.room_attributes[attr.name] = attr
 
-    def get_all_systems(self) -> List[CoolingSystem]:
+    def get_all_systems(self, include_unavailable: bool = False) -> List[CoolingSystem]:
         """
-        获取机房内所有空调系统（包含不可用系统）
+        获取机房内所有空调系统
+
+        参数:
+            include_unavailable: 是否包含不可用的系统，默认 False（只返回可用系统）
 
         返回:
-            List[CoolingSystem]: 所有空调系统的列表
+            List[CoolingSystem]: 空调系统列表（根据参数过滤）
         """
-        return self.air_cooled_systems + self.water_cooled_systems
+        all_systems = self.air_cooled_systems + self.water_cooled_systems
 
-    def get_all_devices(self) -> List[Device]:
+        if not include_unavailable:
+            all_systems = [s for s in all_systems if s.is_available]
+
+        return all_systems
+
+    def get_all_devices(self, include_unavailable: bool = False) -> List[Device]:
         """
         获取机房内所有设备
 
+        参数:
+            include_unavailable: 是否包含不可用的设备，默认 False（只返回可用设备）
+
         返回:
-            List[Device]: 所有设备的列表
+            List[Device]: 设备列表（根据参数过滤）
         """
         devices = []
-        for system in self.get_all_systems():
-            devices.extend(system.get_all_devices(include_unavailable=True))  # 包含不可用设备
+        for system in self.get_all_systems(include_unavailable=include_unavailable):
+            devices.extend(system.get_all_devices(include_unavailable=include_unavailable))
         return devices
 
-    def get_all_observable_uids(self) -> List[str]:
+    def get_all_observable_uids(self, include_unavailable: bool = False) -> List[str]:
         """
-        获取机房内所有可观测属性（可用）的uid列表(包括设备、传感器、机房属性)
+        获取机房内所有可观测属性的uid列表(包括设备、传感器、机房属性)
+
+        参数:
+            include_unavailable: 是否包含不可用设备的属性，默认 False（只返回可用设备的属性）
 
         返回:
             List[str]: 所有可观测属性的 uid 列表
         """
         uids = []
 
-        # 设备属性（只收集可用设备的属性）
-        for device in self.get_all_devices():
-            if device.is_available:
-                uids.extend(device.get_observable_uids())
+        # 设备属性（根据参数决定是否包含不可用设备）
+        for device in self.get_all_devices(include_unavailable=include_unavailable):
+            uids.extend(device.get_observable_uids())
 
         # 环境传感器属性
         for sensor in self.environment_sensors:
@@ -551,18 +564,20 @@ class ComputerRoom:
 
         return uids
 
-    def get_all_regulable_uids(self) -> List[str]:
+    def get_all_regulable_uids(self, include_unavailable: bool = False) -> List[str]:
         """
         获取机房内所有可调控属性的uid列表
+
+        参数:
+            include_unavailable: 是否包含不可用设备的属性，默认 False（只返回可用设备的属性）
 
         返回:
             List[str]: 所有可调控属性的 uid 列表
         """
         uids = []
-        # 只收集可用设备的可调控属性
-        for device in self.get_all_devices():
-            if device.is_available:
-                uids.extend(device.get_regulable_uids())
+        # 根据参数决定是否包含不可用设备的可调控属性
+        for device in self.get_all_devices(include_unavailable=include_unavailable):
+            uids.extend(device.get_regulable_uids())
         return uids
 
     def get_device_by_uid(self, device_uid: str) -> Optional[Device]:
@@ -575,7 +590,7 @@ class ComputerRoom:
         返回:
             Optional[Device]: 设备对象，不存在则返回 None
         """
-        for device in self.get_all_devices():
+        for device in self.get_all_devices(include_unavailable=True):
             if device.device_uid == device_uid:
                 return device
         return None
@@ -590,7 +605,7 @@ class ComputerRoom:
         返回:
             Optional[CoolingSystem]: 系统对象，不存在则返回 None
         """
-        for system in self.get_all_systems():
+        for system in self.get_all_systems(include_unavailable=True):
             if system.system_uid == system_uid:
                 return system
         return None
@@ -602,7 +617,7 @@ class ComputerRoom:
         返回:
             List[Device]: 可用设备的列表
         """
-        return [device for device in self.get_all_devices() if device.is_available]
+        return self.get_all_devices(include_unavailable=False)
 
     def get_unavailable_devices(self) -> List[Device]:
         """
@@ -611,7 +626,7 @@ class ComputerRoom:
         返回:
             List[Device]: 不可用设备的列表
         """
-        return [device for device in self.get_all_devices() if not device.is_available]
+        return [device for device in self.get_all_devices(include_unavailable=True) if not device.is_available]
 
     def get_available_systems(self) -> List[CoolingSystem]:
         """
@@ -620,7 +635,7 @@ class ComputerRoom:
         返回:
             List[CoolingSystem]: 可用系统的列表
         """
-        return [system for system in self.get_all_systems() if system.is_available]
+        return self.get_all_systems(include_unavailable=False)
 
     def get_unavailable_systems(self) -> List[CoolingSystem]:
         """
@@ -629,7 +644,7 @@ class ComputerRoom:
         返回:
             List[CoolingSystem]: 不可用系统的列表
         """
-        return [system for system in self.get_all_systems() if not system.is_available]
+        return [system for system in self.get_all_systems(include_unavailable=True) if not system.is_available]
 
 
 @dataclass
@@ -676,39 +691,50 @@ class DataCenter:
         """添加数据中心级别属性"""
         self.dc_attributes[attr.name] = attr
 
-    def get_all_rooms(self) -> List[ComputerRoom]:
+    def get_all_rooms(self, include_unavailable: bool = False) -> List[ComputerRoom]:
         """
         获取所有机房
 
+        参数:
+            include_unavailable: 是否包含不可用的机房，默认 False（只返回可用机房）
+
         返回:
-            List[ComputerRoom]: 所有机房的列表
+            List[ComputerRoom]: 机房列表（根据参数过滤）
         """
+        if not include_unavailable:
+            return [room for room in self.computer_rooms if room.is_available]
         return self.computer_rooms
 
-    def get_all_devices(self) -> List[Device]:
+    def get_all_devices(self, include_unavailable: bool = False) -> List[Device]:
         """
         获取数据中心内所有设备
 
+        参数:
+            include_unavailable: 是否包含不可用的设备，默认 False（只返回可用设备）
+
         返回:
-            List[Device]: 所有设备的列表
+            List[Device]: 设备列表（根据参数过滤）
         """
         devices = []
-        for room in self.computer_rooms:
-            devices.extend(room.get_all_devices())
+        for room in self.get_all_rooms(include_unavailable=include_unavailable):
+            devices.extend(room.get_all_devices(include_unavailable=include_unavailable))
         return devices
 
-    def get_all_observable_uids(self) -> List[str]:
+    def get_all_observable_uids(self, include_unavailable: bool = False) -> List[str]:
         """
         获取数据中心内所有可观测属性的uid列表
+
+        参数:
+            include_unavailable: 是否包含不可用设备的属性，默认 False（只返回可用设备的属性）
 
         返回:
             List[str]: 所有遥测属性的 uid 列表
         """
         uids = []
 
-        # 机房属性
-        for room in self.computer_rooms:
-            uids.extend(room.get_all_observable_uids())
+        # 机房属性（根据参数决定是否包含不可用机房和设备）
+        for room in self.get_all_rooms(include_unavailable=include_unavailable):
+            uids.extend(room.get_all_observable_uids(include_unavailable=include_unavailable))
 
         # 数据中心级别环境传感器
         for sensor in self.environment_sensors:
@@ -721,16 +747,19 @@ class DataCenter:
 
         return uids
 
-    def get_all_regulable_uids(self) -> List[str]:
+    def get_all_regulable_uids(self, include_unavailable: bool = False) -> List[str]:
         """
         获取数据中心内所有可调控属性的uid列表
+
+        参数:
+            include_unavailable: 是否包含不可用设备的属性，默认 False（只返回可用设备的属性）
 
         返回:
             List[str]: 所有控制属性的 uid 列表
         """
         uids = []
-        for room in self.computer_rooms:
-            uids.extend(room.get_all_regulable_uids())
+        for room in self.get_all_rooms(include_unavailable=include_unavailable):
+            uids.extend(room.get_all_regulable_uids(include_unavailable=include_unavailable))
         return uids
 
     def get_room_by_uid(self, room_uid: str) -> Optional[ComputerRoom]:
@@ -755,7 +784,7 @@ class DataCenter:
         返回:
             List[ComputerRoom]: 可用机房的列表
         """
-        return [room for room in self.computer_rooms if room.is_available]
+        return self.get_all_rooms(include_unavailable=False)
 
     def get_unavailable_rooms(self) -> List[ComputerRoom]:
         """
@@ -764,7 +793,7 @@ class DataCenter:
         返回:
             List[ComputerRoom]: 不可用机房的列表
         """
-        return [room for room in self.computer_rooms if not room.is_available]
+        return [room for room in self.get_all_rooms(include_unavailable=True) if not room.is_available]
 
     def get_device_by_uid(self, device_uid: str) -> Optional[Device]:
         """
@@ -800,8 +829,8 @@ class DataCenter:
                 - total_devices: 设备总数
                 - available_devices: 可用设备数量
                 - unavailable_devices: 不可用设备数量
-                - total_observable_points: 可观测点总数
-                - total_regulable_points: 可调控点总数
+                - total_observable_points: 可观测点总数（只统计可用设备）
+                - total_regulable_points: 可调控点总数（只统计可用设备）
         """
         stats = {
             "total_rooms": len(self.computer_rooms),
@@ -816,18 +845,20 @@ class DataCenter:
             "total_devices": 0,
             "available_devices": 0,
             "unavailable_devices": 0,
-            "total_observable_points": len(self.get_all_observable_uids()),
-            "total_regulable_points": len(self.get_all_regulable_uids())
+            # 遥测点和控制点只统计可用设备的（默认 include_unavailable=False）
+            "total_observable_points": len(self.get_all_observable_uids(include_unavailable=False)),
+            "total_regulable_points": len(self.get_all_regulable_uids(include_unavailable=False))
         }
 
-        for room in self.computer_rooms:
+        # 遍历所有机房（包括不可用的）以进行完整统计
+        for room in self.get_all_rooms(include_unavailable=True):
             # 统计机房可用性
             if room.is_available:
                 stats["available_rooms"] += 1
             else:
                 stats["unavailable_rooms"] += 1
 
-            # 统计风冷系统
+            # 统计风冷系统（包括不可用的）
             for system in room.air_cooled_systems:
                 stats["total_air_cooled_systems"] += 1
                 if system.is_available:
@@ -835,7 +866,7 @@ class DataCenter:
                 else:
                     stats["unavailable_air_cooled_systems"] += 1
 
-            # 统计水冷系统
+            # 统计水冷系统（包括不可用的）
             for system in room.water_cooled_systems:
                 stats["total_water_cooled_systems"] += 1
                 if system.is_available:
@@ -843,8 +874,8 @@ class DataCenter:
                 else:
                     stats["unavailable_water_cooled_systems"] += 1
 
-            # 统计设备可用性
-            for device in room.get_all_devices():
+            # 统计设备可用性（包括不可用的）
+            for device in room.get_all_devices(include_unavailable=True):
                 stats["total_devices"] += 1
                 if device.is_available:
                     stats["available_devices"] += 1
