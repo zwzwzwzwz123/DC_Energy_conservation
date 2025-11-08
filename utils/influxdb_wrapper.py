@@ -214,7 +214,7 @@ def init_influxdb_clients(utils_config: Dict, logger: logging.Logger) -> Tuple[
     初始化 InfluxDB 1.8 客户端（带自动重连功能）
 
     参数:
-        utils_config: 包含 InfluxDB 配置字典，从 utils.yaml 读取
+        utils_config: 包含 InfluxDB 配置字典，从 utils_config.yaml 读取
                      包含三个客户端的配置:
                      - InfluxDB.influxdb_dc_status_data: 数据中心状态数据客户端配置
                      - InfluxDB.influxdb_prediction_data: 预测数据客户端配置

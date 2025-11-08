@@ -85,3 +85,7 @@ logging:
     # 优化日志保留14天
     optimization:
       backup_count: 14
+
+    # 架构解析器日志保留365天
+    architecture_parser:
+      backup_count: 365

@@ -104,7 +104,8 @@ def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
                 "influxdb": influxdb_wrapper.py 日志器,
                 "prediction_training": 预测训练线程日志器,
                 "prediction_inference": 预测推理线程日志器,
-                "optimization": 优化线程日志器
+                "optimization": 优化线程日志器,
+                "architecture_parser": 架构解析器日志器
             }
 
     使用示例:
@@ -142,7 +143,8 @@ def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
             "influxdb": ("log_total.influxdb", "influxdb_log.log"),
             "prediction_training": ("log_total.prediction_training", "prediction_training_log.log"),
             "prediction_inference": ("log_total.prediction_inference", "prediction_inference_log.log"),
-            "optimization": ("log_total.optimization", "optimization_log.log")
+            "optimization": ("log_total.optimization", "optimization_log.log"),
+            "architecture_parser": ("log_total.architecture_parser", "architecture_parser_log.log")
         }
 
         # 日志格式：包含时间、logger名称、级别、消息
