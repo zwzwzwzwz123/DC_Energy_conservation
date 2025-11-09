@@ -1,0 +1,230 @@
+# influxdb_read_write_config.yaml - InfluxDB 读写配置
+# 本配置文件定义了数据读取策略和写入策略
+
+# ==================== 读取配置 ====================
+read:
+  # 全局默认配置
+  default:
+    # 数据量选择模式: "time_range" 或 "last_n_points"
+    mode: "time_range"
+
+    # time_range 模式参数
+    time_range:
+      duration: 1  # 时间范围(数值)
+      unit: "h"    # 时间单位: "h"(小时), "m"(分钟), "d"(天)
+
+    # last_n_points 模式参数
+    last_n_points:
+      count: 100   # 读取最近N条数据
+
+    # 默认 field_key
+    default_field_key: "value"
+
+  # 数据中心级别读取配置
+  datacenter:
+    # 是否读取数据中心级别属性
+    enabled: true
+
+    # 环境传感器读取配置
+    environment_sensors:
+      enabled: true
+      # 可以为特定传感器指定不同的读取策略(可选)
+      sensors:
+        - sensor_uid: "ENV_DC_TEMP_001"
+          mode: "time_range"
+          time_range:
+            duration: 2
+            unit: "h"
+          field_key: "value"
+
+        - sensor_uid: "ENV_DC_HUM_001"
+          mode: "time_range"
+          time_range:
+            duration: 2
+            unit: "h"
+          field_key: "value"
+
+    # 数据中心属性读取配置
+    datacenter_attributes:
+      enabled: true
+      # 使用全局默认配置
+
+  # 机房级别读取配置
+  computer_rooms:
+    # 全局机房读取开关
+    enabled: true
+
+    # 为特定机房配置不同的读取策略(可选)
+    rooms:
+      # 机房1: A栋1层机房(风冷)
+      - room_uid: "CR_A1"
+        enabled: true
+
+        # 环境传感器
+        environment_sensors:
+          enabled: true
+          # 使用全局默认配置
+
+        # 机房属性
+        room_attributes:
+          enabled: true
+
+        # 风冷系统
+        air_cooled_systems:
+          enabled: true
+
+          # 为特定系统配置(可选)
+          systems:
+            - system_uid: "ACAC_A1_001"
+              enabled: true
+
+              # 设备类型级别配置
+              air_conditioners:
+                enabled: true
+                # 为特定设备配置(可选)
+                devices:
+                  - device_uid: "AC_A1_001"
+                    enabled: true
+                    # 为特定属性配置不同的 field_key(可选)
+                    attributes:
+                      - attr_name: "空调送风温度"
+                        field_key: "value"
+                      - attr_name: "空调回风温度"
+                        field_key: "value"
+
+              compressors:
+                enabled: true
+
+              condensers:
+                enabled: true
+
+              expansion_valves:
+                enabled: true
+
+      # 机房2: B栋2层机房(水冷)
+      - room_uid: "CR_B2"
+        enabled: true
+
+        environment_sensors:
+          enabled: true
+
+        room_attributes:
+          enabled: true
+
+        # 水冷系统
+        water_cooled_systems:
+          enabled: true
+
+          systems:
+            - system_uid: "WCAC_B2_001"
+              enabled: true
+
+              air_conditioners:
+                enabled: true
+
+              chillers:
+                enabled: true
+
+              chilled_water_pumps:
+                enabled: true
+
+              cooling_water_pumps:
+                enabled: true
+
+              cooling_towers:
+                enabled: true
+
+# ==================== 写入配置 ====================
+write:
+  # 预测数据写入配置
+  prediction:
+    enabled: true
+    database: "iot_origin_prediction"  # 目标数据库
+
+    # 写入策略
+    batch_size: 100  # 批量写入大小
+    retry_times: 3   # 写入失败重试次数
+    retry_interval: 2  # 重试间隔(秒)
+
+    # 数据保留策略(可选)
+    retention_policy: "autogen"  # InfluxDB retention policy
+
+    # 写入的数据类型
+    data_types:
+      # 温度预测
+      - data_type: "temperature_prediction"
+        enabled: true
+        description: "机房温度预测数据"
+        # measurement 命名规则: {room_uid}_temp_pred_{horizon}
+        # 例如: CR_A1_temp_pred_1h, CR_A1_temp_pred_6h
+
+      # 能耗预测
+      - data_type: "energy_prediction"
+        enabled: true
+        description: "机房能耗预测数据"
+        # measurement 命名规则: {room_uid}_energy_pred_{horizon}
+
+      # PUE预测
+      - data_type: "pue_prediction"
+        enabled: true
+        description: "数据中心PUE预测数据"
+        # measurement 命名规则: dc_pue_pred_{horizon}
+
+  # 优化控制指令写入配置
+  optimization:
+    enabled: true
+    database: "iot_origin_optimization"
+
+    batch_size: 50
+    retry_times: 3
+    retry_interval: 2
+    retention_policy: "autogen"
+
+    # 控制指令类型
+    control_types:
+      # 空调控制指令
+      - control_type: "ac_control"
+        enabled: true
+        description: "空调控制指令"
+        # measurement 命名规则: 使用设备的控制属性 uid
+        # 例如: ac_a1_001_on_setpoint, ac_a1_001_supply_temp_setpoint
+
+      # 压缩机控制指令
+      - control_type: "compressor_control"
+        enabled: true
+        description: "压缩机控制指令"
+
+      # 冷水机组控制指令
+      - control_type: "chiller_control"
+        enabled: true
+        description: "冷水机组控制指令"
+
+      # 水泵控制指令
+      - control_type: "pump_control"
+        enabled: true
+        description: "水泵控制指令"
+
+      # 冷却塔控制指令
+      - control_type: "cooling_tower_control"
+        enabled: true
+        description: "冷却塔控制指令"
+
+# ==================== 查询优化配置 ====================
+query_optimization:
+  # 是否启用查询缓存
+  enable_cache: false
+
+  # 缓存过期时间(秒)
+  cache_ttl: 60
+
+  # 是否启用并行查询(对于大量 uid 的情况)
+  enable_parallel_query: true
+
+  # 并行查询的线程数
+  parallel_threads: 4
+
+  # 单次查询的最大 uid 数量(超过则分批查询)
+  max_uids_per_query: 50
+
+  # 查询超时时间(秒)
+  query_timeout: 30
