@@ -432,10 +432,10 @@ def __init__(
 
 #### 4.3.3 核心方法
 
-**1. `read_all_telemetry_data()` 方法**：读取所有遥测数据
+**1. `read_all_observable_data()` 方法**：读取所有遥测数据
 
 ```python
-def read_all_telemetry_data(self) -> Dict[str, pd.DataFrame]:
+def read_all_observable_data(self) -> Dict[str, pd.DataFrame]:
     """
     读取所有遥测数据
     
@@ -885,7 +885,7 @@ def create_data_reader(
     
     示例:
         reader = create_data_reader(datacenter, "configs/influxdb_read_write_config.yaml", client)
-        data = reader.read_all_telemetry_data()
+        data = reader.read_all_observable_data()
     """
     config = load_read_write_config(config_path)
     read_config = config.get('read', {})
@@ -945,7 +945,7 @@ def create_data_writer(
 ```
 用户调用
     │
-    ├─> reader.read_all_telemetry_data()
+    ├─> reader.read_all_observable_data()
     │       │
     │       ├─> datacenter.get_all_observable_uids()  # 获取所有 UID
     │       │       │
@@ -1072,7 +1072,7 @@ reader = create_data_reader(
 )
 
 # 5. 读取所有遥测数据
-all_data = reader.read_all_telemetry_data()
+all_data = reader.read_all_observable_data()
 
 # 6. 处理数据
 for uid, df in all_data.items():
@@ -1220,7 +1220,7 @@ A: 使用 `try...except` 捕获异常：
 
 ```python
 try:
-    all_data = reader.read_all_telemetry_data()
+    all_data = reader.read_all_observable_data()
 except Exception as e:
     logger.error(f"读取数据失败: {e}")
     # 处理失败情况
@@ -1231,7 +1231,7 @@ except Exception as e:
 A: 检查返回的字典中是否包含该 UID：
 
 ```python
-all_data = reader.read_all_telemetry_data()
+all_data = reader.read_all_observable_data()
 
 if 'ac_a1_001_supply_temp' in all_data:
     df = all_data['ac_a1_001_supply_temp']

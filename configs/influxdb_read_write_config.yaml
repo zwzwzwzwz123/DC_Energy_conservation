@@ -20,6 +20,10 @@ read:
     # 默认 field_key
     default_field_key: "value"
 
+    # 时间排序方式: "asc"(升序) 或 "desc"(降序)
+    # asc: 从旧到新排序（升序，时间戳小的在前面）, desc: 从新到旧排序（降序，时间戳大的在前面）
+    time_order: "desc"
+
   # 数据中心级别读取配置
   datacenter:
     # 是否读取数据中心级别属性
@@ -211,11 +215,6 @@ write:
 
 # ==================== 查询优化配置 ====================
 query_optimization:
-  # 是否启用查询缓存
-  enable_cache: false
-
-  # 缓存过期时间(秒)
-  cache_ttl: 60
 
   # 是否启用并行查询(对于大量 uid 的情况)
   enable_parallel_query: true
@@ -224,7 +223,7 @@ query_optimization:
   parallel_threads: 4
 
   # 单次查询的最大 uid 数量(超过则分批查询)
-  max_uids_per_query: 50
+  max_uids_per_query: 100
 
   # 查询超时时间(秒)
   query_timeout: 30

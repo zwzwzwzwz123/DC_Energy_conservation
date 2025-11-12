@@ -21,8 +21,6 @@ from modules.architecture_module import DataCenter, ComputerRoom, Device, Attrib
 from utils.influxdb_wrapper import InfluxDBClientWrapper
 from utils.critical_operation import critical_operation
 
-logger = logging.getLogger(__name__)
-
 
 class DataCenterDataReader:
     """
@@ -42,16 +40,17 @@ class DataCenterDataReader:
         default_field_key: 默认 field_key
 
     方法:
-        read_all_telemetry_data: 读取所有遥测数据
+        read_all_observable_data: 读取所有遥测数据
         read_room_data: 读取指定机房的所有数据
         read_device_data: 读取指定设备的所有数据
     """
 
     def __init__(
-        self,
-        datacenter: DataCenter,
-        read_config: Dict,
-        influxdb_client: InfluxDBClientWrapper
+            self,
+            datacenter: DataCenter,
+            read_config: Dict,
+            influxdb_client: InfluxDBClientWrapper,
+            logger: logging.Logger
     ):
         """
         初始化数据读取器
@@ -60,10 +59,12 @@ class DataCenterDataReader:
             datacenter: DataCenter 对象
             read_config: 读取配置字典（来自 influxdb_read_write_config.yaml 的 read 部分）
             influxdb_client: InfluxDB 客户端包装器
+            logger: 日志器（从调用方传入，通常是 loggers["influxdb"]）
         """
         self.datacenter = datacenter
         self.read_config = read_config
         self.influxdb_client = influxdb_client
+        self.logger = logger
 
         # 获取默认配置
         default_config = read_config.get('default', {})
@@ -71,18 +72,21 @@ class DataCenterDataReader:
         self.default_field_key = default_config.get('default_field_key', 'value')
         self.default_time_range = default_config.get('time_range', {'duration': 1, 'unit': 'h'})
         self.default_last_n = default_config.get('last_n_points', {'count': 100})
+        self.default_time_order = default_config.get('time_order', 'desc').lower()  # 默认降序（时间最新的放在最上面）
 
         # 查询优化配置
         query_opt = read_config.get('query_optimization', {})
         self.enable_parallel_query = query_opt.get('enable_parallel_query', True)
-        self.max_uids_per_query = query_opt.get('max_uids_per_query', 50)
+        self.max_uids_per_query = query_opt.get('max_uids_per_query', 100)
         self.query_timeout = query_opt.get('query_timeout', 30)
 
-        logger.info(f"数据读取器初始化完成 - 数据中心: {datacenter.dc_name}")
-        logger.info(f"  默认读取模式: {self.default_mode}")
-        logger.info(f"  默认 field_key: {self.default_field_key}")
+        self.logger.info(f"数据读取器初始化完成 - 数据中心: {datacenter.dc_name}")
+        self.logger.info(f"  默认读取模式: {self.default_mode}")
+        self.logger.info(f"  默认 field_key: {self.default_field_key}")
+        self.logger.info(
+            f"  时间排序方式: {self.default_time_order} ({'升序' if self.default_time_order == 'asc' else '降序'})")
 
-    def read_all_telemetry_data(self) -> Dict[str, pd.DataFrame]:
+    def read_all_observable_data(self) -> Dict[str, pd.DataFrame]:
         """
         读取所有遥测数据
 
@@ -93,20 +97,20 @@ class DataCenterDataReader:
         异常:
             Exception: 查询失败
         """
-        logger.info("开始读取所有遥测数据...")
+        self.logger.info("开始读取所有可观测数据...")
 
         # 获取所有遥测属性的 uid 列表
-        all_uids = self.datacenter.get_all_observable_uids()
-        logger.info(f"共有 {len(all_uids)} 个遥测点需要读取")
+        all_uids = self.datacenter.get_all_observable_uids(include_unavailable=False)
+        self.logger.info(f"共有 {len(all_uids)} 个遥测点需要读取")
 
         if not all_uids:
-            logger.warning("没有遥测点需要读取")
+            self.logger.warning("没有遥测点需要读取")
             return {}
 
         # 批量读取数据
         result = self._batch_read_data(all_uids)
 
-        logger.info(f"成功读取 {len(result)} 个遥测点的数据")
+        self.logger.info(f"成功读取 {len(result)} 个遥测点的数据")
         return result
 
     def read_room_data(self, room_uid: str) -> Dict[str, pd.DataFrame]:
@@ -128,23 +132,23 @@ class DataCenterDataReader:
 
         # 检查机房是否可用
         if not room.is_available:
-            logger.warning(f"机房 {room.room_name} 不可用，跳过数据读取")
+            self.logger.warning(f"机房 {room.room_name} 不可用，跳过数据读取")
             return {}
 
-        logger.info(f"开始读取机房数据: {room.room_name} (UID: {room_uid})")
+        self.logger.info(f"开始读取机房数据: {room.room_name} (UID: {room_uid})")
 
         # 获取机房的所有遥测 uid
         room_uids = room.get_all_observable_uids()
-        logger.info(f"机房 {room.room_name} 共有 {len(room_uids)} 个遥测点")
+        self.logger.info(f"机房 {room.room_name} 共有 {len(room_uids)} 个遥测点")
 
         if not room_uids:
-            logger.warning(f"机房 {room.room_name} 没有遥测点")
+            self.logger.warning(f"机房 {room.room_name} 没有遥测点")
             return {}
 
         # 批量读取数据
         result = self._batch_read_data(room_uids)
 
-        logger.info(f"成功读取机房 {room.room_name} 的 {len(result)} 个遥测点数据")
+        self.logger.info(f"成功读取机房 {room.room_name} 的 {len(result)} 个遥测点数据")
         return result
 
     def read_device_data(self, device_uid: str) -> Dict[str, pd.DataFrame]:
@@ -166,23 +170,23 @@ class DataCenterDataReader:
 
         # 检查设备是否可用
         if not device.is_available:
-            logger.warning(f"设备 {device.device_name} 不可用，跳过数据读取")
+            self.logger.warning(f"设备 {device.device_name} 不可用，跳过数据读取")
             return {}
 
-        logger.info(f"开始读取设备数据: {device.device_name} (UID: {device_uid})")
+        self.logger.info(f"开始读取设备数据: {device.device_name} (UID: {device_uid})")
 
         # 获取设备的所有遥测 uid
         device_uids = device.get_observable_uids()
-        logger.info(f"设备 {device.device_name} 共有 {len(device_uids)} 个遥测点")
+        self.logger.info(f"设备 {device.device_name} 共有 {len(device_uids)} 个遥测点")
 
         if not device_uids:
-            logger.warning(f"设备 {device.device_name} 没有遥测点")
+            self.logger.warning(f"设备 {device.device_name} 没有遥测点")
             return {}
 
         # 批量读取数据
         result = self._batch_read_data(device_uids)
 
-        logger.info(f"成功读取设备 {device.device_name} 的 {len(result)} 个遥测点数据")
+        self.logger.info(f"成功读取设备 {device.device_name} 的 {len(result)} 个遥测点数据")
         return result
 
     def _batch_read_data(self, uids: List[str]) -> Dict[str, pd.DataFrame]:
@@ -199,7 +203,7 @@ class DataCenterDataReader:
 
         # 如果 uid 数量超过阈值，分批查询
         if len(uids) > self.max_uids_per_query:
-            logger.info(f"uid 数量 ({len(uids)}) 超过阈值 ({self.max_uids_per_query})，分批查询")
+            self.logger.info(f"uid 数量 ({len(uids)}) 超过阈值 ({self.max_uids_per_query})，开启分批查询")
 
             # 分批
             batches = [
@@ -208,7 +212,7 @@ class DataCenterDataReader:
             ]
 
             for i, batch in enumerate(batches):
-                logger.debug(f"查询批次 {i+1}/{len(batches)}，包含 {len(batch)} 个 uid")
+                self.logger.debug(f"查询批次 {i + 1}/{len(batches)}，包含 {len(batch)} 个 uid")
                 batch_result = self._read_batch(batch)
                 result.update(batch_result)
         else:
@@ -243,10 +247,10 @@ class DataCenterDataReader:
                 if df is not None and not df.empty:
                     result[uid] = df
                 else:
-                    logger.debug(f"uid {uid} 没有数据")
+                    self.logger.debug(f"uid {uid} 没有数据")
 
             except Exception as e:
-                logger.warning(f"读取 uid {uid} 失败: {e}")
+                self.logger.warning(f"读取 uid {uid} 失败: {e}")
 
         return result
 
@@ -292,7 +296,7 @@ class DataCenterDataReader:
 
         else:
             # 默认使用 time_range 模式
-            logger.warning(f"未知的读取模式: {self.default_mode}，使用默认 time_range 模式")
+            self.logger.warning(f"未知的读取模式: {self.default_mode}/未设定读取模式，使用默认 time_range 模式")
             query = f"""
                 SELECT "{field_key}" AS value
                 FROM "{uid}"
@@ -331,7 +335,7 @@ class DataCenterDataReader:
 
             # 确保包含 time 和 value 列
             if 'time' not in df.columns or 'value' not in df.columns:
-                logger.warning(f"查询结果缺少必要的列: {df.columns.tolist()}")
+                self.logger.warning(f"查询结果缺少必要的列: {df.columns.tolist()}")
                 return None
 
             # 重命名列
@@ -343,13 +347,14 @@ class DataCenterDataReader:
             # 只保留 timestamp 和 value 列
             df = df[['timestamp', 'value']]
 
-            # 按时间排序
-            df = df.sort_values('timestamp').reset_index(drop=True)
+            # 按时间排序（根据配置的排序方式）
+            ascending = (self.default_time_order == 'asc')
+            df = df.sort_values('timestamp', ascending=ascending).reset_index(drop=True)
 
             return df
 
         except Exception as e:
-            logger.error(f"解析查询结果失败 (uid: {uid}): {e}")
+            self.logger.error(f"解析查询结果失败 (uid: {uid}): {e}")
             return None
 
 
@@ -377,11 +382,12 @@ class DataCenterDataWriter:
     """
 
     def __init__(
-        self,
-        datacenter: DataCenter,
-        write_config: Dict,
-        influxdb_client: InfluxDBClientWrapper,
-        ctx: Any  # AppContext 对象
+            self,
+            datacenter: DataCenter,
+            write_config: Dict,
+            influxdb_client: InfluxDBClientWrapper,
+            ctx: Any,  # AppContext 对象
+            logger: logging.Logger
     ):
         """
         初始化数据写入器
@@ -391,11 +397,13 @@ class DataCenterDataWriter:
             write_config: 写入配置字典（来自 influxdb_read_write_config.yaml 的 write 部分）
             influxdb_client: InfluxDB 客户端包装器
             ctx: AppContext 对象（用于 critical_operation）
+            logger: 日志器（从调用方传入，通常是 loggers["influxdb"]）
         """
         self.datacenter = datacenter
         self.write_config = write_config
         self.influxdb_client = influxdb_client
         self.ctx = ctx
+        self.logger = logger
 
         # 解析预测数据写入配置
         self.prediction_config = write_config.get('prediction', {})
@@ -415,16 +423,16 @@ class DataCenterDataWriter:
         self.optimization_retry_interval = self.optimization_config.get('retry_interval', 2)
         self.optimization_retention_policy = self.optimization_config.get('retention_policy', 'autogen')
 
-        logger.info(f"数据写入器初始化完成 - 数据中心: {datacenter.dc_name}")
-        logger.info(f"  预测数据写入: {'启用' if self.prediction_enabled else '禁用'}")
-        logger.info(f"  预测数据库: {self.prediction_database}")
-        logger.info(f"  优化控制写入: {'启用' if self.optimization_enabled else '禁用'}")
-        logger.info(f"  优化数据库: {self.optimization_database}")
+        self.logger.info(f"数据写入器初始化完成 - 数据中心: {datacenter.dc_name}")
+        self.logger.info(f"  预测数据写入: {'启用' if self.prediction_enabled else '禁用'}")
+        self.logger.info(f"  预测数据库: {self.prediction_database}")
+        self.logger.info(f"  优化控制写入: {'启用' if self.optimization_enabled else '禁用'}")
+        self.logger.info(f"  优化数据库: {self.optimization_database}")
 
     def write_prediction_data(
-        self,
-        prediction_data: Dict[str, Any],
-        data_type: str
+            self,
+            prediction_data: Dict[str, Any],
+            data_type: str
     ) -> bool:
         """
         写入预测数据
@@ -448,10 +456,10 @@ class DataCenterDataWriter:
             ValueError: 预测数据格式错误
         """
         if not self.prediction_enabled:
-            logger.warning("预测数据写入已禁用")
+            self.logger.warning("预测数据写入已禁用")
             return False
 
-        logger.info(f"开始写入预测数据 - 类型: {data_type}")
+        self.logger.info(f"开始写入预测数据 - 类型: {data_type}")
 
         try:
             # 验证数据格式
@@ -460,7 +468,7 @@ class DataCenterDataWriter:
 
             predictions = prediction_data['predictions']
             if not predictions:
-                logger.warning("预测数据为空，跳过写入")
+                self.logger.warning("预测数据为空，跳过写入")
                 return True
 
             # 构建 measurement 名称
@@ -489,7 +497,7 @@ class DataCenterDataWriter:
                 )
                 points.append(point)
 
-            logger.info(f"构建了 {len(points)} 个预测数据点")
+            self.logger.info(f"构建了 {len(points)} 个预测数据点")
 
             # 使用 critical_operation 保护写入操作
             with critical_operation(self.ctx):
@@ -502,19 +510,19 @@ class DataCenterDataWriter:
                 )
 
             if success:
-                logger.info(f"成功写入 {len(points)} 个预测数据点到 {self.prediction_database}")
+                self.logger.info(f"成功写入 {len(points)} 个预测数据点到 {self.prediction_database}")
             else:
-                logger.error(f"写入预测数据失败")
+                self.logger.error(f"写入预测数据失败")
 
             return success
 
         except Exception as e:
-            logger.error(f"写入预测数据异常: {e}")
+            self.logger.error(f"写入预测数据异常: {e}")
             return False
 
     def write_optimization_commands(
-        self,
-        control_commands: Dict[str, Any]
+            self,
+            control_commands: Dict[str, Any]
     ) -> bool:
         """
         写入优化控制指令
@@ -540,10 +548,10 @@ class DataCenterDataWriter:
             ValueError: 控制指令格式错误
         """
         if not self.optimization_enabled:
-            logger.warning("优化控制指令写入已禁用")
+            self.logger.warning("优化控制指令写入已禁用")
             return False
 
-        logger.info("开始写入优化控制指令")
+        self.logger.info("开始写入优化控制指令")
 
         try:
             # 验证数据格式
@@ -552,7 +560,7 @@ class DataCenterDataWriter:
 
             commands = control_commands['commands']
             if not commands:
-                logger.warning("控制指令为空，跳过写入")
+                self.logger.warning("控制指令为空，跳过写入")
                 return True
 
             device_uid = control_commands.get('device_uid', 'unknown')
@@ -561,7 +569,7 @@ class DataCenterDataWriter:
             if device_uid != 'unknown':
                 device = self.datacenter.get_device_by_uid(device_uid)
                 if device and not device.is_available:
-                    logger.error(f"设备 {device.device_name} 不可用，拒绝写入控制指令")
+                    self.logger.error(f"设备 {device.device_name} 不可用，拒绝写入控制指令")
                     return False
 
             # 构建 Points
@@ -581,7 +589,7 @@ class DataCenterDataWriter:
                 )
                 points.append(point)
 
-            logger.info(f"构建了 {len(points)} 个控制指令点")
+            self.logger.info(f"构建了 {len(points)} 个控制指令点")
 
             # 使用 critical_operation 保护写入操作
             with critical_operation(self.ctx):
@@ -594,22 +602,22 @@ class DataCenterDataWriter:
                 )
 
             if success:
-                logger.info(f"成功写入 {len(points)} 个控制指令到 {self.optimization_database}")
+                self.logger.info(f"成功写入 {len(points)} 个控制指令到 {self.optimization_database}")
             else:
-                logger.error(f"写入控制指令失败")
+                self.logger.error(f"写入控制指令失败")
 
             return success
 
         except Exception as e:
-            logger.error(f"写入控制指令异常: {e}")
+            self.logger.error(f"写入控制指令异常: {e}")
             return False
 
     def _build_point(
-        self,
-        measurement: str,
-        fields: Dict[str, Any],
-        tags: Optional[Dict[str, str]] = None,
-        timestamp: Optional[datetime] = None
+            self,
+            measurement: str,
+            fields: Dict[str, Any],
+            tags: Optional[Dict[str, str]] = None,
+            timestamp: Optional[datetime] = None
     ) -> Dict[str, Any]:
         """
         构建 InfluxDB Point 对象（框架实现）
@@ -655,12 +663,12 @@ class DataCenterDataWriter:
         return point
 
     def _batch_write(
-        self,
-        points: List[Dict[str, Any]],
-        database: str,
-        batch_size: int,
-        retry_times: int,
-        retry_interval: int
+            self,
+            points: List[Dict[str, Any]],
+            database: str,
+            batch_size: int,
+            retry_times: int,
+            retry_interval: int
     ) -> bool:
         """
         批量写入数据到 InfluxDB
@@ -676,10 +684,10 @@ class DataCenterDataWriter:
             bool: 写入是否成功
         """
         if not points:
-            logger.warning("没有数据需要写入")
+            self.logger.warning("没有数据需要写入")
             return True
 
-        logger.info(f"开始批量写入 {len(points)} 个数据点到数据库 {database}")
+        self.logger.info(f"开始批量写入 {len(points)} 个数据点到数据库 {database}")
 
         # 分批写入
         total_batches = (len(points) + batch_size - 1) // batch_size
@@ -688,7 +696,7 @@ class DataCenterDataWriter:
             batch = points[i:i + batch_size]
             batch_num = i // batch_size + 1
 
-            logger.debug(f"写入批次 {batch_num}/{total_batches}，包含 {len(batch)} 个数据点")
+            self.logger.debug(f"写入批次 {batch_num}/{total_batches}，包含 {len(batch)} 个数据点")
 
             # 调用重试写入
             success = self._retry_write(
@@ -699,18 +707,18 @@ class DataCenterDataWriter:
             )
 
             if not success:
-                logger.error(f"批次 {batch_num} 写入失败")
+                self.logger.error(f"批次 {batch_num} 写入失败")
                 return False
 
-        logger.info(f"成功写入所有 {len(points)} 个数据点")
+        self.logger.info(f"成功写入所有 {len(points)} 个数据点")
         return True
 
     def _retry_write(
-        self,
-        points: List[Dict[str, Any]],
-        database: str,
-        retry_times: int,
-        retry_interval: int
+            self,
+            points: List[Dict[str, Any]],
+            database: str,
+            retry_times: int,
+            retry_interval: int
     ) -> bool:
         """
         写入失败时自动重试
@@ -736,16 +744,16 @@ class DataCenterDataWriter:
 
                 # 写入成功
                 if attempt > 0:
-                    logger.info(f"重试第 {attempt} 次后写入成功")
+                    self.logger.info(f"重试第 {attempt} 次后写入成功")
 
                 return True
 
             except Exception as e:
                 if attempt < retry_times:
-                    logger.warning(f"写入失败（第 {attempt + 1} 次尝试）: {e}，{retry_interval} 秒后重试...")
+                    self.logger.warning(f"写入失败（第 {attempt + 1} 次尝试）: {e}，{retry_interval} 秒后重试...")
                     time.sleep(retry_interval)
                 else:
-                    logger.error(f"写入失败，已达到最大重试次数 ({retry_times}): {e}")
+                    self.logger.error(f"写入失败，已达到最大重试次数 ({retry_times}): {e}")
                     return False
 
         return False
@@ -753,97 +761,56 @@ class DataCenterDataWriter:
 
 # ==================== 便捷函数 ====================
 
-def load_read_write_config(config_path: str) -> Dict:
-    """
-    加载 InfluxDB 读写配置文件（便捷函数）
-
-    参数:
-        config_path: influxdb_read_write_config.yaml 配置文件的路径
-
-    返回:
-        Dict: 配置字典
-
-    异常:
-        FileNotFoundError: 配置文件不存在
-        yaml.YAMLError: 配置文件格式错误
-
-    示例:
-        config = load_read_write_config("configs/influxdb_read_write_config.yaml")
-        read_config = config['read']
-        write_config = config['write']
-    """
-    config_path = Path(config_path)
-
-    if not config_path.exists():
-        error_msg = f"配置文件不存在: {config_path}"
-        logger.error(error_msg)
-        raise FileNotFoundError(error_msg)
-
-    try:
-        with open(config_path, 'r', encoding='utf-8') as f:
-            config = yaml.safe_load(f)
-        logger.info(f"成功读取配置文件: {config_path}")
-        return config
-    except yaml.YAMLError as e:
-        error_msg = f"配置文件格式错误: {e}"
-        logger.error(error_msg)
-        raise yaml.YAMLError(error_msg)
-    except Exception as e:
-        error_msg = f"读取配置文件失败: {e}"
-        logger.error(error_msg)
-        raise
-
 
 def create_data_reader(
-    datacenter: DataCenter,
-    config_path: str,
-    influxdb_client: InfluxDBClientWrapper
+        datacenter: DataCenter,
+        read_write_config: Dict,
+        influxdb_client: InfluxDBClientWrapper,
+        logger: logging.Logger
 ) -> DataCenterDataReader:
     """
     创建数据读取器（便捷函数）
 
     参数:
         datacenter: DataCenter 对象
-        config_path: influxdb_read_write_config.yaml 配置文件的路径
+        read_write_config: InfluxDB 读写配置字典（从 influxdb_read_write_config.yaml 加载）
         influxdb_client: InfluxDB 客户端包装器
+        logger: 日志器（从调用方传入，通常是 loggers["influxdb"]）
 
     返回:
         DataCenterDataReader: 数据读取器对象
 
     示例:
-        reader = create_data_reader(datacenter, "configs/influxdb_read_write_config.yaml", client)
-        data = reader.read_all_telemetry_data()
+        reader = create_data_reader(datacenter, influxdb_read_write_config, client, logger)
+        data = reader.read_all_observable_data()
     """
-    config = load_read_write_config(config_path)
-    read_config = config.get('read', {})
-    return DataCenterDataReader(datacenter, read_config, influxdb_client)
+    read_config = read_write_config.get('read', {})
+    return DataCenterDataReader(datacenter, read_config, influxdb_client, logger)
 
 
 def create_data_writer(
-    datacenter: DataCenter,
-    config_path: str,
-    influxdb_client: InfluxDBClientWrapper,
-    ctx: Any
+        datacenter: DataCenter,
+        read_write_config: Dict,
+        influxdb_client: InfluxDBClientWrapper,
+        ctx: Any,
+        logger: logging.Logger
 ) -> DataCenterDataWriter:
     """
     创建数据写入器（便捷函数）
 
     参数:
         datacenter: DataCenter 对象
-        config_path: influxdb_read_write_config.yaml 配置文件的路径
+        read_write_config: InfluxDB 读写配置字典（从 influxdb_read_write_config.yaml 加载）
         influxdb_client: InfluxDB 客户端包装器
         ctx: AppContext 对象
+        logger: 日志器（从调用方传入，通常是 loggers["influxdb"]）
 
     返回:
         DataCenterDataWriter: 数据写入器对象
 
     示例:
-        writer = create_data_writer(datacenter, "configs/influxdb_read_write_config.yaml", client, ctx)
+        writer = create_data_writer(datacenter, influxdb_read_write_config, client, ctx, logger)
         writer.write_prediction_data(prediction_data, "temperature_prediction")
     """
-    config = load_read_write_config(config_path)
-    write_config = config.get('write', {})
-    return DataCenterDataWriter(datacenter, write_config, influxdb_client, ctx)
-
-
-
+    write_config = read_write_config.get('write', {})
+    return DataCenterDataWriter(datacenter, write_config, influxdb_client, ctx, logger)
