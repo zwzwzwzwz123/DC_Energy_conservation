@@ -1,0 +1,80 @@
+# 优化模块配置文件
+# 配置优化算法的选择和参数
+
+optimization_module:
+  # ==================== 优化算法选择 ====================
+  # 可选算法:
+  #   - bayesian: 贝叶斯优化（使用 Optuna TPE 采样器）
+  #   - reinforcement_learning (或 rl): 强化学习优化（使用 PPO 算法）
+  #   - grid_search: 网格搜索（遍历所有参数组合）
+  #   - random_search: 随机搜索（随机采样参数空间）
+  #   - genetic: 遗传算法（模拟自然进化）
+  algorithm: "bayesian"
+
+  # ==================== 通用参数 ====================
+  # 历史数据权重（0-1之间，越大越依赖历史数据）
+  historical_weight: 0.3
+
+  # 最大试验次数（适用于贝叶斯优化、随机搜索）
+  max_trials: 20
+
+  # 优化超时时间（秒）
+  timeout: 300
+
+  # ==================== 贝叶斯优化参数 ====================
+  bayesian:
+    # 试验次数
+    n_trials: 20
+
+    # 采样器类型: TPE, Random, Grid
+    sampler: "TPE"
+
+  # ==================== 强化学习优化参数 ====================
+  reinforcement_learning:
+    # 算法类型: PPO, DQN, SAC
+    algorithm: "PPO"
+
+    # 学习率
+    learning_rate: 0.0003
+
+    # 折扣因子
+    gamma: 0.99
+
+    # 训练回合数
+    episodes: 100
+
+    # 每回合最大步数
+    max_steps_per_episode: 200
+
+    # 模型保存路径
+    model_save_path: "./models/rl_optimizer.pth"
+
+  # ==================== 网格搜索参数 ====================
+  grid_search:
+    # 温度搜索步长（度）
+    temperature_step: 1
+
+    # 湿度搜索步长（%）
+    humidity_step: 5
+
+  # ==================== 随机搜索参数 ====================
+  random_search:
+    # 迭代次数
+    n_iterations: 50
+
+    # 随机种子（可选，用于结果复现）
+    seed: 42
+
+  # ==================== 遗传算法参数 ====================
+  genetic:
+    # 种群大小
+    population_size: 50
+
+    # 进化代数
+    generations: 30
+
+    # 变异率（0-1之间）
+    mutation_rate: 0.1
+
+    # 交叉率（0-1之间）
+    crossover_rate: 0.8
