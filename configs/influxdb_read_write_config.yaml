@@ -24,119 +24,90 @@ read:
     # asc: 从旧到新排序（升序，时间戳小的在前面）, desc: 从新到旧排序（降序，时间戳大的在前面）
     time_order: "desc"
 
-  # 数据中心级别读取配置
-  datacenter:
-    # 是否读取数据中心级别属性
-    enabled: true
+    # 是否包含不可用设备/机房的数据（默认 false）
+    # true: 包含不可用设备/机房的数据（用于诊断）, false: 只包含可用设备/机房的数据
+    include_unavailable: false
 
-    # 环境传感器读取配置
-    environment_sensors:
-      enabled: true
-      # 可以为特定传感器指定不同的读取策略(可选)
-      sensors:
-        - sensor_uid: "ENV_DC_TEMP_001"
-          mode: "time_range"
-          time_range:
-            duration: 2
-            unit: "h"
-          field_key: "value"
+  # ==================== 配置驱动的数据读取配置项 ====================
+  # 以下配置项用于 read_influxdb_data(config_key) 方法
+  # 每个配置项定义了一种数据读取策略，可以灵活组合不同的读取方法和参数
 
-        - sensor_uid: "ENV_DC_HUM_001"
-          mode: "time_range"
-          time_range:
-            duration: 2
-            unit: "h"
-          field_key: "value"
+  # 示例配置 1: 读取数据中心最新状态（所有可观测数据）
+  datacenter_latest_status:
+    # 必填：读取方法类型
+    # 可选值: read_all_observable_data / read_room_data / read_device_data / read_specific_uids
+    read_method: "read_all_observable_data"
 
-    # 数据中心属性读取配置
-    datacenter_attributes:
-      enabled: true
-      # 使用全局默认配置
+    # 可选：是否包含不可用设备/机房的数据（默认 false）
+    include_unavailable: false
 
-  # 机房级别读取配置
-  computer_rooms:
-    # 全局机房读取开关
-    enabled: true
+    # 可选：覆盖默认的读取模式配置（如果不指定则使用 default 配置）
+    # mode: "time_range"
+    # time_range:
+    #   duration: 2
+    #   unit: "h"
 
-    # 为特定机房配置不同的读取策略(可选)
-    rooms:
-      # 机房1: A栋1层机房(风冷)
-      - room_uid: "CR_A1"
-        enabled: true
+  # 示例配置 2: 读取预测结果（指定机房）
+  prediction_result:
+    read_method: "read_room_data"
 
-        # 环境传感器
-        environment_sensors:
-          enabled: true
-          # 使用全局默认配置
+    # 必填（当 read_method 为 read_room_data 时）：指定要读取的机房 UID 列表
+    room_uids: [ "CR_A1" ]
 
-        # 机房属性
-        room_attributes:
-          enabled: true
+    include_unavailable: false
 
-        # 风冷系统
-        air_cooled_systems:
-          enabled: true
+    # 覆盖默认配置：使用最近 N 条数据模式
+    mode: "last_n_points"
+    last_n_points:
+      count: 50
 
-          # 为特定系统配置(可选)
-          systems:
-            - system_uid: "ACAC_A1_001"
-              enabled: true
+  # 示例配置 3: 读取关键设备数据
+  critical_devices_data:
+    read_method: "read_device_data"
 
-              # 设备类型级别配置
-              air_conditioners:
-                enabled: true
-                # 为特定设备配置(可选)
-                devices:
-                  - device_uid: "AC_A1_001"
-                    enabled: true
-                    # 为特定属性配置不同的 field_key(可选)
-                    attributes:
-                      - attr_name: "空调送风温度"
-                        field_key: "value"
-                      - attr_name: "空调回风温度"
-                        field_key: "value"
+    # 必填（当 read_method 为 read_device_data 时）：指定要读取的设备 UID 列表
+    device_uids: [ "AC_A1_001", "AC_A1_002" ]
 
-              compressors:
-                enabled: true
+    # 覆盖默认配置：读取最近 2 小时的数据
+    mode: "time_range"
+    time_range:
+      duration: 2
+      unit: "h"
 
-              condensers:
-                enabled: true
+  # 示例配置 4: 读取特定测点数据
+  specific_sensors_data:
+    read_method: "read_specific_uids"
 
-              expansion_valves:
-                enabled: true
+    # 必填（当 read_method 为 read_specific_uids 时）：指定要读取的属性 UID 列表
+    specific_uids: [ "ac_a1_001_supply_temp", "ac_a1_001_return_temp","comp_a1_001_power" ]
 
-      # 机房2: B栋2层机房(水冷)
-      - room_uid: "CR_B2"
-        enabled: true
+    # 覆盖默认配置：使用最近 100 条数据
+    mode: "last_n_points"
+    last_n_points:
+      count: 100
 
-        environment_sensors:
-          enabled: true
+  # 示例配置 5: 读取多个机房的历史数据
+  multi_room_history:
+    read_method: "read_room_data"
+    room_uids: [ "CR_A1", "CR_B2" ]
+    include_unavailable: false
 
-        room_attributes:
-          enabled: true
+    # 读取最近 24 小时的数据
+    mode: "time_range"
+    time_range:
+      duration: 24
+      unit: "h"
 
-        # 水冷系统
-        water_cooled_systems:
-          enabled: true
+  # 示例配置 6: 诊断模式（包含不可用设备）
+  diagnostic_all_data:
+    read_method: "read_all_observable_data"
+    include_unavailable: true  # 包含不可用设备的数据，用于诊断
 
-          systems:
-            - system_uid: "WCAC_B2_001"
-              enabled: true
+    mode: "time_range"
+    time_range:
+      duration: 1
+      unit: "h"
 
-              air_conditioners:
-                enabled: true
-
-              chillers:
-                enabled: true
-
-              chilled_water_pumps:
-                enabled: true
-
-              cooling_water_pumps:
-                enabled: true
-
-              cooling_towers:
-                enabled: true
 
 # ==================== 写入配置 ====================
 write:
@@ -223,7 +194,4 @@ query_optimization:
   parallel_threads: 4
 
   # 单次查询的最大 uid 数量(超过则分批查询)
-  max_uids_per_query: 100
-
-  # 查询超时时间(秒)
-  query_timeout: 30
+  max_uids_per_query: 200

@@ -4,7 +4,7 @@
 本模块负责从 InfluxDB 读取数据和向 InfluxDB 写入数据。
 
 主要功能：
-1. DataCenterDataReader: 根据配置从 InfluxDB 批量读取遥测数据
+1. DataCenterDataReader: 根据配置从 InfluxDB 批量读取可观测数据
 2. DataCenterDataWriter: 批量写入预测数据和优化控制指令到 InfluxDB
 
 """
@@ -40,7 +40,7 @@ class DataCenterDataReader:
         default_field_key: 默认 field_key
 
     方法:
-        read_all_observable_data: 读取所有遥测数据
+        read_all_observable_data: 读取所有可观测点数据
         read_room_data: 读取指定机房的所有数据
         read_device_data: 读取指定设备的所有数据
     """
@@ -73,22 +73,31 @@ class DataCenterDataReader:
         self.default_time_range = default_config.get('time_range', {'duration': 1, 'unit': 'h'})
         self.default_last_n = default_config.get('last_n_points', {'count': 100})
         self.default_time_order = default_config.get('time_order', 'desc').lower()  # 默认降序（时间最新的放在最上面）
+        self.default_include_unavailable = default_config.get('include_unavailable', False)  # 默认不包含不可用设备
 
         # 查询优化配置
         query_opt = read_config.get('query_optimization', {})
         self.enable_parallel_query = query_opt.get('enable_parallel_query', True)
+        self.parallel_threads = query_opt.get('parallel_threads', 4)  # 新增：并行查询线程数
         self.max_uids_per_query = query_opt.get('max_uids_per_query', 100)
-        self.query_timeout = query_opt.get('query_timeout', 30)
 
         self.logger.info(f"数据读取器初始化完成 - 数据中心: {datacenter.dc_name}")
         self.logger.info(f"  默认读取模式: {self.default_mode}")
         self.logger.info(f"  默认 field_key: {self.default_field_key}")
         self.logger.info(
             f"  时间排序方式: {self.default_time_order} ({'升序' if self.default_time_order == 'asc' else '降序'})")
+        self.logger.info(f"  查询优化配置:")
+        self.logger.info(f"    并行查询: {'启用' if self.enable_parallel_query else '禁用'}")
+        if self.enable_parallel_query:
+            self.logger.info(f"    并行线程数: {self.parallel_threads}")
+        self.logger.info(f"    单批最大uid数: {self.max_uids_per_query}")
 
-    def read_all_observable_data(self) -> Dict[str, pd.DataFrame]:
+    def read_all_observable_data(self, include_unavailable: bool = False) -> Dict[str, pd.DataFrame]:
         """
-        读取所有遥测数据
+        读取所有可观测点数据
+
+        参数:
+            include_unavailable: 是否包含不可用设备/机房的数据，默认 False（只返回可用设备的属性）
 
         返回:
             Dict[str, pd.DataFrame]: uid -> DataFrame 的映射
@@ -99,26 +108,27 @@ class DataCenterDataReader:
         """
         self.logger.info("开始读取所有可观测数据...")
 
-        # 获取所有遥测属性的 uid 列表
-        all_uids = self.datacenter.get_all_observable_uids(include_unavailable=False)
-        self.logger.info(f"共有 {len(all_uids)} 个遥测点需要读取")
+        # 获取所有可观测属性的 uid 列表
+        all_uids = self.datacenter.get_all_observable_uids(include_unavailable=include_unavailable)
+        self.logger.info(f"共有 {len(all_uids)} 个可观测点需要读取 (include_unavailable={include_unavailable})")
 
         if not all_uids:
-            self.logger.warning("没有遥测点需要读取")
+            self.logger.warning("没有可观测点需要读取")
             return {}
 
         # 批量读取数据
         result = self._batch_read_data(all_uids)
 
-        self.logger.info(f"成功读取 {len(result)} 个遥测点的数据")
+        self.logger.info(f"成功读取 {len(result)} 个可观测点的数据")
         return result
 
-    def read_room_data(self, room_uid: str) -> Dict[str, pd.DataFrame]:
+    def read_room_data(self, room_uid: str, include_unavailable: bool = False) -> Dict[str, pd.DataFrame]:
         """
         读取指定机房的所有数据
 
         参数:
             room_uid: 机房唯一标识符
+            include_unavailable: 是否包含不可用设备的数据，默认 False（只返回可用设备的属性）
 
         返回:
             Dict[str, pd.DataFrame]: uid -> DataFrame 的映射
@@ -130,33 +140,34 @@ class DataCenterDataReader:
         if not room:
             raise ValueError(f"机房不存在: {room_uid}")
 
-        # 检查机房是否可用
-        if not room.is_available:
+        # 检查机房是否可用（如果不包含不可用机房）
+        if not include_unavailable and not room.is_available:
             self.logger.warning(f"机房 {room.room_name} 不可用，跳过数据读取")
             return {}
 
         self.logger.info(f"开始读取机房数据: {room.room_name} (UID: {room_uid})")
 
-        # 获取机房的所有遥测 uid
-        room_uids = room.get_all_observable_uids()
-        self.logger.info(f"机房 {room.room_name} 共有 {len(room_uids)} 个遥测点")
+        # 获取机房的所有可观测 uid
+        room_uids = room.get_all_observable_uids(include_unavailable=include_unavailable)
+        self.logger.info(f"机房 {room.room_name} 共有 {len(room_uids)} 个可观测点 (include_unavailable={include_unavailable})")
 
         if not room_uids:
-            self.logger.warning(f"机房 {room.room_name} 没有遥测点")
+            self.logger.warning(f"机房 {room.room_name} 没有可观测点")
             return {}
 
         # 批量读取数据
         result = self._batch_read_data(room_uids)
 
-        self.logger.info(f"成功读取机房 {room.room_name} 的 {len(result)} 个遥测点数据")
+        self.logger.info(f"成功读取机房 {room.room_name} 的 {len(result)} 个可观测点数据")
         return result
 
-    def read_device_data(self, device_uid: str) -> Dict[str, pd.DataFrame]:
+    def read_device_data(self, device_uid: str, include_unavailable: bool = False) -> Dict[str, pd.DataFrame]:
         """
         读取指定设备的所有数据
 
         参数:
             device_uid: 设备唯一标识符
+            include_unavailable: 是否读取不可用设备的数据，默认 False（不读取不可用设备）
 
         返回:
             Dict[str, pd.DataFrame]: uid -> DataFrame 的映射
@@ -168,26 +179,165 @@ class DataCenterDataReader:
         if not device:
             raise ValueError(f"设备不存在: {device_uid}")
 
-        # 检查设备是否可用
-        if not device.is_available:
+        # 检查设备是否可用（如果不包含不可用设备）
+        if not include_unavailable and not device.is_available:
             self.logger.warning(f"设备 {device.device_name} 不可用，跳过数据读取")
             return {}
 
         self.logger.info(f"开始读取设备数据: {device.device_name} (UID: {device_uid})")
 
-        # 获取设备的所有遥测 uid
+        # 获取设备的所有可观测 uid
         device_uids = device.get_observable_uids()
-        self.logger.info(f"设备 {device.device_name} 共有 {len(device_uids)} 个遥测点")
+        self.logger.info(f"设备 {device.device_name} 共有 {len(device_uids)} 个可观测点 (include_unavailable={include_unavailable})")
 
         if not device_uids:
-            self.logger.warning(f"设备 {device.device_name} 没有遥测点")
+            self.logger.warning(f"设备 {device.device_name} 没有可观测点")
             return {}
 
         # 批量读取数据
         result = self._batch_read_data(device_uids)
 
-        self.logger.info(f"成功读取设备 {device.device_name} 的 {len(result)} 个遥测点数据")
+        self.logger.info(f"成功读取设备 {device.device_name} 的 {len(result)} 个可观测点数据")
         return result
+
+    def read_specific_uids(self, uids: List[str]) -> Dict[str, pd.DataFrame]:
+        """
+        读取指定 UID 列表的数据
+
+        参数:
+            uids: UID 列表
+
+        返回:
+            Dict[str, pd.DataFrame]: uid -> DataFrame 的映射
+
+        异常:
+            ValueError: UID 列表为空
+        """
+        if not uids:
+            raise ValueError("UID 列表不能为空")
+
+        self.logger.info(f"开始读取指定的 {len(uids)} 个 UID 的数据")
+
+        # 批量读取数据
+        result = self._batch_read_data(uids)
+
+        self.logger.info(f"成功读取 {len(result)} 个 UID 的数据")
+        return result
+
+    def read_influxdb_data(self, config_key: str) -> Dict[str, pd.DataFrame]:
+        """
+        根据配置键从 InfluxDB 读取数据（统一数据读取接口）
+
+        参数:
+            config_key: 配置文件中 read 部分下的配置键名
+                       例如: "datacenter_latest_status", "prediction_result"
+
+        返回:
+            Dict[str, pd.DataFrame]: uid -> DataFrame 的映射
+
+        异常:
+            ValueError: 配置不存在或配置无效
+        """
+        self.logger.info(f"开始根据配置键 '{config_key}' 读取数据")
+
+        # 1. 读取配置
+        if config_key not in self.read_config:
+            raise ValueError(f"配置键 '{config_key}' 不存在于 read 配置中")
+
+        config = self.read_config[config_key]
+
+        # 2. 验证配置：检查 read_method 是否存在
+        if 'read_method' not in config:
+            raise ValueError(f"配置键 '{config_key}' 缺少必填字段 'read_method'")
+
+        read_method = config['read_method']
+        valid_methods = ['read_all_observable_data', 'read_room_data', 'read_device_data', 'read_specific_uids']
+
+        if read_method not in valid_methods:
+            raise ValueError(
+                f"配置键 '{config_key}' 的 read_method '{read_method}' 无效，"
+                f"有效值为: {valid_methods}"
+            )
+
+        self.logger.info(f"  读取方法: {read_method}")
+
+        # 3. 解析参数（优先使用配置项中的值,否则使用默认值）
+        include_unavailable = config.get('include_unavailable', self.default_include_unavailable)
+        room_uids = config.get('room_uids', [])
+        device_uids = config.get('device_uids', [])
+        specific_uids = config.get('specific_uids', [])
+
+        # 4. 临时覆盖默认配置（如果配置中指定了）
+        original_mode = self.default_mode
+        original_time_range = self.default_time_range
+        original_last_n = self.default_last_n
+
+        try:
+            # 如果配置中指定了 mode，临时覆盖
+            if 'mode' in config:
+                self.default_mode = config['mode']
+                self.logger.info(f"  临时覆盖读取模式: {self.default_mode}")
+
+            if 'time_range' in config:
+                self.default_time_range = config['time_range']
+                self.logger.info(f"  临时覆盖时间范围: {self.default_time_range}")
+
+            if 'last_n_points' in config:
+                self.default_last_n = config['last_n_points']
+                self.logger.info(f"  临时覆盖最近数据点数: {self.default_last_n}")
+
+            # 5. 路由调用：根据 read_method 调用相应的底层方法
+            result = {}
+
+            if read_method == 'read_all_observable_data':
+                # 调用 read_all_observable_data 方法
+                self.logger.info(f"  调用 read_all_observable_data(include_unavailable={include_unavailable})")
+                result = self.read_all_observable_data(include_unavailable=include_unavailable)
+
+            elif read_method == 'read_room_data':
+                # 调用 read_room_data，遍历 room_uids
+                if not room_uids:
+                    raise ValueError(f"配置键 '{config_key}' 使用 read_room_data 方法时，必须指定 room_uids")
+
+                self.logger.info(f"  读取 {len(room_uids)} 个机房的数据: {room_uids}")
+
+                for room_uid in room_uids:
+                    try:
+                        room_data = self.read_room_data(room_uid, include_unavailable=include_unavailable)
+                        result.update(room_data)
+                    except ValueError as e:
+                        self.logger.warning(f"  读取机房 {room_uid} 失败: {e}")
+
+            elif read_method == 'read_device_data':
+                # 调用 read_device_data，遍历 device_uids
+                if not device_uids:
+                    raise ValueError(f"配置键 '{config_key}' 使用 read_device_data 方法时，必须指定 device_uids")
+
+                self.logger.info(f"  读取 {len(device_uids)} 个设备的数据: {device_uids}")
+
+                for device_uid in device_uids:
+                    try:
+                        device_data = self.read_device_data(device_uid, include_unavailable=include_unavailable)
+                        result.update(device_data)
+                    except ValueError as e:
+                        self.logger.warning(f"  读取设备 {device_uid} 失败: {e}")
+
+            elif read_method == 'read_specific_uids':
+                # 调用 read_specific_uids
+                if not specific_uids:
+                    raise ValueError(f"配置键 '{config_key}' 使用 read_specific_uids 方法时，必须指定 specific_uids")
+
+                self.logger.info(f"  读取 {len(specific_uids)} 个指定 UID 的数据")
+                result = self.read_specific_uids(specific_uids)
+
+            self.logger.info(f"成功根据配置键 '{config_key}' 读取 {len(result)} 个 UID 的数据")
+            return result
+
+        finally:
+            # 6. 恢复默认配置
+            self.default_mode = original_mode
+            self.default_time_range = original_time_range
+            self.default_last_n = original_last_n
 
     def _batch_read_data(self, uids: List[str]) -> Dict[str, pd.DataFrame]:
         """
@@ -221,9 +371,40 @@ class DataCenterDataReader:
 
         return result
 
+    def _query_single_uid(self, uid: str) -> Optional[pd.DataFrame]:
+        """
+        查询单个 uid 的数据（内部方法，用于并行查询）
+
+        参数:
+            uid: 属性唯一标识符
+
+        返回:
+            Optional[pd.DataFrame]: DataFrame 或 None（如果没有数据或查询失败）
+        """
+        try:
+            # 构建查询语句
+            query = self._build_query(uid)
+
+            # 执行查询
+            query_result = self.influxdb_client.query(query)
+
+            # 解析查询结果
+            df = self._parse_query_result(query_result, uid)
+
+            if df is not None and not df.empty:
+                return df
+            else:
+                self.logger.debug(f"uid {uid} 没有数据")
+                return None
+
+        except Exception as e:
+            self.logger.warning(f"读取 uid {uid} 失败: {e}")
+            return None
+
     def _read_batch(self, uids: List[str]) -> Dict[str, pd.DataFrame]:
         """
         读取一批 uid 的数据（内部方法）
+        支持并行查询和串行查询两种模式
 
         参数:
             uids: uid 列表
@@ -233,24 +414,41 @@ class DataCenterDataReader:
         """
         result = {}
 
-        for uid in uids:
-            try:
-                # 构建查询语句
-                query = self._build_query(uid)
+        # 检查是否启用并行查询（且 uid 数量大于 1）
+        if self.enable_parallel_query and len(uids) > 1:
+            # 并行查询模式
+            self.logger.debug(f"使用并行查询模式，线程数: {self.parallel_threads}，查询 {len(uids)} 个 uid")
 
-                # 执行查询
-                query_result = self.influxdb_client.query(query)
+            from concurrent.futures import ThreadPoolExecutor, as_completed
 
-                # 解析查询结果
-                df = self._parse_query_result(query_result, uid)
+            with ThreadPoolExecutor(max_workers=self.parallel_threads) as executor:
+                # 提交所有查询任务
+                future_to_uid = {
+                    executor.submit(self._query_single_uid, uid): uid
+                    for uid in uids
+                }
 
-                if df is not None and not df.empty:
+                # 收集查询结果
+                for future in as_completed(future_to_uid):
+                    uid = future_to_uid[future]
+                    try:
+                        df = future.result()
+                        if df is not None:
+                            result[uid] = df
+                    except Exception as e:
+                        self.logger.warning(f"并行查询 uid {uid} 时发生异常: {e}")
+
+        else:
+            # 串行查询模式（原有逻辑）
+            if not self.enable_parallel_query:
+                self.logger.debug(f"并行查询已禁用，使用串行查询模式")
+            else:
+                self.logger.debug(f"uid 数量为 {len(uids)}，使用串行查询模式")
+
+            for uid in uids:
+                df = self._query_single_uid(uid)
+                if df is not None:
                     result[uid] = df
-                else:
-                    self.logger.debug(f"uid {uid} 没有数据")
-
-            except Exception as e:
-                self.logger.warning(f"读取 uid {uid} 失败: {e}")
 
         return result
 
@@ -295,12 +493,18 @@ class DataCenterDataReader:
             """
 
         else:
-            # 默认使用 time_range 模式
             self.logger.warning(f"未知的读取模式: {self.default_mode}/未设定读取模式，使用默认 time_range 模式")
+            # 默认使用 time_range 模式
+            duration = self.default_time_range.get('duration', 1)
+            unit = self.default_time_range.get('unit', 'h')
+
+            # 构建时间范围字符串
+            time_range_str = f"{duration}{unit}"
+
             query = f"""
                 SELECT "{field_key}" AS value
                 FROM "{uid}"
-                WHERE time > now() - 1h
+                WHERE time > now() - {time_range_str}
                 ORDER BY time ASC
             """
 
@@ -626,7 +830,7 @@ class DataCenterDataWriter:
             measurement: measurement 名称
             fields: 字段字典（如 {'value': 25.0}）
             tags: 标签字典（可选）
-            timestamp: 时间戳（可选，默认为当前时间）
+            timestamp: 时间戳（可选，默认为当前 UTC 时间）
 
         返回:
             Dict[str, Any]: Point 字典格式
@@ -640,13 +844,16 @@ class DataCenterDataWriter:
         注意:
             这是基本框架实现，具体的 Point 构造逻辑后续可以完善
         """
-        # 如果没有提供时间戳，使用当前时间
+        # 如果没有提供时间戳，使用当前 UTC 时间（与 InfluxDB 存储保持一致）
         if timestamp is None:
-            timestamp = datetime.now()
+            from datetime import timezone
+            timestamp = datetime.now(timezone.utc)
 
         # 转换为纳秒级时间戳
         if isinstance(timestamp, datetime):
             # datetime 转换为纳秒级时间戳
+            # 对于 aware datetime（有时区信息），timestamp() 会正确转换为 UTC 时间戳
+            # 对于 naive datetime（无时区信息），timestamp() 会假设为本地时区
             timestamp_ns = int(timestamp.timestamp() * 1e9)
         else:
             # 假设已经是时间戳（秒级），转换为纳秒级
