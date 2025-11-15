@@ -3,7 +3,7 @@
 
 # ==================== 读取配置 ====================
 read:
-  # 全局默认配置
+  # 全局默认配置（所有客户端共享）
   default:
     # 数据量选择模式: "time_range" 或 "last_n_points"
     mode: "time_range"
@@ -28,93 +28,116 @@ read:
     # true: 包含不可用设备/机房的数据（用于诊断）, false: 只包含可用设备/机房的数据
     include_unavailable: false
 
-  # ==================== 配置驱动的数据读取配置项 ====================
-  # 以下配置项用于 read_influxdb_data(config_key) 方法
-  # 每个配置项定义了一种数据读取策略，可以灵活组合不同的读取方法和参数
+  # ==================== dc_status_data_client 客户端的读取配置 ====================
+  # 用于从 iot_origin_database 读取数据中心状态数据
+  dc_status_data_client:
+    # 客户端级别的默认配置（可选，覆盖全局 default）
+    default:
+      mode: "time_range"
+      time_range:
+        duration: 1
+        unit: "h"
 
-  # 示例配置 1: 读取数据中心最新状态（所有可观测数据）
-  datacenter_latest_status:
-    # 必填：读取方法类型
-    # 可选值: read_all_observable_data / read_room_data / read_device_data / read_specific_uids
-    read_method: "read_all_observable_data"
+    # 配置项 1: 读取数据中心最新状态（所有可观测数据）
+    datacenter_latest_status:
+      # 必填：读取方法类型
+      # 可选值: read_all_observable_data / read_room_data / read_device_data / read_specific_uids
+      read_method: "read_all_observable_data"
 
-    # 可选：是否包含不可用设备/机房的数据（默认 false）
-    include_unavailable: false
+      # 可选：是否包含不可用设备/机房的数据（默认 false）
+      include_unavailable: false
 
-    # 可选：覆盖默认的读取模式配置（如果不指定则使用 default 配置）
-    # mode: "time_range"
-    # time_range:
-    #   duration: 2
-    #   unit: "h"
+    # 配置项 2: 读取关键设备数据
+    critical_devices_data:
+      read_method: "read_device_data"
 
-  # 示例配置 2: 读取预测结果（指定机房）
-  prediction_result:
-    read_method: "read_room_data"
+      # 必填（当 read_method 为 read_device_data 时）：指定要读取的设备 UID 列表
+      device_uids: [ "AC_A1_001", "AC_A1_002" ]
 
-    # 必填（当 read_method 为 read_room_data 时）：指定要读取的机房 UID 列表
-    room_uids: [ "CR_A1" ]
+      # 覆盖默认配置：读取最近 2 小时的数据
+      mode: "time_range"
+      time_range:
+        duration: 2
+        unit: "h"
 
-    include_unavailable: false
+    # 配置项 3: 读取特定测点数据
+    specific_sensors_data:
+      read_method: "read_specific_uids"
 
-    # 覆盖默认配置：使用最近 N 条数据模式
-    mode: "last_n_points"
-    last_n_points:
-      count: 50
+      # 必填（当 read_method 为 read_specific_uids 时）：指定要读取的属性 UID 列表
+      specific_uids: [ "ac_a1_001_supply_temp", "ac_a1_001_return_temp","comp_a1_001_power" ]
 
-  # 示例配置 3: 读取关键设备数据
-  critical_devices_data:
-    read_method: "read_device_data"
+      # 覆盖默认配置：使用最近 100 条数据
+      mode: "last_n_points"
+      last_n_points:
+        count: 100
 
-    # 必填（当 read_method 为 read_device_data 时）：指定要读取的设备 UID 列表
-    device_uids: [ "AC_A1_001", "AC_A1_002" ]
+    # 配置项 4: 读取多个机房的历史数据
+    multi_room_history:
+      read_method: "read_room_data"
+      room_uids: [ "CR_A1", "CR_B2" ]
+      include_unavailable: false
 
-    # 覆盖默认配置：读取最近 2 小时的数据
-    mode: "time_range"
-    time_range:
-      duration: 2
-      unit: "h"
+      # 读取最近 24 小时的数据
+      mode: "time_range"
+      time_range:
+        duration: 24
+        unit: "h"
 
-  # 示例配置 4: 读取特定测点数据
-  specific_sensors_data:
-    read_method: "read_specific_uids"
+    # 配置项 5: 诊断模式（包含不可用设备）
+    diagnostic_all_data:
+      read_method: "read_all_observable_data"
+      include_unavailable: true  # 包含不可用设备的数据，用于诊断
 
-    # 必填（当 read_method 为 read_specific_uids 时）：指定要读取的属性 UID 列表
-    specific_uids: [ "ac_a1_001_supply_temp", "ac_a1_001_return_temp","comp_a1_001_power" ]
+      mode: "time_range"
+      time_range:
+        duration: 1
+        unit: "h"
 
-    # 覆盖默认配置：使用最近 100 条数据
-    mode: "last_n_points"
-    last_n_points:
-      count: 100
+  # ==================== prediction_data_client 客户端的读取配置 ====================
+  # 用于从 iot_origin_prediction 读取预测数据
+  prediction_data_client:
+    # 客户端级别的默认配置
+    default:
+      mode: "last_n_points"
+      last_n_points:
+        count: 50
 
-  # 示例配置 5: 读取多个机房的历史数据
-  multi_room_history:
-    read_method: "read_room_data"
-    room_uids: [ "CR_A1", "CR_B2" ]
-    include_unavailable: false
+    # 配置项 1: 读取最新预测结果（指定机房）
+    latest_predictions:
+      read_method: "read_room_data"
 
-    # 读取最近 24 小时的数据
-    mode: "time_range"
-    time_range:
-      duration: 24
-      unit: "h"
+      # 必填（当 read_method 为 read_room_data 时）：指定要读取的机房 UID 列表
+      room_uids: [ "CR_A1" ]
 
-  # 示例配置 6: 诊断模式（包含不可用设备）
-  diagnostic_all_data:
-    read_method: "read_all_observable_data"
-    include_unavailable: true  # 包含不可用设备的数据，用于诊断
+      include_unavailable: false
 
-    mode: "time_range"
-    time_range:
-      duration: 1
-      unit: "h"
+      # 覆盖默认配置：使用最近 100 条数据
+      mode: "last_n_points"
+      last_n_points:
+        count: 100
+
+    # 配置项 2: 读取预测历史数据
+    prediction_history:
+      read_method: "read_specific_uids"
+
+      # 指定要读取的预测数据 UID 列表
+      # 注意：预测数据的 measurement 命名规则为 {room_uid}_temp_pred_{horizon}
+      specific_uids: [ "CR_A1_temp_pred_1h", "CR_A1_temp_pred_6h" ]
+
+      # 读取最近 6 小时的预测历史
+      mode: "time_range"
+      time_range:
+        duration: 6
+        unit: "h"
 
 
 # ==================== 写入配置 ====================
 write:
   # 预测数据写入配置
-  prediction:
+  # 注意：数据库名称从客户端配置（utils_config.yaml）中获取，不在此处配置
+  prediction_data_client:
     enabled: true
-    database: "iot_origin_prediction"  # 目标数据库
 
     # 写入策略
     batch_size: 100  # 批量写入大小
@@ -124,7 +147,7 @@ write:
     # 数据保留策略(可选)
     retention_policy: "autogen"  # InfluxDB retention policy
 
-    # 写入的数据类型
+    # 写入的数据类型说明
     data_types:
       # 温度预测
       - data_type: "temperature_prediction"
@@ -146,16 +169,16 @@ write:
         # measurement 命名规则: dc_pue_pred_{horizon}
 
   # 优化控制指令写入配置
-  optimization:
+  # 注意：数据库名称从客户端配置（utils_config.yaml）中获取，不在此处配置
+  optimization_data_client:
     enabled: true
-    database: "iot_origin_optimization"
 
     batch_size: 50
     retry_times: 3
     retry_interval: 2
     retention_policy: "autogen"
 
-    # 控制指令类型
+    # 控制指令类型说明
     control_types:
       # 空调控制指令
       - control_type: "ac_control"
