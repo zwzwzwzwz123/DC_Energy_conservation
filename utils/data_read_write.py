@@ -74,6 +74,7 @@ class DataCenterDataReader:
         self.default_last_n = default_config.get('last_n_points', {'count': 100})
         self.default_time_order = default_config.get('time_order', 'desc').lower()  # 默认降序（时间最新的放在最上面）
         self.default_include_unavailable = default_config.get('include_unavailable', False)  # 默认不包含不可用设备
+        self.default_tag_filters = default_config.get('tag_filters', {})  # 默认 Tag 过滤配置
 
         # 查询优化配置
         query_opt = read_config.get('query_optimization', {})
@@ -99,7 +100,8 @@ class DataCenterDataReader:
         mode: str,
         time_range: Dict[str, Any],
         last_n: Dict[str, Any],
-        include_unavailable: bool = False
+        include_unavailable: bool = False,
+        tag_filters: Dict[str, Any] = None
     ) -> Dict[str, pd.DataFrame]:
         """
         读取所有可观测点数据
@@ -110,6 +112,7 @@ class DataCenterDataReader:
             time_range: 时间范围配置（用于 time_range 模式）
             last_n: 最近数据点数配置（用于 last_n_points 模式）
             include_unavailable: 是否包含不可用设备/机房的数据，默认 False（只返回可用设备的属性）
+            tag_filters: Tag Set 过滤配置，默认 None（不过滤）
 
         返回:
             Dict[str, pd.DataFrame]: uid -> DataFrame 的映射
@@ -129,7 +132,9 @@ class DataCenterDataReader:
             return {}
 
         # 批量读取数据（将客户端和配置作为参数传递）
-        result = self._batch_read_data(all_uids, client, mode, time_range, last_n)
+        if tag_filters is None:
+            tag_filters = {}
+        result = self._batch_read_data(all_uids, client, mode, time_range, last_n, tag_filters)
 
         self.logger.info(f"成功读取 {len(result)} 个可观测点的数据")
         return result
@@ -141,7 +146,8 @@ class DataCenterDataReader:
         mode: str,
         time_range: Dict[str, Any],
         last_n: Dict[str, Any],
-        include_unavailable: bool = False
+        include_unavailable: bool = False,
+        tag_filters: Dict[str, Any] = None
     ) -> Dict[str, pd.DataFrame]:
         """
         读取指定机房的所有数据
@@ -180,7 +186,9 @@ class DataCenterDataReader:
             return {}
 
         # 批量读取数据（将客户端和配置作为参数传递）
-        result = self._batch_read_data(room_uids, client, mode, time_range, last_n)
+        if tag_filters is None:
+            tag_filters = {}
+        result = self._batch_read_data(room_uids, client, mode, time_range, last_n, tag_filters)
 
         self.logger.info(f"成功读取机房 {room.room_name} 的 {len(result)} 个可观测点数据")
         return result
@@ -192,7 +200,8 @@ class DataCenterDataReader:
         mode: str,
         time_range: Dict[str, Any],
         last_n: Dict[str, Any],
-        include_unavailable: bool = False
+        include_unavailable: bool = False,
+        tag_filters: Dict[str, Any] = None
     ) -> Dict[str, pd.DataFrame]:
         """
         读取指定设备的所有数据
@@ -231,7 +240,9 @@ class DataCenterDataReader:
             return {}
 
         # 批量读取数据（将客户端和配置作为参数传递）
-        result = self._batch_read_data(device_uids, client, mode, time_range, last_n)
+        if tag_filters is None:
+            tag_filters = {}
+        result = self._batch_read_data(device_uids, client, mode, time_range, last_n, tag_filters)
 
         self.logger.info(f"成功读取设备 {device.device_name} 的 {len(result)} 个可观测点数据")
         return result
@@ -242,7 +253,8 @@ class DataCenterDataReader:
         client: InfluxDBClientWrapper,
         mode: str,
         time_range: Dict[str, Any],
-        last_n: Dict[str, Any]
+        last_n: Dict[str, Any],
+        tag_filters: Dict[str, Any] = None
     ) -> Dict[str, pd.DataFrame]:
         """
         读取指定 UID 列表的数据
@@ -266,7 +278,9 @@ class DataCenterDataReader:
         self.logger.info(f"开始读取指定的 {len(uids)} 个 UID 的数据")
 
         # 批量读取数据（将客户端和配置作为参数传递）
-        result = self._batch_read_data(uids, client, mode, time_range, last_n)
+        if tag_filters is None:
+            tag_filters = {}
+        result = self._batch_read_data(uids, client, mode, time_range, last_n, tag_filters)
 
         self.logger.info(f"成功读取 {len(result)} 个 UID 的数据")
         return result
@@ -325,11 +339,12 @@ class DataCenterDataReader:
         room_uids = config.get('room_uids', [])
         device_uids = config.get('device_uids', [])
         specific_uids = config.get('specific_uids', [])
+        tag_filters = config.get('tag_filters', self.default_tag_filters)
 
-        # 6. 获取客户端（不再使用实例属性 _current_client，直接从字典获取）
+        # 6. 获取客户端（直接从字典获取）
         client = self.influxdb_clients[client_key]
 
-        # 7. 解析配置参数（不再修改实例属性，而是作为局部变量）
+        # 7. 解析配置参数（作为局部变量）
         # 优先级：配置项 > 客户端默认配置 > 全局默认配置
         mode = self.default_mode
         time_range = self.default_time_range
@@ -364,7 +379,7 @@ class DataCenterDataReader:
         if read_method == 'read_all_observable_data':
             # 调用 read_all_observable_data 方法
             self.logger.info(f"  调用 read_all_observable_data(include_unavailable={include_unavailable})")
-            result = self.read_all_observable_data(client, mode, time_range, last_n, include_unavailable)
+            result = self.read_all_observable_data(client, mode, time_range, last_n, include_unavailable, tag_filters)
 
         elif read_method == 'read_room_data':
             # 调用 read_room_data，遍历 room_uids
@@ -375,7 +390,7 @@ class DataCenterDataReader:
 
             for room_uid in room_uids:
                 try:
-                    room_data = self.read_room_data(room_uid, client, mode, time_range, last_n, include_unavailable)
+                    room_data = self.read_room_data(room_uid, client, mode, time_range, last_n, include_unavailable, tag_filters)
                     result.update(room_data)
                 except ValueError as e:
                     self.logger.warning(f"  读取机房 {room_uid} 失败: {e}")
@@ -389,7 +404,7 @@ class DataCenterDataReader:
 
             for device_uid in device_uids:
                 try:
-                    device_data = self.read_device_data(device_uid, client, mode, time_range, last_n, include_unavailable)
+                    device_data = self.read_device_data(device_uid, client, mode, time_range, last_n, include_unavailable, tag_filters)
                     result.update(device_data)
                 except ValueError as e:
                     self.logger.warning(f"  读取设备 {device_uid} 失败: {e}")
@@ -400,7 +415,7 @@ class DataCenterDataReader:
                 raise ValueError(f"配置键 '{config_key}' 使用 read_specific_uids 方法时，必须指定 specific_uids")
 
             self.logger.info(f"  读取 {len(specific_uids)} 个指定 UID 的数据")
-            result = self.read_specific_uids(specific_uids, client, mode, time_range, last_n)
+            result = self.read_specific_uids(specific_uids, client, mode, time_range, last_n, tag_filters)
 
         self.logger.info(f"成功根据客户端 '{client_key}' 和配置键 '{config_key}' 读取 {len(result)} 个 UID 的数据")
         return result
@@ -411,7 +426,8 @@ class DataCenterDataReader:
         client: InfluxDBClientWrapper,
         mode: str,
         time_range: Dict[str, Any],
-        last_n: Dict[str, Any]
+        last_n: Dict[str, Any],
+        tag_filters: Dict[str, Any] = None
     ) -> Dict[str, pd.DataFrame]:
         """
         批量读取数据（内部方法）
@@ -422,6 +438,7 @@ class DataCenterDataReader:
             mode: 读取模式（'time_range' 或 'last_n_points'）
             time_range: 时间范围配置（用于 time_range 模式）
             last_n: 最近数据点数配置（用于 last_n_points 模式）
+            tag_filters: Tag Set 过滤配置（用于添加 WHERE 条件）
 
         返回:
             Dict[str, pd.DataFrame]: uid -> DataFrame 的映射
@@ -440,11 +457,11 @@ class DataCenterDataReader:
 
             for i, batch in enumerate(batches):
                 self.logger.debug(f"查询批次 {i + 1}/{len(batches)}，包含 {len(batch)} 个 uid")
-                batch_result = self._read_batch(batch, client, mode, time_range, last_n)
+                batch_result = self._read_batch(batch, client, mode, time_range, last_n, tag_filters)
                 result.update(batch_result)
         else:
             # 一次性查询
-            result = self._read_batch(uids, client, mode, time_range, last_n)
+            result = self._read_batch(uids, client, mode, time_range, last_n, tag_filters)
 
         return result
 
@@ -454,7 +471,8 @@ class DataCenterDataReader:
         client: InfluxDBClientWrapper,
         mode: str,
         time_range: Dict[str, Any],
-        last_n: Dict[str, Any]
+        last_n: Dict[str, Any],
+        tag_filters: Dict[str, Any] = None
     ) -> Optional[pd.DataFrame]:
         """
         查询单个 uid 的数据（内部方法，用于并行查询）
@@ -465,13 +483,14 @@ class DataCenterDataReader:
             mode: 读取模式（'time_range' 或 'last_n_points'）
             time_range: 时间范围配置（用于 time_range 模式）
             last_n: 最近数据点数配置（用于 last_n_points 模式）
+            tag_filters: Tag Set 过滤配置（用于添加 WHERE 条件）
 
         返回:
             Optional[pd.DataFrame]: DataFrame 或 None（如果没有数据或查询失败）
         """
         try:
             # 构建查询语句（传递配置参数）
-            query = self._build_query(uid, mode, time_range, last_n)
+            query = self._build_query(uid, mode, time_range, last_n, tag_filters)
 
             # 执行查询（直接使用传入的客户端，无需从实例属性获取）
             query_result = client.query(query)
@@ -495,7 +514,8 @@ class DataCenterDataReader:
         client: InfluxDBClientWrapper,
         mode: str,
         time_range: Dict[str, Any],
-        last_n: Dict[str, Any]
+        last_n: Dict[str, Any],
+        tag_filters: Dict[str, Any] = None
     ) -> Dict[str, pd.DataFrame]:
         """
         读取一批 uid 的数据（内部方法）
@@ -507,6 +527,7 @@ class DataCenterDataReader:
             mode: 读取模式（'time_range' 或 'last_n_points'）
             time_range: 时间范围配置（用于 time_range 模式）
             last_n: 最近数据点数配置（用于 last_n_points 模式）
+            tag_filters: Tag Set 过滤配置（用于添加 WHERE 条件）
 
         返回:
             Dict[str, pd.DataFrame]: uid -> DataFrame 的映射
@@ -523,7 +544,7 @@ class DataCenterDataReader:
             with ThreadPoolExecutor(max_workers=self.parallel_threads) as executor:
                 # 提交所有查询任务（将 client 和配置参数传递）
                 future_to_uid = {
-                    executor.submit(self._query_single_uid, uid, client, mode, time_range, last_n): uid
+                    executor.submit(self._query_single_uid, uid, client, mode, time_range, last_n, tag_filters): uid
                     for uid in uids
                 }
 
@@ -545,13 +566,13 @@ class DataCenterDataReader:
                 self.logger.debug(f"uid 数量为 {len(uids)}，使用串行查询模式")
 
             for uid in uids:
-                df = self._query_single_uid(uid, client, mode, time_range, last_n)
+                df = self._query_single_uid(uid, client, mode, time_range, last_n, tag_filters)
                 if df is not None:
                     result[uid] = df
 
         return result
 
-    def _build_query(self, uid: str, mode: str, time_range: Dict[str, Any], last_n: Dict[str, Any]) -> str:
+    def _build_query(self, uid: str, mode: str, time_range: Dict[str, Any], last_n: Dict[str, Any], tag_filters: Dict[str, Any] = None) -> str:
         """
         根据配置构建 InfluxDB 查询语句
 
@@ -560,12 +581,25 @@ class DataCenterDataReader:
             mode: 读取模式（'time_range' 或 'last_n_points'）
             time_range: 时间范围配置（用于 time_range 模式）
             last_n: 最近数据点数配置（用于 last_n_points 模式）
+            tag_filters: Tag Set 过滤配置（用于添加 WHERE 条件）
 
         返回:
             str: InfluxDB 查询语句
         """
         # 获取 field_key（从实例属性读取，这是只读配置，不会被临时修改）
         field_key = self.default_field_key
+
+        # 构建 Tag 过滤条件
+        tag_conditions = []
+        if tag_filters:
+            for tag_key, tag_value in tag_filters.items():
+                if isinstance(tag_value, list):
+                    # 多值匹配：tag_key IN ('value1', 'value2')
+                    values_str = "', '".join(str(v) for v in tag_value)
+                    tag_conditions.append(f'"{tag_key}" IN (\'{values_str}\')')
+                else:
+                    # 单值匹配：tag_key = 'value'
+                    tag_conditions.append(f'"{tag_key}" = \'{tag_value}\'')
 
         # 根据模式构建查询
         if mode == 'time_range':
@@ -576,10 +610,15 @@ class DataCenterDataReader:
             # 构建时间范围字符串
             time_range_str = f"{duration}{unit}"
 
+            # 构建 WHERE 条件
+            where_conditions = [f"time > now() - {time_range_str}"]
+            where_conditions.extend(tag_conditions)
+            where_clause = " AND ".join(where_conditions)
+
             query = f"""
                 SELECT "{field_key}" AS value
                 FROM "{uid}"
-                WHERE time > now() - {time_range_str}
+                WHERE {where_clause}
                 ORDER BY time ASC
             """
 
@@ -587,12 +626,24 @@ class DataCenterDataReader:
             # last_n_points 模式
             count = last_n.get('count', 100)
 
-            query = f"""
-                SELECT "{field_key}" AS value
-                FROM "{uid}"
-                ORDER BY time DESC
-                LIMIT {count}
-            """
+            if tag_conditions:
+                # 有 Tag 过滤条件时，需要先过滤再限制数量
+                where_clause = " AND ".join(tag_conditions)
+                query = f"""
+                    SELECT "{field_key}" AS value
+                    FROM "{uid}"
+                    WHERE {where_clause}
+                    ORDER BY time DESC
+                    LIMIT {count}
+                """
+            else:
+                # 无 Tag 过滤条件时，直接限制数量
+                query = f"""
+                    SELECT "{field_key}" AS value
+                    FROM "{uid}"
+                    ORDER BY time DESC
+                    LIMIT {count}
+                """
 
         else:
             self.logger.warning(f"未知的读取模式: {mode}/未设定读取模式，使用默认 time_range 模式")
@@ -603,10 +654,15 @@ class DataCenterDataReader:
             # 构建时间范围字符串
             time_range_str = f"{duration}{unit}"
 
+            # 构建 WHERE 条件
+            where_conditions = [f"time > now() - {time_range_str}"]
+            where_conditions.extend(tag_conditions)
+            where_clause = " AND ".join(where_conditions)
+
             query = f"""
                 SELECT "{field_key}" AS value
                 FROM "{uid}"
-                WHERE time > now() - {time_range_str}
+                WHERE {where_clause}
                 ORDER BY time ASC
             """
 
@@ -669,22 +725,23 @@ class DataCenterDataWriter:
     数据中心数据写入器
 
     功能：
-        - 批量写入预测数据到 InfluxDB
-        - 批量写入优化控制指令到 InfluxDB
+        - 支持两种预测数据写入模式：按测点分离存储和统一存储格式
+        - 支持两种优化控制指令写入模式：按测点分离存储和统一存储格式
         - 实现批量写入和重试机制
         - 使用 critical_operation 保护写入操作（线程安全）
+        - 采用 client_key -> config_key 的两级配置结构
 
     属性:
         datacenter: DataCenter 对象
         write_config: 写入配置字典
-        influxdb_client: InfluxDB 客户端包装器
+        influxdb_clients: InfluxDB 客户端字典
         ctx: AppContext 对象（用于 critical_operation）
-        prediction_config: 预测数据写入配置
-        optimization_config: 优化控制指令写入配置
+        logger: 日志器
 
     方法:
-        write_prediction_data: 写入预测数据
-        write_optimization_commands: 写入优化控制指令
+        write_prediction_data: 写入预测数据（支持两种模式）
+        write_optimization_commands: 写入优化控制指令（支持两种模式）
+        write_influxdb_data: 统一的数据写入接口
     """
 
     def __init__(
@@ -711,26 +768,121 @@ class DataCenterDataWriter:
         self.ctx = ctx
         self.logger = logger
 
-        # 解析预测数据写入配置
-        self.prediction_config = write_config.get('prediction_data_client', {})
-        self.prediction_enabled = self.prediction_config.get('enabled', True)
-        self.prediction_batch_size = self.prediction_config.get('batch_size', 100)
-        self.prediction_retry_times = self.prediction_config.get('retry_times', 3)
-        self.prediction_retry_interval = self.prediction_config.get('retry_interval', 2)
-        self.prediction_retention_policy = self.prediction_config.get('retention_policy', 'autogen')
-
-        # 解析优化控制指令写入配置
-        self.optimization_config = write_config.get('optimization_data_client', {})
-        self.optimization_enabled = self.optimization_config.get('enabled', True)
-        self.optimization_batch_size = self.optimization_config.get('batch_size', 50)
-        self.optimization_retry_times = self.optimization_config.get('retry_times', 3)
-        self.optimization_retry_interval = self.optimization_config.get('retry_interval', 2)
-        self.optimization_retention_policy = self.optimization_config.get('retention_policy', 'autogen')
+        # 获取默认配置
+        default_config = write_config.get('default', {})
+        self.default_enabled = default_config.get('enabled', True)
+        self.default_batch_size = default_config.get('batch_size', 100)
+        self.default_retry_times = default_config.get('retry_times', 3)
+        self.default_retry_interval = default_config.get('retry_interval', 2)
+        self.default_retention_policy = default_config.get('retention_policy', 'autogen')
 
         self.logger.info(f"数据写入器初始化完成 - 数据中心: {datacenter.dc_name}")
         self.logger.info(f"  已注册客户端: {list(influxdb_clients.keys())}")
-        self.logger.info(f"  预测数据写入: {'启用' if self.prediction_enabled else '禁用'}")
-        self.logger.info(f"  优化控制写入: {'启用' if self.optimization_enabled else '禁用'}")
+        self.logger.info(f"  默认配置:")
+        self.logger.info(f"    启用状态: {self.default_enabled}")
+        self.logger.info(f"    批量大小: {self.default_batch_size}")
+        self.logger.info(f"    重试次数: {self.default_retry_times}")
+        self.logger.info(f"    重试间隔: {self.default_retry_interval}秒")
+
+    def write_prediction_data(
+            self,
+            prediction_data: Dict[str, float],
+            horizon: str,
+            client_key: str = 'prediction_data_client',
+            config_key: str = 'prediction_by_uid'
+    ) -> bool:
+        """
+        写入预测数据（模式一：按测点分离存储）
+
+        参数:
+            prediction_data: 预测数据，键为测点uid，值为预测数值
+            horizon: 预测时间范围（如 "15mins"）
+            client_key: 客户端键名，默认为 'prediction_data_client'
+            config_key: 配置键名，默认为 'prediction_by_uid'
+
+        返回:
+            bool: 写入是否成功
+        """
+        data = {
+            'prediction_data': prediction_data,
+            'horizon': horizon
+        }
+        return self.write_influxdb_data(client_key, config_key, data)
+
+    def write_prediction_data_unified(
+            self,
+            prediction_data: Dict[str, str],
+            horizon: str,
+            client_key: str = 'prediction_data_client',
+            config_key: str = 'prediction_unified'
+    ) -> bool:
+        """
+        写入预测数据（模式二：统一存储格式）
+
+        参数:
+            prediction_data: 预测数据，键为测点uid，值为JSON字符串
+            horizon: 预测时间范围（如 "15mins"）
+            client_key: 客户端键名，默认为 'prediction_data_client'
+            config_key: 配置键名，默认为 'prediction_unified'
+
+        返回:
+            bool: 写入是否成功
+        """
+        data = {
+            'prediction_data': prediction_data,
+            'horizon': horizon
+        }
+        return self.write_influxdb_data(client_key, config_key, data)
+
+    def write_optimization_commands(
+            self,
+            optimization_data: Dict[str, float],
+            is_auto_execute: bool = False,
+            client_key: str = 'optimization_data_client',
+            config_key: str = 'optimization_by_uid'
+    ) -> bool:
+        """
+        写入优化控制命令（模式一：按测点分离存储）
+
+        参数:
+            optimization_data: 优化数据，键为测点uid，值为控制数值
+            is_auto_execute: 是否自动执行，默认False
+            client_key: 客户端键名，默认为 'optimization_data_client'
+            config_key: 配置键名，默认为 'optimization_by_uid'
+
+        返回:
+            bool: 写入是否成功
+        """
+        data = {
+            'optimization_data': optimization_data,
+            'is_auto_execute': is_auto_execute
+        }
+        return self.write_influxdb_data(client_key, config_key, data)
+
+    def write_optimization_commands_unified(
+            self,
+            optimization_data: Dict[str, str],
+            is_auto_execute: bool = False,
+            client_key: str = 'optimization_data_client',
+            config_key: str = 'optimization_unified'
+    ) -> bool:
+        """
+        写入优化控制命令（模式二：统一存储格式）
+
+        参数:
+            optimization_data: 优化数据，键为测点uid，值为JSON字符串
+            is_auto_execute: 是否自动执行，默认False
+            client_key: 客户端键名，默认为 'optimization_data_client'
+            config_key: 配置键名，默认为 'optimization_unified'
+
+        返回:
+            bool: 写入是否成功
+        """
+        data = {
+            'optimization_data': optimization_data,
+            'is_auto_execute': is_auto_execute
+        }
+        return self.write_influxdb_data(client_key, config_key, data)
 
     def write_influxdb_data(
             self,
@@ -739,201 +891,342 @@ class DataCenterDataWriter:
             data: Dict[str, Any]
     ) -> bool:
         """
-        统一的数据写入接口
+        统一的数据写入接口（核心实现）
 
         参数:
-            client_key: 客户端键名（'prediction_data_client' 或 'optimization_data_client'）
-            config_key: 写入配置的键（用于获取写入参数）
+            client_key: 客户端键名（如 'prediction_data_client'）
+            config_key: 写入配置的键（如 'prediction_by_uid'）
             data: 要写入的数据字典
-                对于预测数据，格式为: {
-                    'room_uid': 'CR_A1',
-                    'horizon': '1h',
-                    'data_type': 'temperature_prediction',
-                    'predictions': [
-                        {'timestamp': datetime, 'value': float},
-                        ...
-                    ]
-                }
-                对于优化控制指令，格式为: {
-                    'device_uid': 'AC_A1_001',
-                    'commands': [
-                        {
-                            'control_uid': 'ac_a1_001_on_setpoint',
-                            'value': 25.0,
-                            'timestamp': datetime
-                        },
-                        ...
-                    ]
-                }
 
         返回:
             bool: 写入是否成功
-
-        异常:
-            ValueError: 客户端不存在、配置不存在或数据格式错误
         """
         self.logger.info(f"开始写入数据 - 客户端: {client_key}, 配置: {config_key}")
 
-        # 1. 验证客户端是否存在
-        if client_key not in self.influxdb_clients:
-            raise ValueError(f"客户端 '{client_key}' 不存在，可用客户端: {list(self.influxdb_clients.keys())}")
+        # 1. 验证和获取配置
+        try:
+            client, config, write_params = self._get_write_config(client_key, config_key)
+        except ValueError as e:
+            self.logger.error(f"获取写入配置失败: {e}")
+            raise
 
-        # 2. 获取客户端和数据库名称
-        client = self.influxdb_clients[client_key]
-        database = client.client_config['database']
-
-        # 3. 获取写入配置
-        if config_key not in self.write_config:
-            raise ValueError(f"写入配置 '{config_key}' 不存在")
-
-        config = self.write_config[config_key]
-        enabled = config.get('enabled', True)
-        batch_size = config.get('batch_size', 100)
-        retry_times = config.get('retry_times', 3)
-        retry_interval = config.get('retry_interval', 2)
-
-        if not enabled:
+        if not write_params['enabled']:
             self.logger.warning(f"写入配置 '{config_key}' 已禁用")
             return False
 
+        # 2. 构建数据点
         try:
-            # 4. 根据客户端类型构建数据点
-            points = []
-
-            if client_key == 'prediction_data_client':
-                # 预测数据写入逻辑
-                points = self._build_prediction_points(data)
-            elif client_key == 'optimization_data_client':
-                # 优化控制指令写入逻辑
-                points = self._build_optimization_points(data)
-            else:
-                raise ValueError(f"不支持的客户端类型: {client_key}")
-
+            points = self._build_points(config, data)
             if not points:
-                self.logger.warning("没有数据点需要写入")
+                self.logger.warning("没有构建任何数据点，写入操作终止")
                 return True
-
-            self.logger.info(f"构建了 {len(points)} 个数据点")
-
-            # 5. 使用 critical_operation 保护写入操作
-            with critical_operation(self.ctx):
-                success = self._batch_write(
-                    points=points,
-                    client=client,
-                    database=database,
-                    batch_size=batch_size,
-                    retry_times=retry_times,
-                    retry_interval=retry_interval
-                )
-
-            if success:
-                self.logger.info(f"成功写入 {len(points)} 个数据点到 {database}")
-            else:
-                self.logger.error(f"写入数据失败")
-
-            return success
-
+            self.logger.info(f"成功构建 {len(points)} 个数据点")
         except Exception as e:
-            self.logger.error(f"写入数据异常: {e}", exc_info=True)
+            self.logger.error(f"构建数据点时发生异常: {e}", exc_info=True)
             return False
 
-    def _build_prediction_points(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        # 3. 批量写入
+        with critical_operation(self.ctx):
+            success = self._batch_write(
+                points=points,
+                client=client,
+                database=client.client_config['database'],
+                batch_size=write_params['batch_size'],
+                retry_times=write_params['retry_times'],
+                retry_interval=write_params['retry_interval']
+            )
+
+        if success:
+            self.logger.info(f"成功将 {len(points)} 个数据点写入数据库 '{client.client_config['database']}'")
+        else:
+            self.logger.error(f"写入数据到数据库 '{client.client_config['database']}' 失败")
+
+        return success
+
+    def _get_write_config(self, client_key: str, config_key: str) -> Tuple[InfluxDBClientWrapper, Dict, Dict]:
         """
-        构建预测数据点（内部方法）
+        获取写入配置（内部方法）
 
         参数:
-            data: 预测数据字典
+            client_key: 客户端键名
+            config_key: 配置键名
+
+        返回:
+            Tuple[InfluxDBClientWrapper, Dict, Dict]: (客户端, 配置, 写入参数)
+
+        异常:
+            ValueError: 客户端或配置不存在
+        """
+        # 验证客户端是否存在
+        if client_key not in self.influxdb_clients:
+            raise ValueError(f"客户端 '{client_key}' 不存在，可用客户端: {list(self.influxdb_clients.keys())}")
+
+        # 获取客户端
+        client = self.influxdb_clients[client_key]
+
+        # 验证客户端配置是否存在
+        if client_key not in self.write_config:
+            raise ValueError(f"客户端 '{client_key}' 没有对应的写入配置")
+
+        client_config = self.write_config[client_key]
+
+        # 验证配置键是否存在
+        if config_key not in client_config:
+            raise ValueError(f"配置键 '{config_key}' 不存在于客户端 '{client_key}' 的配置中")
+
+        config = client_config[config_key]
+
+        # 解析写入参数（优先级：配置项 > 客户端默认 > 全局默认）
+        write_params = {
+            'enabled': self.default_enabled,
+            'batch_size': self.default_batch_size,
+            'retry_times': self.default_retry_times,
+            'retry_interval': self.default_retry_interval,
+            'retention_policy': self.default_retention_policy
+        }
+
+        # 应用客户端级别的默认配置
+        if 'default' in client_config and isinstance(client_config['default'], dict):
+            client_default = client_config['default']
+            for key in write_params:
+                if key in client_default:
+                    write_params[key] = client_default[key]
+
+        # 应用配置项级别的配置（最高优先级）
+        for key in write_params:
+            if key in config:
+                write_params[key] = config[key]
+
+        return client, config, write_params
+
+    def _build_points(self, config: Dict, data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        根据配置构建数据点（内部方法）
+
+        参数:
+            config: 写入配置
+            data: 要写入的数据
 
         返回:
             List[Dict[str, Any]]: 数据点列表
 
         异常:
-            ValueError: 数据格式错误
+            ValueError: 配置或数据格式错误
         """
-        # 验证数据格式
-        if 'predictions' not in data:
-            raise ValueError("预测数据缺少 'predictions' 字段")
+        write_mode = config.get('write_mode')
+        if not write_mode:
+            raise ValueError("配置中缺少 'write_mode' 字段")
 
-        predictions = data['predictions']
-        if not predictions:
-            self.logger.warning("预测数据为空")
-            return []
-
-        data_type = data.get('data_type', 'unknown')
-
-        # 构建 measurement 名称
-        if data_type == 'pue_prediction':
-            measurement = f"dc_pue_pred_{data.get('horizon', '1h')}"
-        else:
-            room_uid = data.get('room_uid', 'unknown')
-            horizon = data.get('horizon', '1h')
-
-            if data_type == 'temperature_prediction':
-                measurement = f"{room_uid}_temp_pred_{horizon}"
-            elif data_type == 'energy_prediction':
-                measurement = f"{room_uid}_energy_pred_{horizon}"
-            else:
-                measurement = f"{room_uid}_{data_type}_{horizon}"
-
-        # 构建 Points
         points = []
-        for pred in predictions:
-            point = self._build_point(
-                measurement=measurement,
-                fields={'value': pred['value']},
-                tags={'data_type': data_type},
-                timestamp=pred['timestamp']
-            )
-            points.append(point)
+
+        if write_mode == 'separate_by_uid':
+            # 模式一：按测点分离存储
+            points = self._build_separate_points(config, data)
+        elif write_mode == 'unified_format':
+            # 模式二：统一存储格式
+            points = self._build_unified_points(config, data)
+        else:
+            raise ValueError(f"不支持的写入模式: {write_mode}")
 
         return points
 
-    def _build_optimization_points(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _build_separate_points(self, config: Dict, data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
-        构建优化控制指令数据点（内部方法）
+        构建按测点分离存储的数据点（内部方法）
 
         参数:
-            data: 控制指令字典
+            config: 写入配置
+            data: 要写入的数据
 
         返回:
             List[Dict[str, Any]]: 数据点列表
-
-        异常:
-            ValueError: 数据格式错误
         """
-        # 验证数据格式
-        if 'commands' not in data:
-            raise ValueError("控制指令缺少 'commands' 字段")
-
-        commands = data['commands']
-        if not commands:
-            self.logger.warning("控制指令为空")
-            return []
-
-        device_uid = data.get('device_uid', 'unknown')
-
-        # 检查设备是否可用
-        if device_uid != 'unknown':
-            device = self.datacenter.get_device_by_uid(device_uid)
-            if device and not device.is_available:
-                raise ValueError(f"设备 {device.device_name} 不可用，拒绝写入控制指令")
-
-        # 构建 Points
         points = []
-        for cmd in commands:
-            # measurement 使用控制属性的 uid
-            measurement = cmd['control_uid']
 
-            point = self._build_point(
-                measurement=measurement,
-                fields={'value': cmd['value']},
-                tags={
-                    'device_uid': device_uid,
-                    'control_type': 'optimization'
-                },
-                timestamp=cmd.get('timestamp', datetime.now())
-            )
-            points.append(point)
+        # 获取当前时间戳
+        from datetime import timezone
+        current_time = datetime.now(timezone.utc)
+
+        # 处理预测数据
+        if 'prediction_data' in data:
+            prediction_data = data['prediction_data']
+            horizon = data.get('horizon', '15mins')
+
+            measurement_template = config.get('measurement_template', '{uid}')
+            tag_set_config = config.get('tag_set', {})
+            field_set_config = config.get('field_set', {})
+
+            for uid, value in prediction_data.items():
+                # 构建 measurement
+                measurement = measurement_template.format(uid=uid)
+
+                # 构建 tags
+                tags = {}
+                for tag_key, tag_template in tag_set_config.items():
+                    if isinstance(tag_template, str):
+                        tags[tag_key] = tag_template.format(
+                            uid=uid,
+                            horizon=horizon,
+                            value=value
+                        )
+                    else:
+                        tags[tag_key] = str(tag_template)
+
+                # 构建 fields
+                fields = {}
+                for field_key, field_template in field_set_config.items():
+                    if isinstance(field_template, str) and '{value}' in field_template:
+                        fields[field_key] = value
+                    else:
+                        fields[field_key] = field_template
+
+                # 构建数据点
+                point = self._build_point(
+                    measurement=measurement,
+                    fields=fields,
+                    tags=tags,
+                    timestamp=current_time
+                )
+                points.append(point)
+
+        # 处理优化控制数据
+        elif 'optimization_data' in data:
+            optimization_data = data['optimization_data']
+            is_auto_execute = data.get('is_auto_execute', False)
+
+            measurement_template = config.get('measurement_template', '{uid}')
+            tag_set_config = config.get('tag_set', {})
+            field_set_config = config.get('field_set', {})
+
+            for uid, value in optimization_data.items():
+                # 构建 measurement
+                measurement = measurement_template.format(uid=uid)
+
+                # 构建 tags
+                tags = {}
+                for tag_key, tag_template in tag_set_config.items():
+                    if isinstance(tag_template, str):
+                        tags[tag_key] = tag_template.format(
+                            uid=uid,
+                            is_auto_execute=is_auto_execute,
+                            value=value
+                        )
+                    else:
+                        tags[tag_key] = str(tag_template)
+
+                # 构建 fields
+                fields = {}
+                for field_key, field_template in field_set_config.items():
+                    if isinstance(field_template, str) and '{value}' in field_template:
+                        fields[field_key] = value
+                    else:
+                        fields[field_key] = field_template
+
+                # 构建数据点
+                point = self._build_point(
+                    measurement=measurement,
+                    fields=fields,
+                    tags=tags,
+                    timestamp=current_time
+                )
+                points.append(point)
+
+        return points
+
+    def _build_unified_points(self, config: Dict, data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        构建统一存储格式的数据点（内部方法）
+
+        参数:
+            config: 写入配置
+            data: 要写入的数据
+
+        返回:
+            List[Dict[str, Any]]: 数据点列表
+        """
+        points = []
+
+        # 获取当前时间戳
+        from datetime import timezone
+        current_time = datetime.now(timezone.utc)
+
+        # 处理预测数据
+        if 'prediction_data' in data:
+            prediction_data = data['prediction_data']
+            horizon = data.get('horizon', '15mins')
+
+            measurement_name = config.get('measurement_name', 'ai_prediction_results')
+            tag_set_config = config.get('tag_set', {})
+            field_set_config = config.get('field_set', {})
+
+            for uid, json_content in prediction_data.items():
+                # 构建 tags
+                tags = {}
+                for tag_key, tag_template in tag_set_config.items():
+                    if isinstance(tag_template, str):
+                        tags[tag_key] = tag_template.format(
+                            uid=uid,
+                            horizon=horizon,
+                            json_content=json_content
+                        )
+                    else:
+                        tags[tag_key] = str(tag_template)
+
+                # 构建 fields
+                fields = {}
+                for field_key, field_template in field_set_config.items():
+                    if isinstance(field_template, str) and '{json_content}' in field_template:
+                        fields[field_key] = json_content
+                    else:
+                        fields[field_key] = field_template
+
+                # 构建数据点
+                point = self._build_point(
+                    measurement=measurement_name,
+                    fields=fields,
+                    tags=tags,
+                    timestamp=current_time
+                )
+                points.append(point)
+
+        # 处理优化控制数据
+        elif 'optimization_data' in data:
+            optimization_data = data['optimization_data']
+            is_auto_execute = data.get('is_auto_execute', False)
+
+            measurement_name = config.get('measurement_name', 'ai_optimization_commands')
+            tag_set_config = config.get('tag_set', {})
+            field_set_config = config.get('field_set', {})
+
+            for uid, json_content in optimization_data.items():
+                # 构建 tags
+                tags = {}
+                for tag_key, tag_template in tag_set_config.items():
+                    if isinstance(tag_template, str):
+                        tags[tag_key] = tag_template.format(
+                            uid=uid,
+                            is_auto_execute=is_auto_execute,
+                            json_content=json_content
+                        )
+                    else:
+                        tags[tag_key] = str(tag_template)
+
+                # 构建 fields
+                fields = {}
+                for field_key, field_template in field_set_config.items():
+                    if isinstance(field_template, str) and '{json_content}' in field_template:
+                        fields[field_key] = json_content
+                    else:
+                        fields[field_key] = field_template
+
+                # 构建数据点
+                point = self._build_point(
+                    measurement=measurement_name,
+                    fields=fields,
+                    tags=tags,
+                    timestamp=current_time
+                )
+                points.append(point)
 
         return points
 

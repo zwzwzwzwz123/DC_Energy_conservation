@@ -28,6 +28,11 @@ read:
     # true: 包含不可用设备/机房的数据（用于诊断）, false: 只包含可用设备/机房的数据
     include_unavailable: false
 
+    # Tag Set 过滤配置（可选）
+    # 当配置了 tag_filters 时，在查询中添加相应的 WHERE 条件
+    # 格式: tag_key: tag_value 或 tag_key: [value1, value2] (多值匹配)
+    tag_filters: {}
+
   # ==================== dc_status_data_client 客户端的读取配置 ====================
   # 用于从 iot_origin_database 读取数据中心状态数据
   dc_status_data_client:
@@ -131,81 +136,131 @@ read:
         duration: 6
         unit: "h"
 
+    # 配置项 3: 读取特定时间范围的预测数据（带 Tag 过滤）
+    filtered_predictions:
+      read_method: "read_all_observable_data"
+
+      # Tag Set 过滤配置
+      tag_filters:
+        horizon: "15mins"  # 只读取 15 分钟预测数据
+
+      mode: "time_range"
+      time_range:
+        duration: 2
+        unit: "h"
+
+    # 配置项 4: 读取多个 horizon 的预测数据
+    multi_horizon_predictions:
+      read_method: "read_specific_uids"
+      specific_uids: [ "ai_prediction_results" ]
+
+      # 多值 Tag 过滤
+      tag_filters:
+        horizon: ["15mins", "1h", "6h"]  # 读取多个时间范围的预测
+
+      mode: "last_n_points"
+      last_n_points:
+        count: 200
+
 
 # ==================== 写入配置 ====================
 write:
-  # 预测数据写入配置
-  # 注意：数据库名称从客户端配置（utils_config.yaml）中获取，不在此处配置
-  prediction_data_client:
+  # 全局默认配置（所有客户端共享）
+  default:
     enabled: true
-
-    # 写入策略
-    batch_size: 100  # 批量写入大小
-    retry_times: 3   # 写入失败重试次数
-    retry_interval: 2  # 重试间隔(秒)
-
-    # 数据保留策略(可选)
-    retention_policy: "autogen"  # InfluxDB retention policy
-
-    # 写入的数据类型说明
-    data_types:
-      # 温度预测
-      - data_type: "temperature_prediction"
-        enabled: true
-        description: "机房温度预测数据"
-        # measurement 命名规则: {room_uid}_temp_pred_{horizon}
-        # 例如: CR_A1_temp_pred_1h, CR_A1_temp_pred_6h
-
-      # 能耗预测
-      - data_type: "energy_prediction"
-        enabled: true
-        description: "机房能耗预测数据"
-        # measurement 命名规则: {room_uid}_energy_pred_{horizon}
-
-      # PUE预测
-      - data_type: "pue_prediction"
-        enabled: true
-        description: "数据中心PUE预测数据"
-        # measurement 命名规则: dc_pue_pred_{horizon}
-
-  # 优化控制指令写入配置
-  # 注意：数据库名称从客户端配置（utils_config.yaml）中获取，不在此处配置
-  optimization_data_client:
-    enabled: true
-
-    batch_size: 50
+    batch_size: 100
     retry_times: 3
-    retry_interval: 2
+    retry_interval: 3
     retention_policy: "autogen"
 
-    # 控制指令类型说明
-    control_types:
-      # 空调控制指令
-      - control_type: "ac_control"
-        enabled: true
-        description: "空调控制指令"
-        # measurement 命名规则: 使用设备的控制属性 uid
-        # 例如: ac_a1_001_on_setpoint, ac_a1_001_supply_temp_setpoint
+  # ==================== prediction_data_client 客户端的写入配置 ====================
+  # 用于向 iot_origin_prediction 写入预测数据
+  prediction_data_client:
+    # 客户端级别的默认配置（可选，覆盖全局 default）
+    default:
+      enabled: true
+      batch_size: 100
+      retry_times: 3
+      retry_interval: 2
 
-      # 压缩机控制指令
-      - control_type: "compressor_control"
-        enabled: true
-        description: "压缩机控制指令"
+    # 配置项 1: 按测点分离存储预测数据
+    prediction_by_uid:
+      # 写入模式：separate_by_uid（按测点分离） 或 unified_format（统一格式）
+      write_mode: "separate_by_uid"
 
-      # 冷水机组控制指令
-      - control_type: "chiller_control"
-        enabled: true
-        description: "冷水机组控制指令"
+      # 数据点构建配置
+      measurement_template: "{uid}"  # 使用测点uid作为measurement
+      tag_set:
+        horizon: "{horizon}"  # 预测时间范围作为tag
+      field_set:
+        value: "{value}"  # 预测数值作为field
 
-      # 水泵控制指令
-      - control_type: "pump_control"
-        enabled: true
-        description: "水泵控制指令"
+      # 覆盖默认配置
+      batch_size: 50
 
-      # 冷却塔控制指令
-      - control_type: "cooling_tower_control"
-        enabled: true
-        description: "冷却塔控制指令"
+    # 配置项 2: 统一格式存储预测数据
+    prediction_unified:
+      write_mode: "unified_format"
+
+      # 数据点构建配置
+      measurement_name: "ai_prediction_results"  # 固定measurement名称
+      tag_set:
+        horizon: "{horizon}"
+        uid: "{uid}"
+      field_set:
+        content: "{json_content}"  # JSON格式内容
+
+    # 配置项 3: 温度预测专用配置
+    temperature_prediction:
+      write_mode: "separate_by_uid"
+      measurement_template: "{uid}"
+      tag_set:
+        horizon: "{horizon}"
+        data_type: "temperature_prediction"
+      field_set:
+        value: "{value}"
+
+  # ==================== optimization_data_client 客户端的写入配置 ====================
+  # 用于向 iot_origin_optimization 写入优化控制指令
+  optimization_data_client:
+    # 客户端级别的默认配置
+    default:
+      enabled: true
+      batch_size: 50
+      retry_times: 3
+      retry_interval: 2
+
+    # 配置项 1: 按测点分离存储优化指令
+    optimization_by_uid:
+      write_mode: "separate_by_uid"
+
+      # 数据点构建配置
+      measurement_template: "{uid}"  # 使用测点uid作为measurement
+      tag_set:
+        is_auto_execute: "{is_auto_execute}"  # 是否自动执行
+      field_set:
+        value: "{value}"  # 控制数值
+
+    # 配置项 2: 统一格式存储优化指令
+    optimization_unified:
+      write_mode: "unified_format"
+
+      # 数据点构建配置
+      measurement_name: "ai_optimization_commands"  # 固定measurement名称
+      tag_set:
+        is_auto_execute: "{is_auto_execute}"
+        uid: "{uid}"
+      field_set:
+        content: "{json_content}"  # JSON格式内容
+
+    # 配置项 3: 空调控制专用配置
+    ac_control_commands:
+      write_mode: "separate_by_uid"
+      measurement_template: "{uid}"
+      tag_set:
+        is_auto_execute: "{is_auto_execute}"
+      field_set:
+        value: "{value}"
 
 # ==================== 查询优化配置 ====================
 query_optimization:
