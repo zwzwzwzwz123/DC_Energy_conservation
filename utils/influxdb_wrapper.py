@@ -171,6 +171,15 @@ class InfluxDBClientWrapper:
                 # 重连失败
                 raise Exception(f"[{self.client_name}] 写入失败且重连失败: {e}")
 
+    def get_database_name(self) -> str:
+        """
+        获取数据库名称
+
+        返回:
+            str: 数据库名称
+        """
+        return self.client_config.get('database', '')
+
     def close(self) -> None:
         """关闭 InfluxDB 连接"""
         if self.client:

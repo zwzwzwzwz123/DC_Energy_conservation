@@ -167,21 +167,18 @@ read:
 write:
   # 全局默认配置（所有客户端共享）
   default:
-    enabled: true
     batch_size: 100
     retry_times: 3
     retry_interval: 3
-    retention_policy: "autogen"
 
   # ==================== prediction_data_client 客户端的写入配置 ====================
   # 用于向 iot_origin_prediction 写入预测数据
   prediction_data_client:
     # 客户端级别的默认配置（可选，覆盖全局 default）
     default:
-      enabled: true
       batch_size: 100
       retry_times: 3
-      retry_interval: 2
+      retry_interval: 3
 
     # 配置项 1: 按测点分离存储预测数据
     prediction_by_uid:
@@ -210,22 +207,13 @@ write:
       field_set:
         content: "{json_content}"  # JSON格式内容
 
-    # 配置项 3: 温度预测专用配置
-    temperature_prediction:
-      write_mode: "separate_by_uid"
-      measurement_template: "{uid}"
-      tag_set:
-        horizon: "{horizon}"
-        data_type: "temperature_prediction"
-      field_set:
-        value: "{value}"
+
 
   # ==================== optimization_data_client 客户端的写入配置 ====================
   # 用于向 iot_origin_optimization 写入优化控制指令
   optimization_data_client:
     # 客户端级别的默认配置
     default:
-      enabled: true
       batch_size: 50
       retry_times: 3
       retry_interval: 2
@@ -253,14 +241,7 @@ write:
       field_set:
         content: "{json_content}"  # JSON格式内容
 
-    # 配置项 3: 空调控制专用配置
-    ac_control_commands:
-      write_mode: "separate_by_uid"
-      measurement_template: "{uid}"
-      tag_set:
-        is_auto_execute: "{is_auto_execute}"
-      field_set:
-        value: "{value}"
+
 
 # ==================== 查询优化配置 ====================
 query_optimization:
