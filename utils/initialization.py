@@ -12,20 +12,21 @@ from pathlib import Path
 from typing import Dict, Tuple
 
 
-def load_configs() -> Tuple[Dict, Dict, Dict, Dict, Dict, Dict]:
+def load_configs() -> Tuple[Dict, Dict, Dict, Dict, Dict, Dict, Dict]:
     """
     加载所有配置文件
 
     返回:
-        Tuple[Dict, Dict, Dict, Dict, Dict, Dict]:
-            (main_config, models_config, modules_config, utils_config,
-             security_boundary_config, uid_config)
+        Tuple[Dict, Dict, Dict, Dict, Dict, Dict, Dict]:
+            (main_config, models_config, modules_config, security_boundary_config,
+             uid_config, utils_config, influxdb_read_write_config)
             - main_config: main.py 配置（从 main_config.yaml 加载）
             - models_config: 模型配置（从 models_config.yaml 加载）
             - modules_config: 模块配置（从 modules_config.yaml 加载）
             - security_boundary_config: 安全边界配置（从 security_boundary_config.yaml 加载）
             - uid_config: UID 配置（从 uid_config.yaml 加载）
             - utils_config: 工具配置，包含 InfluxDB 和日志配置（从 utils_config.yaml 加载）
+            - influxdb_read_write_config: InfluxDB 读写配置（从 influxdb_read_write_config.yaml 加载）
 
     异常:
         FileNotFoundError: 配置文件未找到
@@ -61,7 +62,11 @@ def load_configs() -> Tuple[Dict, Dict, Dict, Dict, Dict, Dict]:
         with open(config_dir / "utils_config.yaml", "r", encoding="utf-8") as f:
             utils_config = yaml.safe_load(f) or {}
 
-        return main_config, models_config, modules_config, security_boundary_config, uid_config, utils_config
+        # 加载 influxdb_read_write_config.yaml（InfluxDB 读写配置）
+        with open(config_dir / "influxdb_read_write_config.yaml", "r", encoding="utf-8") as f:
+            influxdb_read_write_config = yaml.safe_load(f) or {}
+
+        return main_config, models_config, modules_config, security_boundary_config, uid_config, utils_config, influxdb_read_write_config
 
     except FileNotFoundError as e:
         raise FileNotFoundError(f"配置文件未找到: {e}")
@@ -104,7 +109,8 @@ def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
                 "influxdb": influxdb_wrapper.py 日志器,
                 "prediction_training": 预测训练线程日志器,
                 "prediction_inference": 预测推理线程日志器,
-                "optimization": 优化线程日志器
+                "optimization": 优化线程日志器,
+                "architecture_parser": 架构解析器日志器
             }
 
     使用示例:
@@ -122,7 +128,12 @@ def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
     try:
         # 获取默认配置
         default_config = log_config.get("default", {})
-        log_dir = "../logs"
+
+        # 获取日志位置并创建目录
+        project_root = Path(__file__).parent.parent
+        log_path = project_root / "logs"
+        log_path.mkdir(parents=True, exist_ok=True)
+
         default_console_output = default_config.get("console_output", True)
         default_rotation_when = default_config.get("rotation_when", "midnight")
         default_rotation_interval = default_config.get("rotation_interval", 1)
@@ -131,10 +142,6 @@ def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
         # 获取各日志器的独立配置
         loggers_config = log_config.get("loggers", {})
 
-        # 创建日志目录
-        log_path = Path(log_dir)
-        log_path.mkdir(parents=True, exist_ok=True)
-
         # 定义日志器配置：{简化名称: (完整logger名称, 日志文件名)}
         logger_configs = {
             "total": ("log_total", "total_log.log"),
@@ -142,7 +149,8 @@ def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
             "influxdb": ("log_total.influxdb", "influxdb_log.log"),
             "prediction_training": ("log_total.prediction_training", "prediction_training_log.log"),
             "prediction_inference": ("log_total.prediction_inference", "prediction_inference_log.log"),
-            "optimization": ("log_total.optimization", "optimization_log.log")
+            "optimization": ("log_total.optimization", "optimization_log.log"),
+            "architecture_parser": ("log_total.architecture_parser", "architecture_parser_log.log")
         }
 
         # 日志格式：包含时间、logger名称、级别、消息

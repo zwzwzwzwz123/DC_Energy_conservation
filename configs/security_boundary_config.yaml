@@ -1,19 +1,127 @@
-#----------------需要修改为真实环境配置--------------------
-
-# 空调可设置参数
-minimum_air_conditioner_setting_temperature: 16
-maximum_air_conditioner_setting_temperature: 30
-minimum_air_conditioner_setting_humidity: 30
-maximum_air_conditioner_setting_humidity: 70
-minimum_number_of_on_cooling_model: 0
-maximum_number_of_on_cooling_model: 8
+# ==================== 仅供示例！！！后期需要全部修改 ====================
 
 
-# 空调不可设置参数
-maximum_safe_indoor_temperature: 28.0    # 室内温度安全上限（℃）
-minimum_safe_indoor_temperature: 0.0    # 室内温度安全下限（℃）
-maximum_safe_indoor_humidity: 70.0       # 室内湿度安全上限（%）
-minimum_safe_indoor_humidity: 30.0       # 室内湿度安全下限（%）
-# maximum_energy_consumption: 10000
-temperature_safety_tolerance: 1        # 温度安全容差（℃）
-humidity_safety_tolerance: 5.0           # 湿度安全容差（%）
+# 安全边界配置文件
+# 本配置文件定义了控制范围、约束条件和安全限制
+
+# ==================== 控制范围限制 ====================
+control_limits:
+  # 温度控制范围
+  temperature:
+    min: 18.0              # 最低温度（℃）
+    max: 28.0              # 最高温度（℃）
+    optimal_range:
+      min: 22.0            # 最优温度下限（℃）
+      max: 26.0            # 最优温度上限（℃）
+    unit: "℃"
+
+  # 湿度控制范围
+  humidity:
+    min: 30.0              # 最低湿度（%）
+    max: 70.0              # 最高湿度（%）
+    optimal_range:
+      min: 40.0            # 最优湿度下限（%）
+      max: 60.0            # 最优湿度上限（%）
+    unit: "%"
+
+  # 压缩机频率控制范围
+  compressor_frequency:
+    min: 30.0              # 最低频率（Hz）
+    max: 50.0              # 最高频率（Hz）
+    unit: "Hz"
+
+  # 水泵频率控制范围
+  pump_frequency:
+    min: 25.0              # 最低频率（Hz）
+    max: 50.0              # 最高频率（Hz）
+    unit: "Hz"
+
+# ==================== 控制速率限制 ====================
+rate_limits:
+  # 温度变化速率限制
+  temperature_change_rate:
+    max_per_minute: 2.0    # 每分钟最大变化量（℃/min）
+    max_per_hour: 10.0     # 每小时最大变化量（℃/h）
+
+  # 频率变化速率限制
+  frequency_change_rate:
+    max_per_minute: 5.0    # 每分钟最大变化量（Hz/min）
+    max_per_second: 1.0    # 每秒最大变化量（Hz/s）
+
+  # 控制指令发送频率限制
+  command_rate:
+    min_interval: 60       # 最小发送间隔（秒）
+    max_commands_per_hour: 60  # 每小时最大指令数
+
+# ==================== 设备运行约束 ====================
+equipment_constraints:
+  # 压缩机运行约束
+  compressor:
+    min_on_time: 300       # 最小开机时间（秒）
+    min_off_time: 180      # 最小关机时间（秒）
+    max_starts_per_hour: 6 # 每小时最大启动次数
+
+  # 水泵运行约束
+  pump:
+    min_on_time: 180       # 最小开机时间（秒）
+    min_off_time: 120      # 最小关机时间（秒）
+    max_starts_per_hour: 10  # 每小时最大启动次数
+
+  # 冷却塔运行约束
+  cooling_tower:
+    min_on_time: 300       # 最小开机时间（秒）
+    min_off_time: 180      # 最小关机时间（秒）
+
+# ==================== 紧急停止条件 ====================
+emergency_stop:
+  enabled: true            # 是否启用紧急停止
+
+  # 紧急停止触发条件
+  conditions:
+    # 温度异常
+    - condition: "temperature > 35"
+      action: "stop_all_cooling"
+      description: "温度过高，停止所有制冷设备"
+
+    - condition: "temperature < 15"
+      action: "stop_all_cooling"
+      description: "温度过低，停止所有制冷设备"
+
+    # 湿度异常
+    - condition: "humidity > 85"
+      action: "alert_and_reduce_cooling"
+      description: "湿度过高，发出警报并降低制冷"
+
+    - condition: "humidity < 20"
+      action: "alert_and_increase_humidification"
+      description: "湿度过低，发出警报并增加加湿"
+
+    # 功率异常
+    - condition: "power > max_power_limit"
+      action: "reduce_load"
+      description: "功率超限，降低负载"
+
+  # 紧急停止后的恢复策略
+  recovery:
+    auto_recovery: false   # 是否自动恢复
+    manual_approval_required: true  # 是否需要人工批准
+    cooldown_period: 600   # 冷却期（秒）
+
+# ==================== 安全裕度配置 ====================
+safety_margins:
+  # 控制裕度（避免触及边界）
+  control_margin: 0.1      # 10%的安全裕度
+
+  # 预测裕度（考虑预测不确定性）
+  prediction_margin: 0.15  # 15%的预测裕度
+
+  # 设备裕度（避免设备过载）
+  equipment_margin: 0.2    # 20%的设备裕度
+
+# ==================== 优先级配置 ====================
+priority:
+  # 控制目标优先级（1-10，10最高）
+  safety: 10               # 安全优先级
+  comfort: 7               # 舒适度优先级
+  energy_efficiency: 5     # 能效优先级
+  equipment_protection: 8  # 设备保护优先级
