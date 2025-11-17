@@ -89,15 +89,6 @@ read:
         duration: 24
         unit: "h"
 
-    # 配置项 5: 诊断模式（包含不可用设备）
-    diagnostic_all_data:
-      read_method: "read_all_observable_data"
-      include_unavailable: true  # 包含不可用设备的数据，用于诊断
-
-      mode: "time_range"
-      time_range:
-        duration: 1
-        unit: "h"
 
   # ==================== prediction_data_client 客户端的读取配置 ====================
   # 用于从 iot_origin_prediction 读取预测数据
@@ -204,6 +195,19 @@ write:
       tag_set:
         horizon: "{horizon}"
         uid: "{uid}"
+      field_set:
+        content: "{json_content}"  # JSON格式内容
+
+    # 配置项 3: 统一格式存储预测数据——格式2
+    prediction_unified_2:
+      write_mode: "unified_format"
+
+      # 数据点构建配置
+      measurement_name: "ai_prediction_results"  # 固定measurement名称
+      tag_set:
+        horizon: "{horizon}"
+        uid: "{uid}"
+        data_type: "{data_type}"  # 数据类型（用于演示tag_set是可以直接在config文件中增加的）
       field_set:
         content: "{json_content}"  # JSON格式内容
 

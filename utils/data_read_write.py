@@ -714,7 +714,7 @@ class DataCenterDataReader:
             df = df.rename(columns={'time': 'timestamp'})
 
             # 转换时间戳为 datetime
-            df['timestamp'] = pd.to_datetime(df['timestamp'])
+            df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
 
             # 只保留 timestamp 和 value 列
             df = df[['timestamp', 'value']]
