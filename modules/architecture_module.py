@@ -387,12 +387,12 @@ class CoolingSystem:
         """
         return self.devices.get(device_type, [])
 
-    def get_all_devices(self, include_unavailable: bool = True) -> List[Device]:
+    def get_all_devices(self, include_unavailable: bool = False) -> List[Device]:
         """
         获取系统内所有设备
 
         参数:
-            include_unavailable: 是否包含不可用的设备，默认 True
+            include_unavailable: 是否包含不可用的设备，默认 False
 
         返回:
             List[Device]: 设备列表（根据参数过滤）

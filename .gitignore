@@ -3,3 +3,4 @@ logs/*
 DC_Energy_conservation/*test*
 augment_test
 .idea
+__pycache__

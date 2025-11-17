@@ -128,7 +128,12 @@ def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
     try:
         # 获取默认配置
         default_config = log_config.get("default", {})
-        log_dir = "../logs"
+
+        # 获取日志位置并创建目录
+        project_root = Path(__file__).parent.parent
+        log_path = project_root / "logs"
+        log_path.mkdir(parents=True, exist_ok=True)
+
         default_console_output = default_config.get("console_output", True)
         default_rotation_when = default_config.get("rotation_when", "midnight")
         default_rotation_interval = default_config.get("rotation_interval", 1)
@@ -136,10 +141,6 @@ def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
 
         # 获取各日志器的独立配置
         loggers_config = log_config.get("loggers", {})
-
-        # 创建日志目录
-        log_path = Path(log_dir)
-        log_path.mkdir(parents=True, exist_ok=True)
 
         # 定义日志器配置：{简化名称: (完整logger名称, 日志文件名)}
         logger_configs = {
