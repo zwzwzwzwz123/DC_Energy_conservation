@@ -92,11 +92,11 @@ def prediction_training_thread(ctx: AppContext):
             try:
                 # 使用配置驱动方式读取所有可观测数据
                 # 客户端键 "dc_status_data_client" 和配置键 "datacenter_latest_status" 定义在 influxdb_read_write_config.yaml 中
-                telemetry_data = ctx.data_reader.read_influxdb_data("dc_status_data_client", "datacenter_latest_status")
-                logger.info(f"成功读取 {len(telemetry_data)} 个可观测点的数据")
+                observable_data = ctx.data_reader.read_influxdb_data("dc_status_data_client", "datacenter_latest_status")
+                logger.info(f"成功读取 {len(observable_data)} 个可观测点的数据")
 
                 # 数据验证：检查是否有足够的数据
-                if not telemetry_data:
+                if not observable_data:
                     logger.warning("没有读取到任何数据，跳过本次训练")
                     # 继续下一次循环
                     if mode == "fixed_interval":
@@ -108,8 +108,8 @@ def prediction_training_thread(ctx: AppContext):
                     continue
 
                 # 检查数据质量（示例：检查是否有空的 DataFrame）
-                valid_data_count = sum(1 for df in telemetry_data.values() if not df.empty)
-                logger.info(f"有效数据点数量: {valid_data_count}/{len(telemetry_data)}")
+                valid_data_count = sum(1 for df in observable_data.values() if not df.empty)
+                logger.info(f"有效数据点数量: {valid_data_count}/{len(observable_data)}")
 
             except Exception as e:
                 logger.error(f"读取训练数据失败: {e}", exc_info=True)
@@ -120,9 +120,9 @@ def prediction_training_thread(ctx: AppContext):
 
             # ==================== 数据预处理阶段 ====================
             # TODO: 实现数据预处理逻辑
-            # 将 telemetry_data (Dict[str, pd.DataFrame]) 转换为训练所需的格式
+            # 将 observable_data (Dict[str, pd.DataFrame]) 转换为训练所需的格式
             # 示例：
-            #   training_features, training_labels = preprocess_data(telemetry_data)
+            #   training_features, training_labels = preprocess_data(observable_data)
             logger.info("数据预处理中...")
 
             # ==================== 模型训练阶段 ====================
@@ -209,11 +209,11 @@ def prediction_inference_thread(ctx: AppContext):
             try:
                 # 使用配置驱动方式读取所有可观测数据
                 # 客户端键 "dc_status_data_client" 和配置键 "datacenter_latest_status" 定义在 influxdb_read_write_config.yaml 中
-                telemetry_data = ctx.data_reader.read_influxdb_data("dc_status_data_client", "datacenter_latest_status")
-                logger.info(f"成功读取 {len(telemetry_data)} 个可观测点的数据")
+                observable_data = ctx.data_reader.read_influxdb_data("dc_status_data_client", "datacenter_latest_status")
+                logger.info(f"成功读取 {len(observable_data)} 个可观测点的数据")
 
                 # 数据验证
-                if not telemetry_data:
+                if not observable_data:
                     logger.warning("没有读取到任何数据，跳过本次推理")
                     if mode == "fixed_interval":
                         elapsed_time = time.time() - loop_start_time
@@ -367,11 +367,11 @@ def optimization_thread(ctx: AppContext):
             try:
                 # 使用配置驱动方式读取最新状态数据
                 # 客户端键 "dc_status_data_client" 和配置键 "datacenter_latest_status" 定义在 influxdb_read_write_config.yaml 中
-                telemetry_data = ctx.data_reader.read_influxdb_data("dc_status_data_client", "datacenter_latest_status")
-                logger.info(f"成功读取 {len(telemetry_data)} 个可观测点的数据")
+                observable_data = ctx.data_reader.read_influxdb_data("dc_status_data_client", "datacenter_latest_status")
+                logger.info(f"成功读取 {len(observable_data)} 个可观测点的数据")
 
                 # 数据验证
-                if not telemetry_data:
+                if not observable_data:
                     logger.warning("没有读取到任何状态数据，跳过本次优化")
                     if mode == "fixed_interval":
                         elapsed_time = time.time() - loop_start_time
