@@ -1,4 +1,7 @@
 .venv
 logs/*
 DC_Energy_conservation/*test*
-augment
+augment_test
+.idea
+__pycache__
+pth/*

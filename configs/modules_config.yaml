@@ -1,0 +1,68 @@
+# ==================== 仅供示例！！！后期需要全部修改 ====================
+
+
+# 模块配置文件
+# 本配置文件定义了各个模块的运行参数
+
+# ==================== 预测训练模块配置 ====================
+prediction_training:
+  # 数据预处理配置
+  data_preprocessing:
+    normalization: "minmax"  # 归一化方法: minmax, zscore, robust
+    window_size: 24          # 时间窗口大小（小时）
+    stride: 1                # 滑动窗口步长
+    fill_missing: "interpolate"  # 缺失值处理: interpolate, forward_fill, drop
+
+  # 特征工程配置
+  feature_engineering:
+    use_time_features: true  # 是否使用时间特征（小时、星期等）
+    use_lag_features: true   # 是否使用滞后特征
+    lag_steps: [1, 2, 3, 6, 12, 24]  # 滞后步数
+
+  # 验证配置
+  validation:
+    split_ratio: 0.2         # 验证集比例
+    shuffle: false           # 是否打乱数据（时序数据通常不打乱）
+
+  # 日志配置
+  logging:
+    log_interval: 10         # 每多少个epoch记录一次日志
+    save_metrics: true       # 是否保存训练指标
+
+# ==================== 预测推理模块配置 ====================
+prediction_inference:
+  # 推理配置
+  batch_processing: true     # 是否批量处理
+  batch_size: 64             # 批量大小
+
+  # 置信度配置
+  confidence_threshold: 0.8  # 置信度阈值
+  use_ensemble: false        # 是否使用集成模型
+
+  # 预测时间范围
+  prediction_horizons:
+    - "15mins"               # 15分钟预测
+    - "1h"                   # 1小时预测
+    - "4h"                   # 4小时预测
+    - "24h"                  # 24小时预测
+
+# ==================== 优化模块配置 ====================
+optimization:
+  # 优化时间范围
+  optimization_horizon: 3600  # 优化时间范围（秒）
+
+  # 约束检查
+  constraint_checking: true   # 是否启用约束检查
+  safety_margin: 0.1          # 安全裕度（10%）
+
+  # 目标函数权重
+  objective_weights:
+    energy_cost: 0.6          # 能耗成本权重
+    comfort: 0.3              # 舒适度权重
+    equipment_wear: 0.1       # 设备磨损权重
+
+  # 优化策略
+  strategy:
+    use_predictive_control: true  # 是否使用预测控制
+    rolling_horizon: true         # 是否使用滚动时域
+    update_interval: 600          # 更新间隔（秒）
