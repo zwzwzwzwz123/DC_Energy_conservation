@@ -84,6 +84,46 @@ class AppContext:
     data_writer: Any = None
 
 
+def validate_data_and_wait_on_error_retry(data, data_type, error_retry_wait, shutdown_event, logger):
+    """
+    验证数据有效性，如果数据无效则等待并返回控制标志
+
+    参数:
+        data: Dict[str, pd.DataFrame] - 要验证的数据字典
+        data_type: str - 数据类型描述（用于日志，如"状态数据"、"预测结果"）
+        error_retry_wait: int - 错误重试等待时间（秒）
+        shutdown_event: Event - 关闭事件
+        logger: Logger - 日志器
+
+    返回:
+        Tuple[bool, bool] - (should_continue, should_break)
+            - should_continue=True: 数据无效，调用者应该 continue
+            - should_break=True: 收到关闭信号，调用者应该 break
+            - (False, False): 数据有效，调用者应该继续执行
+    """
+    # 检查数据是否为空
+    if not data:
+        logger.warning(f"没有读取到任何{data_type}，跳过本次训练")
+        logger.info(f"等待 {error_retry_wait}秒后开始下一次训练")
+        if shutdown_event.wait(timeout=error_retry_wait):
+            return False, True  # should_break=True
+        return True, False  # should_continue=True
+
+    # 检查数据质量（检查是否有空的 DataFrame）
+    valid_data_count = sum(1 for df in data.values() if not df.empty)
+    logger.info(f"有效数据点数量: {valid_data_count}/{len(data)}")
+
+    if valid_data_count == 0:
+        logger.warning(f"读取到{data_type}，但所有{data_type}均无效 (例如均为空DataFrame)，跳过本次训练")
+        logger.info(f"等待 {error_retry_wait}秒后开始下一次训练")
+        if shutdown_event.wait(timeout=error_retry_wait):
+            return False, True  # should_break=True
+        return True, False  # should_continue=True
+
+    # 数据有效
+    return False, False
+
+
 def prediction_training_thread(ctx: AppContext):
     """
     预测训练线程 - 从 InfluxDB 读取数据中心状态并训练预测模型
@@ -115,23 +155,13 @@ def prediction_training_thread(ctx: AppContext):
                 observable_data = ctx.data_reader.read_influxdb_data("dc_status_data_client", "datacenter_latest_status")
                 logger.info(f"成功读取 {len(observable_data)} 个可观测点的数据")
 
-                # 数据验证：检查是否有足够的数据
-                if not observable_data:
-                    logger.warning("没有读取到任何状态数据，跳过本次训练")
-                    logger.info(f"等待 {error_retry_wait}秒后开始下一次训练")
-                    if ctx.shutdown_event.wait(timeout=error_retry_wait):
-                        break
-                    continue
-
-                # 检查数据质量（示例：检查是否有空的 DataFrame）
-                valid_data_count = sum(1 for df in observable_data.values() if not df.empty)
-                logger.info(f"有效数据点数量: {valid_data_count}/{len(observable_data)}")
-
-                if valid_data_count == 0:
-                    logger.warning("读取到状态数据，但所有状态数据均无效 (例如均为空DataFrame)，跳过本次训练")
-                    logger.info(f"等待 {error_retry_wait}秒后开始下一次训练")
-                    if ctx.shutdown_event.wait(timeout=error_retry_wait):
-                        break
+                # 数据验证
+                should_continue, should_break = validate_data_and_wait_on_error_retry(
+                    observable_data, "状态数据", error_retry_wait, ctx.shutdown_event, logger
+                )
+                if should_break:
+                    break
+                if should_continue:
                     continue
 
             except Exception as e:
@@ -236,21 +266,12 @@ def prediction_inference_thread(ctx: AppContext):
                 logger.info(f"成功读取 {len(observable_data)} 个可观测点的数据")
 
                 # 数据验证
-                if not observable_data:
-                    logger.warning("没有读取到任何状态数据，跳过本次推理")
-                    logger.info(f"等待 {error_retry_wait}秒后开始下一次训练")
-                    if ctx.shutdown_event.wait(timeout=error_retry_wait):
-                        break
-                    continue
-
-                valid_data_count = sum(1 for df in observable_data.values() if not df.empty)
-                logger.info(f"有效数据点数量: {valid_data_count}/{len(observable_data)}")
-
-                if valid_data_count == 0:
-                    logger.warning("读取到状态数据，但所有状态数据均无效 (例如均为空DataFrame)，跳过本次训练")
-                    logger.info(f"等待 {error_retry_wait}秒后开始下一次训练")
-                    if ctx.shutdown_event.wait(timeout=error_retry_wait):
-                        break
+                should_continue, should_break = validate_data_and_wait_on_error_retry(
+                    observable_data, "状态数据", error_retry_wait, ctx.shutdown_event, logger
+                )
+                if should_break:
+                    break
+                if should_continue:
                     continue
 
             except Exception as e:
@@ -376,21 +397,12 @@ def optimization_thread(ctx: AppContext):
                 logger.info(f"成功读取 {len(prediction_data)} 个预测点的数据")
 
                 # 数据验证
-                if not prediction_data:
-                    logger.warning("没有读取到任何预测结果，跳过本次优化")
-                    logger.info(f"等待 {error_retry_wait}秒后开始下一次训练")
-                    if ctx.shutdown_event.wait(timeout=error_retry_wait):
-                        break
-                    continue
-
-                valid_data_count_prediction = sum(1 for df in prediction_data.values() if not df.empty)
-                logger.info(f"有效数据点数量: {valid_data_count_prediction}/{len(prediction_data)}")
-
-                if valid_data_count_prediction == 0:
-                    logger.warning("读取到预测结果，但所有预测结果均无效 (例如均为空DataFrame)，跳过本次训练")
-                    logger.info(f"等待 {error_retry_wait}秒后开始下一次训练")
-                    if ctx.shutdown_event.wait(timeout=error_retry_wait):
-                        break
+                should_continue, should_break = validate_data_and_wait_on_error_retry(
+                    prediction_data, "预测结果", error_retry_wait, ctx.shutdown_event, logger
+                )
+                if should_break:
+                    break
+                if should_continue:
                     continue
 
             except Exception as e:
@@ -409,21 +421,12 @@ def optimization_thread(ctx: AppContext):
                 logger.info(f"成功读取 {len(observable_data)} 个可观测点的数据")
 
                 # 数据验证
-                if not observable_data:
-                    logger.warning("没有读取到任何状态数据，跳过本次优化")
-                    logger.info(f"等待 {error_retry_wait}秒后开始下一次训练")
-                    if ctx.shutdown_event.wait(timeout=error_retry_wait):
-                        break
-                    continue
-
-                valid_data_count_observable = sum(1 for df in observable_data.values() if not df.empty)
-                logger.info(f"有效数据点数量: {valid_data_count_observable}/{len(observable_data)}")
-
-                if valid_data_count_observable == 0:
-                    logger.warning("读取到状态数据，但所有状态数据均无效 (例如均为空DataFrame)，跳过本次训练")
-                    logger.info(f"等待 {error_retry_wait}秒后开始下一次训练")
-                    if ctx.shutdown_event.wait(timeout=error_retry_wait):
-                        break
+                should_continue, should_break = validate_data_and_wait_on_error_retry(
+                    observable_data, "状态数据", error_retry_wait, ctx.shutdown_event, logger
+                )
+                if should_break:
+                    break
+                if should_continue:
                     continue
 
             except Exception as e:
@@ -520,24 +523,27 @@ def optimization_thread(ctx: AppContext):
     logger.info("优化线程已退出")
 
 
-def main():
+def initialize_system():
     """
-    主函数 - 多线程架构
+    系统初始化函数 - 完成所有启动前的准备工作
+
+    返回:
+        AppContext: 包含所有初始化组件的应用上下文对象
+
+    异常:
+        如果初始化失败，会调用 sys.exit(1) 退出程序
     """
     print("=" * 60)
     print("数据中心节能项目启动中...")
     print("=" * 60)
 
     # 1. 加载配置文件
-    print("\n[1/6] 加载配置文件...")
+    print("\n[1/7] 加载配置文件...")
     main_config, models_config, modules_config, security_boundary_config, uid_config, utils_config, influxdb_read_write_config = load_configs()
     print("✓ 配置文件加载成功")
 
-    # 读取关闭超时配置
-    shutdown_timeout = main_config.get("shutdown", {}).get("timeout", 30)
-
     # 2. 初始化多层级日志系统
-    print("\n[2/6] 初始化多层级日志系统...")
+    print("\n[2/7] 初始化多层级日志系统...")
     try:
         loggers = init_multi_level_loggers(utils_config["logging"])
         print("✓ 多层级日志系统初始化成功")
@@ -556,7 +562,7 @@ def main():
         sys.exit(1)
 
     # 3. 初始化 InfluxDB 客户端
-    print("\n[3/6] 初始化 InfluxDB 客户端...")
+    print("\n[3/7] 初始化 InfluxDB 客户端...")
     try:
         # 传入 influxdb logger，使 InfluxDB 相关日志自动写入 influxdb_log.log 和 total_log.log
         dc_status_data_client, prediction_data_client, optimization_data_client = init_influxdb_clients(
@@ -578,7 +584,7 @@ def main():
         sys.exit(1)
 
     # 4. 加载数据中心配置
-    print("\n[4/6] 加载数据中心配置...")
+    print("\n[4/7] 加载数据中心配置...")
     try:
         datacenter = load_datacenter_from_config(uid_config, loggers["architecture_parser"])
 
@@ -605,7 +611,7 @@ def main():
         sys.exit(1)
 
     # 5. 创建数据读取器
-    print("\n[5/6] 创建数据读取器...")
+    print("\n[5/7] 创建数据读取器...")
     try:
         # 构建客户端字典
         reader_clients = {
@@ -687,7 +693,20 @@ def main():
     print("=" * 60)
     ctx.loggers["main"].info("系统初始化完成，准备启动多线程")
 
-    # 8. 使用 ThreadPoolExecutor 管理线程
+    return ctx
+
+
+def main():
+    """
+    主函数 - 多线程架构
+    """
+    # 1. 初始化系统
+    ctx = initialize_system()
+
+    # 读取关闭超时配置
+    shutdown_timeout = ctx.main_config.get("shutdown", {}).get("timeout", 30)
+
+    # 2. 使用 ThreadPoolExecutor 管理线程
     executor = None
     future_prediction_training = None
     future_prediction_inference = None
@@ -707,21 +726,21 @@ def main():
         print("\n主程序运行中... (按 Ctrl+C 退出)")
 
         # 保持主线程存活，等待中断信号
-        while True:
-            time.sleep(3600)
+        # 使用 shutdown_event.wait() 代替 while True: time.sleep(3600)
+        ctx.shutdown_event.wait()
 
     except KeyboardInterrupt:
         ctx.loggers["main"].info("接收到中断信号，开始关闭系统...")
         print("\n接收到退出信号，正在关闭系统...")
 
         # 设置关闭事件，通知所有线程退出
-        shutdown_event.set()
+        ctx.shutdown_event.set()
         ctx.loggers["main"].info("已发送关闭信号到所有工作线程")
 
     except Exception as e:
         ctx.loggers["main"].error(f"程序运行出错: {e}", exc_info=True)
         print(f"\n程序运行出错: {e}")
-        shutdown_event.set()  # 确保线程能够退出
+        ctx.shutdown_event.set()  # 确保线程能够退出
 
     # 9. 清理资源，退出系统
     finally:
