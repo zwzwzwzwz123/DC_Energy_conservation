@@ -34,8 +34,17 @@ class AppContext:
         prediction_data_client: 预测数据客户端（读写预测结果）
         optimization_data_client: 优化数据客户端（写入优化控制指令）
         shutdown_event: 关闭事件，用于优雅关闭线程
-        main_config: 主配置字典，从 main_config.yaml 加载
-        uid_config: UID 配置字典，从 uid_config.yaml 加载
+
+        # ========== 配置文件（全局只读） ==========
+        main_config: 主配置字典，从 main_config.yaml 加载（线程参数、关闭超时等）
+        uid_config: UID 配置字典，从 uid_config.yaml 加载（数据中心架构和UID映射）
+        models_config: 模型配置字典，从 models_config.yaml 加载（预测模型、优化模型参数）
+        modules_config: 模块配置字典，从 modules_config.yaml 加载（各模块的运行参数）
+        security_boundary_config: 安全边界配置字典，从 security_boundary_config.yaml 加载（控制范围、约束条件）
+        utils_config: 工具配置字典，从 utils_config.yaml 加载（日志、InfluxDB连接配置）
+        influxdb_read_write_config: InfluxDB读写配置字典，从 influxdb_read_write_config.yaml 加载（数据读写策略）
+
+        # ========== 运行时状态 ==========
         critical_operation_lock: 保护关键操作计数器的锁
         critical_operation_count: 当前正在执行的关键操作数量
         datacenter: 数据中心对象（包含完整的层次结构）
@@ -47,16 +56,27 @@ class AppContext:
         - InfluxDBClientWrapper 的操作也是线程安全的（底层使用 requests 库）
         - shutdown_event 用于通知所有线程优雅退出
         - critical_operation_lock 和 critical_operation_count 用于保护关键操作（数据库写入、模型保存）
+        - 所有配置文件在程序启动时加载，运行期间只读，天然线程安全
         - datacenter, data_reader, data_writer 是数据中心架构组件
         - data_reader 和 data_writer 现在支持多客户端架构，可以灵活选择不同的数据库进行读写
     """
+    # 日志和客户端
     loggers: Dict[str, logging.Logger]
     dc_status_data_client: InfluxDBClientWrapper
     prediction_data_client: InfluxDBClientWrapper
     optimization_data_client: InfluxDBClientWrapper
     shutdown_event: Event
+
+    # ========== 所有配置文件（全局只读） ==========
     main_config: Dict
     uid_config: Dict
+    models_config: Dict
+    modules_config: Dict
+    security_boundary_config: Dict
+    utils_config: Dict
+    influxdb_read_write_config: Dict
+
+    # ========== 运行时状态 ==========
     critical_operation_lock: Lock = field(default_factory=Lock)
     critical_operation_count: int = 0
     datacenter: DataCenter = None
@@ -92,7 +112,8 @@ def prediction_training_thread(ctx: AppContext):
             try:
                 # 使用配置驱动方式读取所有可观测数据
                 # 客户端键 "dc_status_data_client" 和配置键 "datacenter_latest_status" 定义在 influxdb_read_write_config.yaml 中
-                observable_data = ctx.data_reader.read_influxdb_data("dc_status_data_client", "datacenter_latest_status")
+                observable_data = ctx.data_reader.read_influxdb_data("dc_status_data_client",
+                                                                     "datacenter_latest_status")
                 logger.info(f"成功读取 {len(observable_data)} 个可观测点的数据")
 
                 # 数据验证：检查是否有足够的数据
@@ -209,7 +230,8 @@ def prediction_inference_thread(ctx: AppContext):
             try:
                 # 使用配置驱动方式读取所有可观测数据
                 # 客户端键 "dc_status_data_client" 和配置键 "datacenter_latest_status" 定义在 influxdb_read_write_config.yaml 中
-                observable_data = ctx.data_reader.read_influxdb_data("dc_status_data_client", "datacenter_latest_status")
+                observable_data = ctx.data_reader.read_influxdb_data("dc_status_data_client",
+                                                                     "datacenter_latest_status")
                 logger.info(f"成功读取 {len(observable_data)} 个可观测点的数据")
 
                 # 数据验证
@@ -246,18 +268,6 @@ def prediction_inference_thread(ctx: AppContext):
             #           break
             #       # 执行推理步骤...
             logger.info("执行预测推理...")
-
-            # 模拟预测结果（实际应用中应该是模型推理的输出）
-            # TODO: 替换为真实的预测结果
-            from datetime import datetime
-            prediction_results = {
-                'room_uid': 'CR_A1',
-                'horizon': '1h',
-                'predictions': [
-                    {'timestamp': datetime.now(), 'value': 25.5},
-                    # ... 更多预测点
-                ]
-            }
 
             # ==================== 预测结果写入阶段 ====================
             logger.info("开始写入预测结果...")
@@ -367,7 +377,8 @@ def optimization_thread(ctx: AppContext):
             try:
                 # 使用配置驱动方式读取最新状态数据
                 # 客户端键 "dc_status_data_client" 和配置键 "datacenter_latest_status" 定义在 influxdb_read_write_config.yaml 中
-                observable_data = ctx.data_reader.read_influxdb_data("dc_status_data_client", "datacenter_latest_status")
+                observable_data = ctx.data_reader.read_influxdb_data("dc_status_data_client",
+                                                                     "datacenter_latest_status")
                 logger.info(f"成功读取 {len(observable_data)} 个可观测点的数据")
 
                 # 数据验证
@@ -400,26 +411,6 @@ def optimization_thread(ctx: AppContext):
             #       # 执行优化步骤...
             #       # 与环境交互...
             logger.info("执行优化算法...")
-
-            # 模拟生成控制指令（实际应用中应该是优化算法的输出）
-            # TODO: 替换为真实的优化结果
-            from datetime import datetime
-            control_commands = {
-                'device_uid': 'AC_A1_001',
-                'commands': [
-                    {
-                        'control_uid': 'ac_a1_001_on_setpoint',
-                        'value': 24.0,
-                        'timestamp': datetime.now()
-                    },
-                    {
-                        'control_uid': 'ac_a1_001_supply_temp_setpoint',
-                        'value': 18.0,
-                        'timestamp': datetime.now()
-                    },
-                    # ... 更多控制指令
-                ]
-            }
 
             # ==================== 控制指令写入阶段 ====================
             logger.info("开始写入控制指令...")
@@ -611,13 +602,21 @@ def main():
             prediction_data_client=prediction_data_client,
             optimization_data_client=optimization_data_client,
             shutdown_event=shutdown_event,
+
+            # ========== 所有配置文件 ==========
             main_config=main_config,
             uid_config=uid_config,
+            models_config=models_config,
+            modules_config=modules_config,
+            security_boundary_config=security_boundary_config,
+            utils_config=utils_config,
+            influxdb_read_write_config=influxdb_read_write_config,
+
             datacenter=datacenter,
             data_reader=data_reader
             # 注意：此时 data_writer 还是 None，将在下一步创建并赋值
         )
-        loggers["main"].info("应用上下文创建成功（初始版本）")
+        loggers["main"].info("应用上下文创建成功")
         print("✓ 应用上下文创建成功")
     except Exception as e:
         loggers["main"].error(f"应用上下文创建失败: {e}", exc_info=True)
