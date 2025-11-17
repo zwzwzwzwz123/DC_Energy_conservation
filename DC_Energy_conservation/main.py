@@ -112,28 +112,30 @@ def prediction_training_thread(ctx: AppContext):
             try:
                 # 使用配置驱动方式读取所有可观测数据
                 # 客户端键 "dc_status_data_client" 和配置键 "datacenter_latest_status" 定义在 influxdb_read_write_config.yaml 中
-                observable_data = ctx.data_reader.read_influxdb_data("dc_status_data_client",
-                                                                     "datacenter_latest_status")
+                observable_data = ctx.data_reader.read_influxdb_data("dc_status_data_client", "datacenter_latest_status")
                 logger.info(f"成功读取 {len(observable_data)} 个可观测点的数据")
 
                 # 数据验证：检查是否有足够的数据
                 if not observable_data:
-                    logger.warning("没有读取到任何数据，跳过本次训练")
-                    # 继续下一次循环
-                    if mode == "fixed_interval":
-                        elapsed_time = time.time() - loop_start_time
-                        remaining_time = interval - elapsed_time
-                        if remaining_time > 0:
-                            if ctx.shutdown_event.wait(timeout=remaining_time):
-                                break
+                    logger.warning("没有读取到任何状态数据，跳过本次训练")
+                    logger.info(f"等待 {error_retry_wait}秒后开始下一次训练")
+                    if ctx.shutdown_event.wait(timeout=error_retry_wait):
+                        break
                     continue
 
                 # 检查数据质量（示例：检查是否有空的 DataFrame）
                 valid_data_count = sum(1 for df in observable_data.values() if not df.empty)
                 logger.info(f"有效数据点数量: {valid_data_count}/{len(observable_data)}")
 
+                if valid_data_count == 0:
+                    logger.warning("读取到状态数据，但所有状态数据均无效 (例如均为空DataFrame)，跳过本次训练")
+                    logger.info(f"等待 {error_retry_wait}秒后开始下一次训练")
+                    if ctx.shutdown_event.wait(timeout=error_retry_wait):
+                        break
+                    continue
+
             except Exception as e:
-                logger.error(f"读取训练数据失败: {e}", exc_info=True)
+                logger.error(f"读取训练数据失败: {e}，等待 {error_retry_wait}秒后开始下一次训练", exc_info=True)
                 # 出错后等待再重试
                 if ctx.shutdown_event.wait(timeout=error_retry_wait):
                     break
@@ -195,7 +197,7 @@ def prediction_training_thread(ctx: AppContext):
                     break
 
         except Exception as e:
-            logger.error(f"预测训练线程出错: {e}", exc_info=True)
+            logger.error(f"预测训练线程出错: {e}，等待 {error_retry_wait}秒后开始下一次训练", exc_info=True)
             if ctx.shutdown_event.wait(timeout=error_retry_wait):  # 出错后等待再重试
                 break
 
@@ -230,23 +232,29 @@ def prediction_inference_thread(ctx: AppContext):
             try:
                 # 使用配置驱动方式读取所有可观测数据
                 # 客户端键 "dc_status_data_client" 和配置键 "datacenter_latest_status" 定义在 influxdb_read_write_config.yaml 中
-                observable_data = ctx.data_reader.read_influxdb_data("dc_status_data_client",
-                                                                     "datacenter_latest_status")
+                observable_data = ctx.data_reader.read_influxdb_data("dc_status_data_client", "datacenter_latest_status")
                 logger.info(f"成功读取 {len(observable_data)} 个可观测点的数据")
 
                 # 数据验证
                 if not observable_data:
-                    logger.warning("没有读取到任何数据，跳过本次推理")
-                    if mode == "fixed_interval":
-                        elapsed_time = time.time() - loop_start_time
-                        remaining_time = interval - elapsed_time
-                        if remaining_time > 0:
-                            if ctx.shutdown_event.wait(timeout=remaining_time):
-                                break
+                    logger.warning("没有读取到任何状态数据，跳过本次推理")
+                    logger.info(f"等待 {error_retry_wait}秒后开始下一次训练")
+                    if ctx.shutdown_event.wait(timeout=error_retry_wait):
+                        break
+                    continue
+
+                valid_data_count = sum(1 for df in observable_data.values() if not df.empty)
+                logger.info(f"有效数据点数量: {valid_data_count}/{len(observable_data)}")
+
+                if valid_data_count == 0:
+                    logger.warning("读取到状态数据，但所有状态数据均无效 (例如均为空DataFrame)，跳过本次训练")
+                    logger.info(f"等待 {error_retry_wait}秒后开始下一次训练")
+                    if ctx.shutdown_event.wait(timeout=error_retry_wait):
+                        break
                     continue
 
             except Exception as e:
-                logger.error(f"读取推理数据失败: {e}", exc_info=True)
+                logger.error(f"读取推理数据失败: {e}，等待 {error_retry_wait}秒后开始下一次训练", exc_info=True)
                 if ctx.shutdown_event.wait(timeout=error_retry_wait):
                     break
                 continue
@@ -329,7 +337,7 @@ def prediction_inference_thread(ctx: AppContext):
                     break
 
         except Exception as e:
-            logger.error(f"预测推理线程出错: {e}", exc_info=True)
+            logger.error(f"预测推理线程出错: {e}，等待 {error_retry_wait}秒后开始下一次推理", exc_info=True)
             if ctx.shutdown_event.wait(timeout=error_retry_wait):  # 出错后等待再重试
                 break
 
@@ -360,40 +368,66 @@ def optimization_thread(ctx: AppContext):
         try:
             # ==================== 数据读取阶段 ====================
             # 1. 读取预测数据（从 prediction_data_client）
-            logger.info("开始读取预测数据...")
+            logger.info("开始读取预测结果...")
             try:
-                # TODO: 实现从 prediction_data_client 读取预测数据的逻辑
-                # 注意：预测数据的读取可能需要单独的查询逻辑
-                # 因为预测数据的 measurement 命名规则与可观测数据不同
-                # 示例：
-                #   prediction_query = "SELECT * FROM CR_A1_temp_pred_1h WHERE time > now() - 1h"
-                #   prediction_data = ctx.prediction_data_client.query(prediction_query)
-                logger.info("预测数据读取完成（TODO: 实现具体逻辑）")
+                # 使用配置驱动方式读取最新预测数据
+                # 客户端键 "prediction_data_client" 和配置键 "latest_predictions" 定义在 influxdb_read_write_config.yaml 中
+                prediction_data = ctx.data_reader.read_influxdb_data("prediction_data_client", "latest_predictions")
+                logger.info(f"成功读取 {len(prediction_data)} 个预测点的数据")
+
+                # 数据验证
+                if not prediction_data:
+                    logger.warning("没有读取到任何预测结果，跳过本次优化")
+                    logger.info(f"等待 {error_retry_wait}秒后开始下一次训练")
+                    if ctx.shutdown_event.wait(timeout=error_retry_wait):
+                        break
+                    continue
+
+                valid_data_count_prediction = sum(1 for df in prediction_data.values() if not df.empty)
+                logger.info(f"有效数据点数量: {valid_data_count_prediction}/{len(prediction_data)}")
+
+                if valid_data_count_prediction == 0:
+                    logger.warning("读取到预测结果，但所有预测结果均无效 (例如均为空DataFrame)，跳过本次训练")
+                    logger.info(f"等待 {error_retry_wait}秒后开始下一次训练")
+                    if ctx.shutdown_event.wait(timeout=error_retry_wait):
+                        break
+                    continue
+
             except Exception as e:
-                logger.error(f"读取预测数据失败: {e}", exc_info=True)
+                logger.error(f"读取预测结果失败: {e}，等待 {error_retry_wait}秒后开始下一次训练", exc_info=True)
+                if ctx.shutdown_event.wait(timeout=error_retry_wait):
+                    break
+                continue
+
 
             # 2. 读取当前状态数据（从 dc_status_data_client）
             logger.info("开始读取状态数据...")
             try:
                 # 使用配置驱动方式读取最新状态数据
                 # 客户端键 "dc_status_data_client" 和配置键 "datacenter_latest_status" 定义在 influxdb_read_write_config.yaml 中
-                observable_data = ctx.data_reader.read_influxdb_data("dc_status_data_client",
-                                                                     "datacenter_latest_status")
+                observable_data = ctx.data_reader.read_influxdb_data("dc_status_data_client", "datacenter_latest_status")
                 logger.info(f"成功读取 {len(observable_data)} 个可观测点的数据")
 
                 # 数据验证
                 if not observable_data:
                     logger.warning("没有读取到任何状态数据，跳过本次优化")
-                    if mode == "fixed_interval":
-                        elapsed_time = time.time() - loop_start_time
-                        remaining_time = interval - elapsed_time
-                        if remaining_time > 0:
-                            if ctx.shutdown_event.wait(timeout=remaining_time):
-                                break
+                    logger.info(f"等待 {error_retry_wait}秒后开始下一次训练")
+                    if ctx.shutdown_event.wait(timeout=error_retry_wait):
+                        break
+                    continue
+
+                valid_data_count_observable = sum(1 for df in observable_data.values() if not df.empty)
+                logger.info(f"有效数据点数量: {valid_data_count_observable}/{len(observable_data)}")
+
+                if valid_data_count_observable == 0:
+                    logger.warning("读取到状态数据，但所有状态数据均无效 (例如均为空DataFrame)，跳过本次训练")
+                    logger.info(f"等待 {error_retry_wait}秒后开始下一次训练")
+                    if ctx.shutdown_event.wait(timeout=error_retry_wait):
+                        break
                     continue
 
             except Exception as e:
-                logger.error(f"读取状态数据失败: {e}", exc_info=True)
+                logger.error(f"读取状态数据失败: {e}，等待 {error_retry_wait}秒后开始下一次训练", exc_info=True)
                 if ctx.shutdown_event.wait(timeout=error_retry_wait):
                     break
                 continue
@@ -479,7 +513,7 @@ def optimization_thread(ctx: AppContext):
                     break
 
         except Exception as e:
-            logger.error(f"优化线程出错: {e}", exc_info=True)
+            logger.error(f"优化线程出错: {e}，等待 {error_retry_wait}秒后开始下一次优化", exc_info=True)
             if ctx.shutdown_event.wait(timeout=error_retry_wait):  # 出错后等待再重试
                 break
 
