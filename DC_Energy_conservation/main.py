@@ -9,7 +9,7 @@ from pathlib import Path
 from threading import Thread, Event, Lock
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 from dataclasses import dataclass, field
-from typing import Dict
+from typing import Dict, Any
 
 # 添加项目根目录到 Python 路径
 project_root = Path(__file__).parent.parent
@@ -18,6 +18,9 @@ sys.path.insert(0, str(project_root))
 from utils.initialization import init_multi_level_loggers, load_configs
 from utils.influxdb_wrapper import init_influxdb_clients, InfluxDBClientWrapper
 from utils.critical_operation import critical_operation, wait_for_critical_operations
+from utils.architecture_config_parser import load_datacenter_from_config
+from utils.data_read_write import create_data_reader, create_data_writer
+from modules.architecture_module import DataCenter
 
 
 @dataclass
@@ -27,28 +30,38 @@ class AppContext:
 
     属性:
         loggers: 所有日志器的字典
-        dc_status_client: 数据中心状态数据客户端
-        prediction_client: 预测数据客户端
-        optimization_client: 优化数据客户端
+        dc_status_data_client: 数据中心状态数据客户端（读取可观测数据）
+        prediction_data_client: 预测数据客户端（读写预测结果）
+        optimization_data_client: 优化数据客户端（写入优化控制指令）
         shutdown_event: 关闭事件，用于优雅关闭线程
-        main_config: 主配置字典，从 main.yaml 加载
+        main_config: 主配置字典，从 main_config.yaml 加载
+        uid_config: UID 配置字典，从 uid_config.yaml 加载
         critical_operation_lock: 保护关键操作计数器的锁
         critical_operation_count: 当前正在执行的关键操作数量
+        datacenter: 数据中心对象（包含完整的层次结构）
+        data_reader: 数据读取器（支持多客户端读取，使用 read_influxdb_data(client_key, config_key) 方法）
+        data_writer: 数据写入器（支持多客户端写入，使用 write_influxdb_data(client_key, config_key, data) 方法）
 
     注意:
         - logging 模块本身是线程安全的，多个线程可以安全地使用同一个 logger
         - InfluxDBClientWrapper 的操作也是线程安全的（底层使用 requests 库）
         - shutdown_event 用于通知所有线程优雅退出
         - critical_operation_lock 和 critical_operation_count 用于保护关键操作（数据库写入、模型保存）
+        - datacenter, data_reader, data_writer 是数据中心架构组件
+        - data_reader 和 data_writer 现在支持多客户端架构，可以灵活选择不同的数据库进行读写
     """
     loggers: Dict[str, logging.Logger]
-    dc_status_client: InfluxDBClientWrapper
-    prediction_client: InfluxDBClientWrapper
-    optimization_client: InfluxDBClientWrapper
+    dc_status_data_client: InfluxDBClientWrapper
+    prediction_data_client: InfluxDBClientWrapper
+    optimization_data_client: InfluxDBClientWrapper
     shutdown_event: Event
     main_config: Dict
+    uid_config: Dict
     critical_operation_lock: Lock = field(default_factory=Lock)
     critical_operation_count: int = 0
+    datacenter: DataCenter = None
+    data_reader: Any = None
+    data_writer: Any = None
 
 
 def prediction_training_thread(ctx: AppContext):
@@ -73,12 +86,47 @@ def prediction_training_thread(ctx: AppContext):
         loop_start_time = time.time()  # 记录循环开始时间
 
         try:
-            # TODO: 实现预测训练逻辑
-            # 1. 从 ctx.dc_status_client 读取数据中心状态数据
-            # 2. 数据预处理
-            # 3. 训练预测模型
-            # 4. 保存模型
-            #
+            # ==================== 数据读取阶段 ====================
+            # 使用 DataCenterDataReader 读取数据中心状态数据
+            logger.info("开始读取训练数据...")
+            try:
+                # 使用配置驱动方式读取所有可观测数据
+                # 客户端键 "dc_status_data_client" 和配置键 "datacenter_latest_status" 定义在 influxdb_read_write_config.yaml 中
+                telemetry_data = ctx.data_reader.read_influxdb_data("dc_status_data_client", "datacenter_latest_status")
+                logger.info(f"成功读取 {len(telemetry_data)} 个可观测点的数据")
+
+                # 数据验证：检查是否有足够的数据
+                if not telemetry_data:
+                    logger.warning("没有读取到任何数据，跳过本次训练")
+                    # 继续下一次循环
+                    if mode == "fixed_interval":
+                        elapsed_time = time.time() - loop_start_time
+                        remaining_time = interval - elapsed_time
+                        if remaining_time > 0:
+                            if ctx.shutdown_event.wait(timeout=remaining_time):
+                                break
+                    continue
+
+                # 检查数据质量（示例：检查是否有空的 DataFrame）
+                valid_data_count = sum(1 for df in telemetry_data.values() if not df.empty)
+                logger.info(f"有效数据点数量: {valid_data_count}/{len(telemetry_data)}")
+
+            except Exception as e:
+                logger.error(f"读取训练数据失败: {e}", exc_info=True)
+                # 出错后等待再重试
+                if ctx.shutdown_event.wait(timeout=error_retry_wait):
+                    break
+                continue
+
+            # ==================== 数据预处理阶段 ====================
+            # TODO: 实现数据预处理逻辑
+            # 将 telemetry_data (Dict[str, pd.DataFrame]) 转换为训练所需的格式
+            # 示例：
+            #   training_features, training_labels = preprocess_data(telemetry_data)
+            logger.info("数据预处理中...")
+
+            # ==================== 模型训练阶段 ====================
+            # TODO: 实现预测模型训练逻辑
             # ⚠️ 重要提醒 1：如果训练过程耗时很长（如模型训练），
             # 必须在训练循环中定期检查 ctx.shutdown_event.is_set()
             # 以便能够快速响应 Ctrl+C 退出信号。
@@ -88,21 +136,17 @@ def prediction_training_thread(ctx: AppContext):
             #           logger.info("检测到关闭信号，中断训练")
             #           break
             #       # 执行训练步骤...
-            #
-            # ⚠️ 重要提醒 2：对于关键操作（数据库写入、模型保存），
+            logger.info("模型训练中...")
+
+            # ==================== 模型保存阶段 ====================
+            # TODO: 实现模型保存逻辑
+            # ⚠️ 重要提醒 2：对于关键操作（模型保存），
             # 必须使用 critical_operation 上下文管理器保护，确保这些操作不会被中断。
             # 示例：
-            #   # 保护数据库写入操作
-            #   with critical_operation(ctx):
-            #       ctx.dc_status_client.write_points(training_metrics)
-            #
             #   # 保护模型保存操作
             #   with critical_operation(ctx):
             #       model.save("checkpoint.pth")
-            #
-            # 注意：不要在长时间运行的任务（如整个训练循环）中使用 critical_operation，
-            # 只在真正关键的操作（如数据库写入、模型保存）处使用。
-            logger.info("预测训练线程运行中...")
+            logger.info("预测训练完成")
 
             # 根据运行模式决定是否等待
             if mode == "fixed_interval":
@@ -159,29 +203,95 @@ def prediction_inference_thread(ctx: AppContext):
         loop_start_time = time.time()  # 记录循环开始时间
 
         try:
+            # ==================== 数据读取阶段 ====================
+            # 使用 DataCenterDataReader 读取最新数据
+            logger.info("开始读取推理数据...")
+            try:
+                # 使用配置驱动方式读取所有可观测数据
+                # 客户端键 "dc_status_data_client" 和配置键 "datacenter_latest_status" 定义在 influxdb_read_write_config.yaml 中
+                telemetry_data = ctx.data_reader.read_influxdb_data("dc_status_data_client", "datacenter_latest_status")
+                logger.info(f"成功读取 {len(telemetry_data)} 个可观测点的数据")
+
+                # 数据验证
+                if not telemetry_data:
+                    logger.warning("没有读取到任何数据，跳过本次推理")
+                    if mode == "fixed_interval":
+                        elapsed_time = time.time() - loop_start_time
+                        remaining_time = interval - elapsed_time
+                        if remaining_time > 0:
+                            if ctx.shutdown_event.wait(timeout=remaining_time):
+                                break
+                    continue
+
+            except Exception as e:
+                logger.error(f"读取推理数据失败: {e}", exc_info=True)
+                if ctx.shutdown_event.wait(timeout=error_retry_wait):
+                    break
+                continue
+
+            # ==================== 模型加载阶段 ====================
+            # TODO: 实现预测模型加载逻辑
+            # 示例：
+            #   model = load_prediction_model("checkpoint.pth")
+            logger.info("加载预测模型...")
+
+            # ==================== 预测推理阶段 ====================
             # TODO: 实现预测推理逻辑
-            # 1. 从 ctx.dc_status_client 读取最新数据
-            # 2. 加载预测模型
-            # 3. 执行预测
-            # 4. 将预测结果写入 ctx.prediction_client
-            #
-            # ⚠️ 重要提醒 1：如果推理过程耗时很长，
+            # ⚠️ 重要提醒：如果推理过程耗时很长，
             # 必须在推理循环中定期检查 ctx.shutdown_event.is_set()
-            # 以便能够快速响应 Ctrl+C 退出信号。
             # 示例：
             #   for batch in data_batches:
             #       if ctx.shutdown_event.is_set():
             #           logger.info("检测到关闭信号，中断推理")
             #           break
             #       # 执行推理步骤...
-            #
-            # ⚠️ 重要提醒 2：对于关键操作（数据库写入），
-            # 必须使用 critical_operation 上下文管理器保护。
-            # 示例：
-            #   # 保护预测结果写入操作
-            #   with critical_operation(ctx):
-            #       ctx.prediction_client.write_points(prediction_results)
-            logger.info("预测推理线程运行中...")
+            logger.info("执行预测推理...")
+
+            # 模拟预测结果（实际应用中应该是模型推理的输出）
+            # TODO: 替换为真实的预测结果
+            from datetime import datetime
+            prediction_results = {
+                'room_uid': 'CR_A1',
+                'horizon': '1h',
+                'predictions': [
+                    {'timestamp': datetime.now(), 'value': 25.5},
+                    # ... 更多预测点
+                ]
+            }
+
+            # ==================== 预测结果写入阶段 ====================
+            logger.info("开始写入预测结果...")
+            try:
+                # 示例 1: 预测数据 - 按测点分离存储
+                prediction_data_separate = {
+                    'sensor_temp_A1': 25.5,
+                    'sensor_temp_B2': 26.1
+                }
+                success1 = ctx.data_writer.write_influxdb_data(
+                    'prediction_data_client',
+                    'prediction_by_uid',
+                    prediction_data_separate,
+                    horizon='15mins'
+                )
+                if success1: logger.info("按测点分离存储预测数据写入成功")
+
+                # 示例 2: 预测数据 - 统一存储格式
+                prediction_data_unified = {
+                    'sensor_temp_A1': '{"value": 25.5, "confidence": 0.95}',
+                    'sensor_temp_B2': '{"value": 26.1, "confidence": 0.93}'
+                }
+                success2 = ctx.data_writer.write_influxdb_data(
+                    'prediction_data_client',
+                    'prediction_unified',
+                    prediction_data_unified,
+                    horizon='1h'
+                )
+                if success2: logger.info("统一存储格式预测数据写入成功")
+
+            except Exception as e:
+                logger.error(f"写入预测结果失败: {e}", exc_info=True)
+
+            logger.info("预测推理完成")
 
             # 根据运行模式决定是否等待
             if mode == "fixed_interval":
@@ -238,18 +348,50 @@ def optimization_thread(ctx: AppContext):
         loop_start_time = time.time()  # 记录循环开始时间
 
         try:
-            # TODO: 实现优化逻辑
-            # 1. 从 ctx.prediction_client 读取预测数据
-            # 2. 根据预测数据执行优化算法
-            # 3. 生成控制指令
-            # 4. 将控制指令写入 ctx.optimization_client
-            # 5. 从 ctx.dc_status_client 读取状态数据，与环境不断交互进行强化学习
-            # 6. 不断生成控制指令
-            # 7. 不断将控制指令写入 ctx.optimization_client
-            #
-            # ⚠️ 重要提醒 1：如果优化过程耗时很长（如强化学习优化），
+            # ==================== 数据读取阶段 ====================
+            # 1. 读取预测数据（从 prediction_data_client）
+            logger.info("开始读取预测数据...")
+            try:
+                # TODO: 实现从 prediction_data_client 读取预测数据的逻辑
+                # 注意：预测数据的读取可能需要单独的查询逻辑
+                # 因为预测数据的 measurement 命名规则与可观测数据不同
+                # 示例：
+                #   prediction_query = "SELECT * FROM CR_A1_temp_pred_1h WHERE time > now() - 1h"
+                #   prediction_data = ctx.prediction_data_client.query(prediction_query)
+                logger.info("预测数据读取完成（TODO: 实现具体逻辑）")
+            except Exception as e:
+                logger.error(f"读取预测数据失败: {e}", exc_info=True)
+
+            # 2. 读取当前状态数据（从 dc_status_data_client）
+            logger.info("开始读取状态数据...")
+            try:
+                # 使用配置驱动方式读取最新状态数据
+                # 客户端键 "dc_status_data_client" 和配置键 "datacenter_latest_status" 定义在 influxdb_read_write_config.yaml 中
+                telemetry_data = ctx.data_reader.read_influxdb_data("dc_status_data_client", "datacenter_latest_status")
+                logger.info(f"成功读取 {len(telemetry_data)} 个可观测点的数据")
+
+                # 数据验证
+                if not telemetry_data:
+                    logger.warning("没有读取到任何状态数据，跳过本次优化")
+                    if mode == "fixed_interval":
+                        elapsed_time = time.time() - loop_start_time
+                        remaining_time = interval - elapsed_time
+                        if remaining_time > 0:
+                            if ctx.shutdown_event.wait(timeout=remaining_time):
+                                break
+                    continue
+
+            except Exception as e:
+                logger.error(f"读取状态数据失败: {e}", exc_info=True)
+                if ctx.shutdown_event.wait(timeout=error_retry_wait):
+                    break
+                continue
+
+            # ==================== 优化算法阶段 ====================
+            # TODO: 实现优化算法逻辑
+            # 根据预测数据和当前状态数据执行优化算法
+            # ⚠️ 重要提醒：如果优化过程耗时很长（如强化学习优化），
             # 必须在优化循环中定期检查 ctx.shutdown_event.is_set()
-            # 以便能够快速响应 Ctrl+C 退出信号。
             # 示例：
             #   for step in range(max_steps):
             #       if ctx.shutdown_event.is_set():
@@ -257,18 +399,68 @@ def optimization_thread(ctx: AppContext):
             #           break
             #       # 执行优化步骤...
             #       # 与环境交互...
-            #
-            # ⚠️ 重要提醒 2：对于关键操作（数据库写入、模型保存），
-            # 必须使用 critical_operation 上下文管理器保护。
+            logger.info("执行优化算法...")
+
+            # 模拟生成控制指令（实际应用中应该是优化算法的输出）
+            # TODO: 替换为真实的优化结果
+            from datetime import datetime
+            control_commands = {
+                'device_uid': 'AC_A1_001',
+                'commands': [
+                    {
+                        'control_uid': 'ac_a1_001_on_setpoint',
+                        'value': 24.0,
+                        'timestamp': datetime.now()
+                    },
+                    {
+                        'control_uid': 'ac_a1_001_supply_temp_setpoint',
+                        'value': 18.0,
+                        'timestamp': datetime.now()
+                    },
+                    # ... 更多控制指令
+                ]
+            }
+
+            # ==================== 控制指令写入阶段 ====================
+            logger.info("开始写入控制指令...")
+            try:
+                # 示例 3: 优化指令 - 按测点分离存储
+                optimization_data_separate = {
+                    'ac_a1_001_supply_temp_setpoint': 24.0,
+                    'ac_a1_002_supply_temp_setpoint': 24.5
+                }
+                success3 = ctx.data_writer.write_influxdb_data(
+                    'optimization_data_client',
+                    'optimization_by_uid',
+                    optimization_data_separate,
+                    is_auto_execute=False
+                )
+                if success3: logger.info("按测点分离存储优化指令写入成功")
+
+                # 示例 4: 优化指令 - 统一存储格式
+                optimization_data_unified = {
+                    'ac_a1_001_supply_temp_setpoint': '{"value": 24.0, "priority": "high"}',
+                    'ac_a1_002_supply_temp_setpoint': '{"value": 24.5, "priority": "medium"}'
+                }
+                success4 = ctx.data_writer.write_influxdb_data(
+                    'optimization_data_client',
+                    'optimization_unified',
+                    optimization_data_unified,
+                    is_auto_execute=True
+                )
+                if success4: logger.info("统一存储格式优化指令写入成功")
+
+            except Exception as e:
+                logger.error(f"写入控制指令失败: {e}", exc_info=True)
+
+            # ==================== 模型保存阶段（可选）====================
+            # TODO: 如果使用强化学习，定期保存模型
+            # ⚠️ 重要：对于模型保存操作，必须使用 critical_operation 保护
             # 示例：
-            #   # 保护控制指令写入操作
-            #   with critical_operation(ctx):
-            #       ctx.optimization_client.write_points(control_commands)
-            #
-            #   # 保护强化学习模型保存操作
             #   with critical_operation(ctx):
             #       rl_agent.save("rl_checkpoint.pth")
-            logger.info("优化线程运行中...")
+
+            logger.info("优化完成")
 
             # 根据运行模式决定是否等待
             if mode == "fixed_interval":
@@ -312,15 +504,15 @@ def main():
     print("=" * 60)
 
     # 1. 加载配置文件
-    print("\n[1/3] 加载配置文件...")
-    main_config, models_config, modules_config, security_boundary_config, uid_config, utils_config = load_configs()
+    print("\n[1/6] 加载配置文件...")
+    main_config, models_config, modules_config, security_boundary_config, uid_config, utils_config, influxdb_read_write_config = load_configs()
     print("✓ 配置文件加载成功")
 
     # 读取关闭超时配置
     shutdown_timeout = main_config.get("shutdown", {}).get("timeout", 30)
 
     # 2. 初始化多层级日志系统
-    print("\n[2/3] 初始化多层级日志系统...")
+    print("\n[2/6] 初始化多层级日志系统...")
     try:
         loggers = init_multi_level_loggers(utils_config["logging"])
         print("✓ 多层级日志系统初始化成功")
@@ -330,6 +522,7 @@ def main():
         print(f"  - 预测训练日志: prediction_training_log.log")
         print(f"  - 预测推理日志: prediction_inference_log.log")
         print(f"  - 优化日志: optimization_log.log")
+        print(f"  - 架构解析器日志: architecture_parser_log.log")
 
         # 使用 main logger 记录主程序日志
         loggers["main"].info("数据中心节能项目启动")
@@ -338,13 +531,14 @@ def main():
         sys.exit(1)
 
     # 3. 初始化 InfluxDB 客户端
-    print("\n[3/3] 初始化 InfluxDB 客户端...")
+    print("\n[3/6] 初始化 InfluxDB 客户端...")
     try:
         # 传入 influxdb logger，使 InfluxDB 相关日志自动写入 influxdb_log.log 和 total_log.log
-        dc_status_client, prediction_client, optimization_client = init_influxdb_clients(
+        dc_status_data_client, prediction_data_client, optimization_data_client = init_influxdb_clients(
             utils_config, loggers["influxdb"]
         )
         # 使用 influxdb logger 记录 InfluxDB 相关日志
+        loggers["main"].info("InfluxDB 客户端全部初始化成功")
         loggers["influxdb"].info("InfluxDB 客户端全部初始化成功")
         print("✓ InfluxDB 客户端初始化成功")
         loggers["influxdb"].info(
@@ -358,25 +552,109 @@ def main():
         print(f"✗ InfluxDB 客户端初始化失败: {e}")
         sys.exit(1)
 
-    # 创建关闭事件
-    shutdown_event = Event()
+    # 4. 加载数据中心配置
+    print("\n[4/6] 加载数据中心配置...")
+    try:
+        datacenter = load_datacenter_from_config(uid_config, loggers["architecture_parser"])
 
-    # 创建应用上下文
-    ctx = AppContext(
-        loggers=loggers,
-        dc_status_client=dc_status_client,
-        prediction_client=prediction_client,
-        optimization_client=optimization_client,
-        shutdown_event=shutdown_event,
-        main_config=main_config
-    )
+        # 输出数据中心统计信息
+        stats = datacenter.get_statistics()
+        loggers["main"].info(f"数据中心配置加载成功: {datacenter.dc_name}")
+        print(f"✓ 数据中心配置加载成功: {datacenter.dc_name}")
+        print(f"  - 机房总数: {stats['total_rooms']}")
+        print(f"  - 风冷系统总数: {stats['total_air_cooled_systems']}")
+        print(f"  - 水冷系统总数: {stats['total_water_cooled_systems']}")
+        print(f"  - 设备总数: {stats['total_devices']}")
+        print(f"  - 可观测点总数: {stats['total_observable_points']}")
+        print(f"  - 控制点总数: {stats['total_regulable_points']}")
+
+        loggers["main"].info(f"  - 机房总数: {stats['total_rooms']}")
+        loggers["main"].info(f"  - 风冷系统总数: {stats['total_air_cooled_systems']}")
+        loggers["main"].info(f"  - 水冷系统总数: {stats['total_water_cooled_systems']}")
+        loggers["main"].info(f"  - 设备总数: {stats['total_devices']}")
+        loggers["main"].info(f"  - 可观测点总数: {stats['total_observable_points']}")
+        loggers["main"].info(f"  - 控制点总数: {stats['total_regulable_points']}")
+    except Exception as e:
+        loggers["main"].error(f"数据中心配置加载失败: {e}", exc_info=True)
+        print(f"✗ 数据中心配置加载失败: {e}")
+        sys.exit(1)
+
+    # 5. 创建数据读取器
+    print("\n[5/6] 创建数据读取器...")
+    try:
+        # 构建客户端字典
+        reader_clients = {
+            'dc_status_data_client': dc_status_data_client,
+            'prediction_data_client': prediction_data_client
+        }
+
+        data_reader = create_data_reader(
+            datacenter=datacenter,
+            read_write_config=influxdb_read_write_config,
+            influxdb_clients=reader_clients,
+            logger=loggers["influxdb"]
+        )
+        loggers["main"].info("数据读取器创建成功")
+        print("✓ 数据读取器创建成功")
+    except Exception as e:
+        loggers["main"].error(f"数据读取器创建失败: {e}", exc_info=True)
+        print(f"✗ 数据读取器创建失败: {e}")
+        sys.exit(1)
+
+    # 6. 创建应用上下文（只创建一次！）
+    print("\n[6/7] 创建应用上下文...")
+    shutdown_event = Event()
+    try:
+        ctx = AppContext(
+            loggers=loggers,
+            dc_status_data_client=dc_status_data_client,
+            prediction_data_client=prediction_data_client,
+            optimization_data_client=optimization_data_client,
+            shutdown_event=shutdown_event,
+            main_config=main_config,
+            uid_config=uid_config,
+            datacenter=datacenter,
+            data_reader=data_reader
+            # 注意：此时 data_writer 还是 None，将在下一步创建并赋值
+        )
+        loggers["main"].info("应用上下文创建成功（初始版本）")
+        print("✓ 应用上下文创建成功")
+    except Exception as e:
+        loggers["main"].error(f"应用上下文创建失败: {e}", exc_info=True)
+        print(f"✗ 应用上下文创建失败: {e}")
+        sys.exit(1)
+
+    # 7. 创建数据写入器并更新到上下文
+    print("\n[7/7] 创建数据写入器...")
+    try:
+        writer_clients = {
+            'prediction_data_client': prediction_data_client,
+            'optimization_data_client': optimization_data_client
+        }
+        data_writer = create_data_writer(
+            datacenter=datacenter,
+            read_write_config=influxdb_read_write_config,
+            influxdb_clients=writer_clients,
+            ctx=ctx,  # 传入唯一的 ctx 实例
+            logger=loggers["influxdb"]
+        )
+
+        # 将创建好的 data_writer 赋值回唯一的 ctx 实例
+        ctx.data_writer = data_writer
+
+        loggers["main"].info("数据写入器创建成功并更新到上下文")
+        print("✓ 数据写入器创建成功")
+    except Exception as e:
+        loggers["main"].error(f"数据写入器创建失败: {e}", exc_info=True)
+        print(f"✗ 数据写入器创建失败: {e}")
+        sys.exit(1)
 
     print("\n" + "=" * 60)
     print("初始化完成，启动多线程...")
     print("=" * 60)
     ctx.loggers["main"].info("系统初始化完成，准备启动多线程")
 
-    # 4. 使用 ThreadPoolExecutor 管理线程
+    # 8. 使用 ThreadPoolExecutor 管理线程
     executor = None
     future_prediction_training = None
     future_prediction_inference = None
@@ -412,8 +690,8 @@ def main():
         print(f"\n程序运行出错: {e}")
         shutdown_event.set()  # 确保线程能够退出
 
+    # 9. 清理资源，退出系统
     finally:
-        # 清理资源
         if executor:
             # 第一步：等待关键操作完成
             ctx.loggers["main"].info(f"等待关键操作完成（最多等待 {shutdown_timeout} 秒）...")
@@ -463,9 +741,9 @@ def main():
         # 第三步：关闭 InfluxDB 连接
         print("正在关闭 InfluxDB 连接...")
         try:
-            ctx.dc_status_client.close()
-            ctx.prediction_client.close()
-            ctx.optimization_client.close()
+            ctx.dc_status_data_client.close()
+            ctx.prediction_data_client.close()
+            ctx.optimization_data_client.close()
             ctx.loggers["influxdb"].info("InfluxDB 连接已关闭")
             print("✓ InfluxDB 连接已关闭")
         except Exception as e:
