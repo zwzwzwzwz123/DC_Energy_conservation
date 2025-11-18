@@ -745,6 +745,165 @@ class ACInstanceManager:
         return self.ac_instances.copy()
 
 
+def run_optimization(
+        uid_config: dict,
+        parameter_config: dict,
+        security_boundary_config: dict,
+        current_data: pd.DataFrame,
+        logger: logging.Logger,
+        historical_data: Optional[pd.DataFrame] = None,
+        is_reference: bool = False,
+        ac_manager: Optional[ACInstanceManager] = None,
+        timeout_seconds: Optional[float] = None,
+        progress_callback: Optional[callable] = None,
+        use_cache: bool = False,
+        initial_params: Optional[Dict] = None
+) -> dict:
+    """
+    高层封装函数：一行代码启动整个优化流程
+
+    这是优化模块的统一入口函数，封装了所有优化相关的初始化和执行逻辑。
+    使用此函数，在 main.py 中只需一行代码即可完成优化。
+
+    Args:
+        uid_config: UID配置字典，包含空调和传感器的配置信息
+        parameter_config: 模块参数配置，包含优化算法参数
+        security_boundary_config: 安全边界配置，包含温湿度约束
+        current_data: 当前系统状态数据（DataFrame格式）
+        logger: 日志记录器
+        historical_data: 历史数据（DataFrame格式，可选）。如果为None，将使用current_data作为历史数据
+        is_reference: 是否为参考优化（快速模式，用于测试）
+        ac_manager: 空调实例管理器（可选）。如果为None则自动创建新实例
+        timeout_seconds: 优化超时时间（秒）。如果为None则使用默认值（600秒）
+        progress_callback: 进度回调函数，签名为 callback(ac_index, ac_total, ac_name, status)
+        use_cache: 是否使用优化结果缓存（暂未实现）
+        initial_params: 初始参数字典（可选），格式为 {'set_temp': int, 'set_humidity': int}
+
+    Returns:
+        dict: 优化后的参数字典，包含以下键：
+            - 'air_conditioner_setting_temperature': List[int] - 每台空调的温度设定值
+            - 'air_conditioner_setting_humidity': List[int] - 每台空调的湿度设定值
+            - 'air_conditioner_cooling_mode': List[int] - 每台空调的制冷模式
+            - 'optimization_metadata': Dict - 优化元数据（可选）
+
+    Raises:
+        ValueError: 当输入参数无效时
+        RuntimeError: 当优化过程失败时
+        TimeoutError: 当优化超时时
+
+    Example:
+        >>> # 最简单的调用方式
+        >>> best_params = run_optimization(
+        ...     uid_config=uid_config,
+        ...     parameter_config=modules_config,
+        ...     security_boundary_config=security_config,
+        ...     current_data=current_data,
+        ...     logger=logger
+        ... )
+
+        >>> # 带历史数据和进度回调的调用
+        >>> def on_progress(idx, total, name, status):
+        ...     print(f"优化进度: [{idx}/{total}] {name} - {status}")
+        >>>
+        >>> best_params = run_optimization(
+        ...     uid_config=uid_config,
+        ...     parameter_config=modules_config,
+        ...     security_boundary_config=security_config,
+        ...     current_data=current_data,
+        ...     historical_data=historical_data,
+        ...     logger=logger,
+        ...     timeout_seconds=300,
+        ...     progress_callback=on_progress
+        ... )
+    """
+    # ==================== 输入验证 ====================
+    # 尝试导入验证器（如果可用）
+    try:
+        from utils.optimization_validator import validate_optimization_config
+
+        # 执行配置验证
+        is_valid = validate_optimization_config(
+            uid_config=uid_config,
+            parameter_config=parameter_config,
+            security_boundary_config=security_boundary_config,
+            current_data=current_data,
+            logger=logger,
+            print_report=False  # 不打印报告，只记录日志
+        )
+
+        if not is_valid:
+            logger.warning("配置验证发现问题，但将继续执行优化")
+    except ImportError:
+        logger.debug("优化验证器不可用，跳过配置验证")
+    except Exception as e:
+        logger.warning(f"配置验证失败: {str(e)}，将继续执行优化")
+
+    # 基本验证
+    if current_data is None or current_data.empty:
+        raise ValueError("current_data 不能为空")
+
+    if not isinstance(uid_config, dict) or 'air_conditioners' not in uid_config:
+        raise ValueError("uid_config 格式不正确，必须包含 'air_conditioners' 字段")
+
+    if not isinstance(parameter_config, dict):
+        raise ValueError("parameter_config 必须是字典类型")
+
+    if not isinstance(security_boundary_config, dict):
+        raise ValueError("security_boundary_config 必须是字典类型")
+
+    # 如果没有提供历史数据，使用当前数据作为历史数据
+    if historical_data is None:
+        logger.info("未提供历史数据，使用当前数据作为历史数据")
+        historical_data = current_data
+
+    # 设置默认超时时间
+    if timeout_seconds is None:
+        timeout_seconds = 600  # 默认10分钟
+
+    logger.info("="*60)
+    logger.info("开始优化流程")
+    logger.info(f"参考模式: {is_reference}")
+    logger.info(f"超时时间: {timeout_seconds}秒")
+    logger.info(f"历史数据: {len(historical_data)}条记录")
+    logger.info(f"当前数据: {len(current_data)}条记录")
+    logger.info("="*60)
+
+    try:
+        # 调用原有的优化函数
+        best_params = start_optimization_process(
+            uid_config=uid_config,
+            parameter_config=parameter_config,
+            security_boundary_config=security_boundary_config,
+            optimization_input=historical_data,
+            current_data=current_data,
+            logger=logger,
+            is_reference=is_reference,
+            ac_manager=ac_manager,
+            timeout_seconds=timeout_seconds,
+            progress_callback=progress_callback,
+            initial_params=initial_params
+        )
+
+        # 添加优化元数据
+        best_params['optimization_metadata'] = {
+            'timestamp': time.time(),
+            'is_reference': is_reference,
+            'ac_count': len(best_params['air_conditioner_setting_temperature']),
+            'success': True
+        }
+
+        logger.info("="*60)
+        logger.info("优化流程完成")
+        logger.info(f"优化了 {len(best_params['air_conditioner_setting_temperature'])} 台空调")
+        logger.info("="*60)
+
+        return best_params
+
+    except Exception as e:
+        logger.error(f"优化流程失败: {str(e)}")
+        raise RuntimeError(f"优化流程执行失败: {str(e)}") from e
+
+
 def start_optimization_process(
         uid_config: dict,
         parameter_config: dict,
@@ -753,10 +912,28 @@ def start_optimization_process(
         current_data: pd.DataFrame,
         logger: logging.Logger,
         is_reference: bool = False,
-        ac_manager: Optional[ACInstanceManager] = None
+        ac_manager: Optional[ACInstanceManager] = None,
+        timeout_seconds: Optional[float] = None,
+        progress_callback: Optional[callable] = None,
+        initial_params: Optional[Dict] = None
 ) -> dict:
     """
-    启动优化过程，对所有空调进行优化。
+    启动优化过程，对所有空调进行优化（核心优化函数）。
+
+    ⚠️ 重要提示：
+    这是一个核心优化函数，通常不需要直接调用。
+    对于大多数使用场景，推荐使用高层封装函数 `run_optimization()`。
+
+    两个函数的关系：
+    - `run_optimization()` (高层封装): 提供简化接口，自动处理配置验证、历史数据后备、
+      优化元数据等，适合在 main.py 中使用
+    - `start_optimization_process()` (核心逻辑): 执行实际的优化算法，提供更精细的控制，
+      适合在其他高层函数中调用或需要自定义错误处理的场景
+
+    使用建议：
+    - 如果你在 main.py 中调用，使用 `run_optimization()`
+    - 如果你需要精细控制或在其他封装函数中调用，使用此函数
+    - 如果你不确定，使用 `run_optimization()`
 
     注意：此函数仅计算优化参数，不执行实际控制。
     实际的参数应用由主函数负责写入InfluxDB。
@@ -765,13 +942,51 @@ def start_optimization_process(
         uid_config: UID配置信息（支持新格式配置）
         parameter_config: 参数配置信息
         security_boundary_config: 安全边界配置信息
-        optimization_input: 历史数据（过去60分钟）
-        current_data: 当前系统状态数据
+        optimization_input: 历史数据（过去60分钟），必须提供
+        current_data: 当前系统状态数据，必须提供
         logger: 日志记录器
-        is_reference: 是否为参考优化
+        is_reference: 是否为参考优化（快速测试模式）
         ac_manager: 空调实例管理器，如果为None则每次创建新实例
+        timeout_seconds: 优化超时时间（秒），如果为None则不设置超时
+        progress_callback: 进度回调函数，签名为 callback(ac_index, ac_total, ac_name, status)
+        initial_params: 初始参数字典，格式为 {'set_temp': int, 'set_humidity': int}
+
     Returns:
-        dict: 包含每台空调优化后的设定温度、湿度和制冷模式
+        dict: 包含每台空调优化后的设定温度、湿度和制冷模式，格式为：
+            {
+                'air_conditioner_setting_temperature': List[int],
+                'air_conditioner_setting_humidity': List[int],
+                'air_conditioner_cooling_mode': List[int]
+            }
+
+    Raises:
+        ValueError: 当空调UID列表为空或结果数量不匹配时
+        TimeoutError: 当优化过程超时时
+        Exception: 其他优化过程中的错误
+
+    Example:
+        >>> # 直接调用（高级用法）
+        >>> best_params = start_optimization_process(
+        ...     uid_config=uid_config,
+        ...     parameter_config=modules_config,
+        ...     security_boundary_config=security_config,
+        ...     optimization_input=historical_data,  # 必须提供
+        ...     current_data=current_data,           # 必须提供
+        ...     logger=logger,
+        ...     timeout_seconds=300
+        ... )
+
+        >>> # 推荐用法（使用高层封装）
+        >>> best_params = run_optimization(
+        ...     uid_config=uid_config,
+        ...     parameter_config=modules_config,
+        ...     security_boundary_config=security_config,
+        ...     current_data=current_data,
+        ...     logger=logger
+        ... )
+
+    See Also:
+        run_optimization(): 推荐使用的高层封装函数
     """
     try:
         # 初始化返回结果
@@ -798,12 +1013,40 @@ def start_optimization_process(
         # 遍历所有空调进行优化
         logger.info(f"开始对 {len(ac_uids)} 台空调进行优化...")
 
+        # 记录优化开始时间（用于超时控制）
+        optimization_start_time = time.time()
+
         for idx, (uid, name) in enumerate(zip(ac_uids, ac_names)):
+            # 检查是否超时
+            if timeout_seconds is not None:
+                elapsed_time = time.time() - optimization_start_time
+                if elapsed_time > timeout_seconds:
+                    logger.error(f"优化过程超时（{elapsed_time:.1f}秒 > {timeout_seconds}秒），停止优化")
+                    raise TimeoutError(f"优化过程超时: {elapsed_time:.1f}秒")
+
             logger.info(f"正在优化空调 [{idx+1}/{len(ac_uids)}]: {name} (UID: {uid})")
+
+            # 调用进度回调
+            if progress_callback is not None:
+                try:
+                    progress_callback(idx + 1, len(ac_uids), name, "开始优化")
+                except Exception as e:
+                    logger.warning(f"进度回调函数执行失败: {str(e)}")
 
             try:
                 # 获取优化器实例
                 optimizer = ac_manager.get_instance(uid)
+
+                # 如果提供了初始参数，设置初始参数
+                if initial_params is not None:
+                    try:
+                        optimizer.set_initial_params(
+                            set_temp=initial_params.get('set_temp', 24),
+                            set_humidity=initial_params.get('set_humidity', 50)
+                        )
+                        logger.info(f"已为空调 {name} 设置初始参数: {initial_params}")
+                    except Exception as e:
+                        logger.warning(f"设置初始参数失败: {str(e)}")
 
                 # 更新历史数据
                 optimizer.controller.add_historical_data(optimization_input)
@@ -829,6 +1072,13 @@ def start_optimization_process(
                     f"制冷模式: {cooling_mode_value}"
                 )
 
+                # 调用进度回调
+                if progress_callback is not None:
+                    try:
+                        progress_callback(idx + 1, len(ac_uids), name, "优化完成")
+                    except Exception as e:
+                        logger.warning(f"进度回调函数执行失败: {str(e)}")
+
             except Exception as e:
                 logger.error(f"优化空调 {name} (UID: {uid}) 时发生错误: {str(e)}")
                 # 使用默认参数
@@ -836,6 +1086,13 @@ def start_optimization_process(
                 best_params['air_conditioner_setting_humidity'].append(50)
                 best_params['air_conditioner_cooling_mode'].append(1)
                 logger.warning(f"空调 {name} 使用默认参数: 温度=24℃, 湿度=50%, 制冷模式=1")
+
+                # 调用进度回调
+                if progress_callback is not None:
+                    try:
+                        progress_callback(idx + 1, len(ac_uids), name, "使用默认参数")
+                    except Exception as e:
+                        logger.warning(f"进度回调函数执行失败: {str(e)}")
 
         # 验证结果完整性
         expected_ac_count = len(ac_uids)
