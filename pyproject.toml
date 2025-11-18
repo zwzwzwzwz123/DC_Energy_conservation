@@ -1,12 +1,21 @@
 [project]
 name = "dc-energy-conservation"
 version = "0.1.0"
-description = "Add your description here"
+description = "Data Center Energy Conservation System with AI-powered Optimization"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    # 核心依赖
     "influxdb>=5.3.2",
     "pandas>=2.3.3",
     "pyyaml>=6.0.3",
     "requests>=2.32.5",
+
+    # 优化算法依赖
+    "optuna>=3.0.0",        # 贝叶斯优化 (BayesianOptimizer)
+    "numpy>=1.24.0",        # 数值计算 (GeneticOptimizer, RLOptimizer)
+    "torch>=2.0.0",         # 深度学习/强化学习 (RLOptimizer)
+
+    # 可选依赖（用于高级功能）
+    "scikit-learn>=1.3.0",  # 机器学习工具
 ]

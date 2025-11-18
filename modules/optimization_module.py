@@ -1,17 +1,123 @@
 import pandas as pd
 import time
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 from dataclasses import dataclass
 from enum import Enum
 import threading
 import queue
 import logging
-from utils.data_reading_writing import (
-    _extract_uids_from_air_conditioners,
-    _get_air_conditioner_uids_and_names
-)
-# 导入新的优化器模块
-from .optimizers import OptimizerFactory, BaseOptimizer
+
+# 使用延迟导入避免在模块加载时就导入优化器（优化器可能依赖外部库）
+# 只在类型检查时导入，运行时在需要时才导入
+if TYPE_CHECKING:
+    from .optimizers import OptimizerFactory, BaseOptimizer
+
+
+# ==================== 辅助函数 ====================
+
+def _get_air_conditioner_uids_and_names(uid_config: Dict) -> Tuple[List[str], List[str]]:
+    """
+    从UID配置中提取空调的UID和名称列表
+
+    参数:
+        uid_config: UID配置字典（新格式，包含 'air_conditioners' 字段）
+
+    返回:
+        Tuple[List[str], List[str]]: (UID列表, 名称列表)
+        - UID列表：每台空调的第一个测点UID（作为设备标识）
+        - 名称列表：每台空调的设备名称
+
+    示例:
+        uid_config = {
+            "air_conditioners": {
+                "空调1": {
+                    "device_name": "空调1",
+                    "measurement_points": {"温度": "uid1", "湿度": "uid2"}
+                },
+                "空调2": {
+                    "device_name": "空调2",
+                    "measurement_points": {"温度": "uid3", "湿度": "uid4"}
+                }
+            }
+        }
+        uids, names = _get_air_conditioner_uids_and_names(uid_config)
+        # uids = ["uid1", "uid3"]
+        # names = ["空调1", "空调2"]
+    """
+    if 'air_conditioners' not in uid_config:
+        raise ValueError("UID配置中缺少 'air_conditioners' 字段")
+
+    air_conditioners = uid_config['air_conditioners']
+    uids = []
+    names = []
+
+    for ac_name, ac_info in air_conditioners.items():
+        # 获取设备名称
+        device_name = ac_info.get('device_name', ac_name)
+        names.append(device_name)
+
+        # 获取第一个测点的UID作为设备标识
+        measurement_points = ac_info.get('measurement_points', {})
+        if measurement_points:
+            # 取第一个测点的UID作为设备标识
+            first_uid = next(iter(measurement_points.values()))
+            uids.append(first_uid)
+        else:
+            # 如果没有测点，使用设备名称作为UID
+            uids.append(device_name)
+
+    return uids, names
+
+
+def _extract_uids_from_air_conditioners(uid_config: Dict, point_names: List[str]) -> List[str]:
+    """
+    从UID配置中提取指定测点名称的UID列表
+
+    参数:
+        uid_config: UID配置字典（新格式，包含 'air_conditioners' 字段）
+        point_names: 要提取的测点名称列表（支持多个候选名称）
+
+    返回:
+        List[str]: 每台空调对应测点的UID列表（按空调顺序）
+
+    示例:
+        uid_config = {
+            "air_conditioners": {
+                "空调1": {
+                    "measurement_points": {"温度设定值": "uid1", "湿度设定值": "uid2"}
+                },
+                "空调2": {
+                    "measurement_points": {"温度设定点": "uid3", "湿度设定点": "uid4"}
+                }
+            }
+        }
+        uids = _extract_uids_from_air_conditioners(uid_config, ['温度设定值', '温度设定点'])
+        # uids = ["uid1", "uid3"]
+    """
+    if 'air_conditioners' not in uid_config:
+        raise ValueError("UID配置中缺少 'air_conditioners' 字段")
+
+    air_conditioners = uid_config['air_conditioners']
+    uids = []
+
+    for ac_name, ac_info in air_conditioners.items():
+        measurement_points = ac_info.get('measurement_points', {})
+
+        # 尝试匹配任意一个候选测点名称
+        found_uid = None
+        for point_name in point_names:
+            if point_name in measurement_points:
+                found_uid = measurement_points[point_name]
+                break
+
+        if found_uid:
+            uids.append(found_uid)
+        else:
+            # 如果没有找到匹配的测点，记录警告但继续处理
+            # 这里不抛出异常，因为某些空调可能没有某些测点
+            pass
+
+    return uids
 
 
 # 定义优化模块的三种状态
@@ -49,35 +155,27 @@ class ACController:
         self.state_lock = threading.Lock()
         self.params_lock = threading.Lock()
 
-        # 设备UID初始化 - 适配新配置格式
-        # 检查配置格式：旧格式包含 'device_uid'，新格式包含 'air_conditioners'
-        if 'device_uid' in self.uid_config:
-            # 旧格式
-            self.logger.info("检测到旧格式的UID配置")
-            self.air_conditioner_uids = self.uid_config['device_uid']['air_conditioner_uid']
-            self.setting_temperature_uids = self.uid_config['dc_status_data_uid']['air_conditioner_setting_temperature_uid']
-            self.onoff_setting_uids = self.uid_config['dc_status_data_uid']['air_conditioner_cooling_mode_uid']
-            self.air_conditioner_setting_humidity_uids = self.uid_config['dc_status_data_uid']['air_conditioner_setting_humidity_uid']
-        elif 'air_conditioners' in self.uid_config:
-            # 新格式
-            self.logger.info("检测到新格式的UID配置")
-            # 获取空调UID和名称
-            self.air_conditioner_uids, self.air_conditioner_names = _get_air_conditioner_uids_and_names(self.uid_config)
-            self.logger.info(f"成功提取 {len(self.air_conditioner_uids)} 台空调的UID")
-            
-            # 提取温度设定值的UID（支持多种测点名称）
-            temp_point_names = ['温度设定值', '温度设定点', '回风温度设定点（℃）', '送风温度设置点']
-            self.setting_temperature_uids = _extract_uids_from_air_conditioners(self.uid_config, temp_point_names)
-            
-            # 提取开关机/制冷模式的UID
-            onoff_point_names = ['监控开关机', '监控开关机状态', '开关机命令']
-            self.onoff_setting_uids = _extract_uids_from_air_conditioners(self.uid_config, onoff_point_names)
-            
-            # 提取湿度设定值的UID
-            humidity_point_names = ['湿度设置值', '湿度设定点', '回风湿度设定点（%）']
-            self.air_conditioner_setting_humidity_uids = _extract_uids_from_air_conditioners(self.uid_config, humidity_point_names)
-        else:
-            raise ValueError("UID配置格式不正确，缺少 'device_uid' 或 'air_conditioners' 字段")
+        # 设备UID初始化 - 使用新配置格式
+        if 'air_conditioners' not in self.uid_config:
+            raise ValueError("UID配置格式不正确，缺少 'air_conditioners' 字段")
+
+        self.logger.info("开始解析空调UID配置")
+
+        # 获取空调UID和名称
+        self.air_conditioner_uids, self.air_conditioner_names = _get_air_conditioner_uids_and_names(self.uid_config)
+        self.logger.info(f"成功提取 {len(self.air_conditioner_uids)} 台空调的UID")
+
+        # 提取温度设定值的UID（支持多种测点名称）
+        temp_point_names = ['温度设定值', '温度设定点', '回风温度设定点（℃）', '送风温度设置点']
+        self.setting_temperature_uids = _extract_uids_from_air_conditioners(self.uid_config, temp_point_names)
+
+        # 提取开关机/制冷模式的UID
+        onoff_point_names = ['监控开关机', '监控开关机状态', '开关机命令']
+        self.onoff_setting_uids = _extract_uids_from_air_conditioners(self.uid_config, onoff_point_names)
+
+        # 提取湿度设定值的UID
+        humidity_point_names = ['湿度设置值', '湿度设定点', '回风湿度设定点（%）']
+        self.air_conditioner_setting_humidity_uids = _extract_uids_from_air_conditioners(self.uid_config, humidity_point_names)
 
         # 状态和数据处理初始化
         self.state = OptimizationState.IDLE
@@ -97,17 +195,11 @@ class ACController:
             self.historical_data.clear()
             
             # ==================== 获取温度传感器UID ====================
-            # 支持新格式（sensors）和旧格式（dc_status_data_uid）
-            if 'sensors' in self.uid_config and 'temperature_sensor_uid' in self.uid_config['sensors']:
-                # 新格式：从 sensors 读取
-                temp_uids = self.uid_config['sensors']['temperature_sensor_uid']
-                self.logger.info(f"从新格式配置读取到 {len(temp_uids)} 个温度传感器")
-            elif 'dc_status_data_uid' in self.uid_config and 'indoor_temperature_sensor_uid' in self.uid_config['dc_status_data_uid']:
-                # 旧格式：从 dc_status_data_uid 读取
-                temp_uids = self.uid_config['dc_status_data_uid']['indoor_temperature_sensor_uid']
-                self.logger.info(f"从旧格式配置读取到 {len(temp_uids)} 个温度传感器")
-            else:
-                raise ValueError("配置文件中缺少温度传感器UID配置")
+            if 'sensors' not in self.uid_config or 'temperature_sensor_uid' not in self.uid_config['sensors']:
+                raise ValueError("配置文件中缺少温度传感器UID配置 (sensors.temperature_sensor_uid)")
+
+            temp_uids = self.uid_config['sensors']['temperature_sensor_uid']
+            self.logger.info(f"读取到 {len(temp_uids)} 个温度传感器")
             
             # 温度传感器列名需要去掉前缀，直接使用UID（因为InfluxDB中可能直接用UID作为measurement）
             temp_cols = [str(uid) for uid in temp_uids]
@@ -116,27 +208,15 @@ class ACController:
             ac_uids = self.air_conditioner_uids
             
             # ==================== 获取空调设定温度的列名 ====================
-            # 新格式使用 self.setting_temperature_uids，旧格式从配置读取
-            if 'device_uid' in self.uid_config:
-                # 旧格式
-                set_temp_uids = self.uid_config["dc_status_data_uid"]["air_conditioner_setting_temperature_uid"]
-            else:
-                # 新格式
-                set_temp_uids = self.setting_temperature_uids
+            set_temp_uids = self.setting_temperature_uids
             set_temp_cols = [str(uid) for uid in set_temp_uids]
             
             # ==================== 获取能耗数据的UID ====================
-            # 能耗数据：优先使用新格式（如果存在），否则使用旧格式
             if 'sensors' in self.uid_config and 'energy_consumption_uid' in self.uid_config['sensors']:
-                # 新格式：从 sensors 读取能耗
                 power_uids = self.uid_config['sensors']['energy_consumption_uid']
-                self.logger.info(f"从新格式配置读取到 {len(power_uids)} 个能耗采集点")
-            elif 'dc_status_data_uid' in self.uid_config and 'energy_consumption_collection_uid' in self.uid_config['dc_status_data_uid']:
-                # 旧格式：从 dc_status_data_uid 读取
-                power_uids = self.uid_config['dc_status_data_uid']['energy_consumption_collection_uid']
-                self.logger.info(f"从旧格式配置读取到 {len(power_uids)} 个能耗采集点")
+                self.logger.info(f"读取到 {len(power_uids)} 个能耗采集点")
             else:
-                self.logger.warning("配置文件中未找到能耗数据配置，将无法计算功耗")
+                self.logger.warning("配置文件中未找到能耗数据配置 (sensors.energy_consumption_uid)，将无法计算功耗")
                 power_uids = []
             
             power_cols = [str(uid) for uid in power_uids]
@@ -158,28 +238,16 @@ class ACController:
                 ac_to_power_mapping = {}
 
             # ==================== 获取湿度传感器UID ====================
-            # 支持新格式（sensors）和旧格式（dc_status_data_uid）
-            if 'sensors' in self.uid_config and 'humidity_sensor_uid' in self.uid_config['sensors']:
-                # 新格式：从 sensors 读取
-                humidity_uids = self.uid_config['sensors']['humidity_sensor_uid']
-                self.logger.info(f"从新格式配置读取到 {len(humidity_uids)} 个湿度传感器")
-            elif 'dc_status_data_uid' in self.uid_config and 'indoor_humidity_sensor_uid' in self.uid_config['dc_status_data_uid']:
-                # 旧格式：从 dc_status_data_uid 读取
-                humidity_uids = self.uid_config['dc_status_data_uid']['indoor_humidity_sensor_uid']
-                self.logger.info(f"从旧格式配置读取到 {len(humidity_uids)} 个湿度传感器")
-            else:
-                raise ValueError("配置文件中缺少湿度传感器UID配置")
+            if 'sensors' not in self.uid_config or 'humidity_sensor_uid' not in self.uid_config['sensors']:
+                raise ValueError("配置文件中缺少湿度传感器UID配置 (sensors.humidity_sensor_uid)")
+
+            humidity_uids = self.uid_config['sensors']['humidity_sensor_uid']
+            self.logger.info(f"读取到 {len(humidity_uids)} 个湿度传感器")
             
             humidity_cols = [str(uid) for uid in humidity_uids]
             
             # ==================== 获取空调设定湿度的列名 ====================
-            # 新格式使用 self.air_conditioner_setting_humidity_uids，旧格式从配置读取
-            if 'device_uid' in self.uid_config:
-                # 旧格式
-                set_humidity_uids = self.uid_config["dc_status_data_uid"]["air_conditioner_setting_humidity_uid"]
-            else:
-                # 新格式
-                set_humidity_uids = self.air_conditioner_setting_humidity_uids
+            set_humidity_uids = self.air_conditioner_setting_humidity_uids
             set_humidity_cols = [str(uid) for uid in set_humidity_uids]
             # ==================== 遍历数据并创建历史记录 ====================
             for _, row in data.iterrows():
@@ -189,7 +257,7 @@ class ACController:
                 avg_humidity = row[humidity_cols].mean()
                 
                 # 遍历每台空调
-                for i, uid in enumerate(ac_uids):
+                for i, _uid in enumerate(ac_uids):
                     # 确保索引不越界
                     if i >= len(set_temp_cols) or i >= len(set_humidity_cols):
                         self.logger.warning(f"空调索引{i}超出设定值列表范围，跳过该空调")
@@ -244,13 +312,10 @@ class ACController:
             row = current_data.iloc[-1]
             
             # ==================== 获取温度传感器数据 ====================
-            # 支持新格式（sensors）和旧格式（dc_status_data_uid）
-            if 'sensors' in self.uid_config and 'temperature_sensor_uid' in self.uid_config['sensors']:
-                temp_uids = self.uid_config['sensors']['temperature_sensor_uid']
-            elif 'dc_status_data_uid' in self.uid_config and 'indoor_temperature_sensor_uid' in self.uid_config['dc_status_data_uid']:
-                temp_uids = self.uid_config['dc_status_data_uid']['indoor_temperature_sensor_uid']
-            else:
-                raise ValueError("配置文件中缺少温度传感器UID配置")
+            if 'sensors' not in self.uid_config or 'temperature_sensor_uid' not in self.uid_config['sensors']:
+                raise ValueError("配置文件中缺少温度传感器UID配置 (sensors.temperature_sensor_uid)")
+
+            temp_uids = self.uid_config['sensors']['temperature_sensor_uid']
             
             temp_cols = [str(uid) for uid in temp_uids]
             temp_list = [row[col] for col in temp_cols]
@@ -259,11 +324,7 @@ class ACController:
             # 回风温度：从空调测点中提取"回风温度测量值（℃）"
             return_temp_point_names = ['回风温度测量值（℃）', '回风温度测量值', '回风温度']
             return_temp_uids = _extract_uids_from_air_conditioners(self.uid_config, return_temp_point_names)
-            
-            # 如果没有找到，尝试从旧格式读取
-            if not return_temp_uids and 'dc_status_data_uid' in self.uid_config and 'return_air_temperature_uid' in self.uid_config['dc_status_data_uid']:
-                return_temp_uids = self.uid_config['dc_status_data_uid']['return_air_temperature_uid']
-            
+
             if return_temp_uids:
                 return_temp_cols = [str(uid) for uid in return_temp_uids]
                 return_temps = [row[col] for col in return_temp_cols]
@@ -274,25 +335,17 @@ class ACController:
             # ==================== 获取功耗数据 ====================
             if 'sensors' in self.uid_config and 'energy_consumption_uid' in self.uid_config['sensors']:
                 power_uids = self.uid_config['sensors']['energy_consumption_uid']
-            elif 'dc_status_data_uid' in self.uid_config and 'energy_consumption_collection_uid' in self.uid_config['dc_status_data_uid']:
-                power_uids = self.uid_config['dc_status_data_uid']['energy_consumption_collection_uid']
-            else:
-                power_uids = []
-                self.logger.warning("配置文件中未找到能耗数据配置")
-            
-            if power_uids:
                 power_cols = [str(uid) for uid in power_uids]
                 power_values = [row[col] for col in power_cols]
             else:
+                self.logger.warning("配置文件中未找到能耗数据配置 (sensors.energy_consumption_uid)")
                 power_values = []
 
             # ==================== 获取湿度传感器数据 ====================
-            if 'sensors' in self.uid_config and 'humidity_sensor_uid' in self.uid_config['sensors']:
-                humidity_uids = self.uid_config['sensors']['humidity_sensor_uid']
-            elif 'dc_status_data_uid' in self.uid_config and 'indoor_humidity_sensor_uid' in self.uid_config['dc_status_data_uid']:
-                humidity_uids = self.uid_config['dc_status_data_uid']['indoor_humidity_sensor_uid']
-            else:
-                raise ValueError("配置文件中缺少湿度传感器UID配置")
+            if 'sensors' not in self.uid_config or 'humidity_sensor_uid' not in self.uid_config['sensors']:
+                raise ValueError("配置文件中缺少湿度传感器UID配置 (sensors.humidity_sensor_uid)")
+
+            humidity_uids = self.uid_config['sensors']['humidity_sensor_uid']
             
             humidity_cols = [str(uid) for uid in humidity_uids]
             humidity_list = [row[col] for col in humidity_cols]
@@ -301,11 +354,7 @@ class ACController:
             # 回风湿度：从空调测点中提取"回风湿度测量值（%）"
             return_humidity_point_names = ['回风湿度测量值（%）', '回风湿度测量值', '回风湿度']
             return_humidity_uids = _extract_uids_from_air_conditioners(self.uid_config, return_humidity_point_names)
-            
-            # 如果没有找到，尝试从旧格式读取
-            if not return_humidity_uids and 'dc_status_data_uid' in self.uid_config and 'return_air_humidity_uid' in self.uid_config['dc_status_data_uid']:
-                return_humidity_uids = self.uid_config['dc_status_data_uid']['return_air_humidity_uid']
-            
+
             if return_humidity_uids:
                 return_humidity_cols = [str(uid) for uid in return_humidity_uids]
                 return_humidity_list = [row[col] for col in return_humidity_cols]
@@ -402,9 +451,12 @@ class DynamicOptimizer:
         optimization_params = parameter_config.get("optimization_module", {})
         self.algorithm = optimization_params.get("algorithm", "bayesian")
 
+        # 延迟导入优化器工厂（运行时导入）
+        from .optimizers import OptimizerFactory
+
         # 创建具体的优化器实例
         try:
-            self.optimizer: BaseOptimizer = OptimizerFactory.create_optimizer(
+            self.optimizer = OptimizerFactory.create_optimizer(
                 algorithm=self.algorithm,
                 controller=controller,
                 parameter_config=parameter_config,
