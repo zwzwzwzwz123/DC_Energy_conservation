@@ -726,8 +726,8 @@ def main():
         print("\n主程序运行中... (按 Ctrl+C 退出)")
 
         # 保持主线程存活，等待中断信号
-        # 使用 shutdown_event.wait() 代替 while True: time.sleep(3600)
-        ctx.shutdown_event.wait()
+        while True:
+            time.sleep(3600)
 
     except KeyboardInterrupt:
         ctx.loggers["main"].info("接收到中断信号，开始关闭系统...")
