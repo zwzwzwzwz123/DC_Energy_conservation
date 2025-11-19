@@ -1,6 +1,6 @@
 import pandas as pd
 import time
-from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING, Union
 from dataclasses import dataclass
 from enum import Enum
 import threading
@@ -120,6 +120,93 @@ def _extract_uids_from_air_conditioners(uid_config: Dict, point_names: List[str]
     return uids
 
 
+def _is_timeseries_mapping(data: Any) -> bool:
+    """判断输入是否为 {uid: DataFrame} 的结构"""
+    if not isinstance(data, dict):
+        return False
+    return all(isinstance(df, pd.DataFrame) for df in data.values())
+
+
+def _merge_timeseries_dict_to_dataframe(data_dict: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """
+    将 {uid: DataFrame} 的结构合并为单一 DataFrame，列名使用 uid
+    方便与原有的优化流程兼容
+    """
+    frames = []
+    for uid, df in data_dict.items():
+        if df is None or df.empty:
+            continue
+
+        df_local = df.copy()
+
+        # 检测时间列
+        time_col = None
+        for candidate in ('_time', 'timestamp', 'time'):
+            if candidate in df_local.columns:
+                time_col = candidate
+                break
+        if time_col is None:
+            time_col = df_local.columns[0]
+
+        # 检测数值列
+        value_col = None
+        for candidate in ('value', '_value', 'reading'):
+            if candidate in df_local.columns:
+                value_col = candidate
+                break
+        if value_col is None:
+            value_col = df_local.columns[-1]
+
+        normalized = df_local[[time_col, value_col]].copy()
+        normalized.columns = ['_time', str(uid)]
+        frames.append(normalized)
+
+    if not frames:
+        raise ValueError("无法从输入数据中提取任何测点")
+
+    merged = frames[0]
+    for frame in frames[1:]:
+        merged = pd.merge(merged, frame, on='_time', how='outer')
+
+    merged.sort_values('_time', inplace=True)
+    merged.ffill(inplace=True)
+    merged.reset_index(drop=True, inplace=True)
+    return merged
+
+
+def _standardize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """统一 DataFrame 的列名格式并复制一份安全副本"""
+    standardized = df.copy()
+    standardized.columns = [str(col) for col in standardized.columns]
+    return standardized
+
+
+def _normalize_input_data(data: Union[pd.DataFrame, Dict[str, pd.DataFrame]], label: str) -> pd.DataFrame:
+    """
+    将输入规范化为 DataFrame。
+    支持两种输入：
+        1. 直接的 DataFrame
+        2. {uid: DataFrame} 的字典结构（与 DataCenterDataReader 对齐）
+    """
+    if isinstance(data, pd.DataFrame):
+        normalized = _standardize_dataframe(data)
+    elif _is_timeseries_mapping(data):
+        normalized = _standardize_dataframe(_merge_timeseries_dict_to_dataframe(data))
+    else:
+        raise TypeError(f"{label} 必须是 pandas.DataFrame 或 {{uid: DataFrame}} 的字典结构")
+
+    if normalized.empty:
+        raise ValueError(f"{label} 不能为空")
+    return normalized
+
+
+TEMPERATURE_SETTING_CANDIDATES = ['温度设定值', '温度设定点', '回风温度设定点（℃）', '送风温度设置点']
+HUMIDITY_SETTING_CANDIDATES = ['湿度设置点', '湿度设定点', '回风湿度设定点（%）']
+RETURN_TEMP_CANDIDATES = ['回风温度测量值（℃）', '回风温度测量值', '回风温度']
+RETURN_HUMIDITY_CANDIDATES = ['回风湿度测量值（%）', '回风湿度测量值', '回风湿度']
+POWER_READING_CANDIDATES = ['有功功率', '功耗', '监控功率', '有功电度']
+
+
 # 定义优化模块的三种状态
 class OptimizationState(Enum):
     IDLE = "idle"
@@ -130,6 +217,7 @@ class OptimizationState(Enum):
 # 定义数据记录类
 @dataclass
 class DataRecord:
+    device_uid: str
     set_temp: int
     set_humidity: int  # 新增湿度设定值
     final_temp: float
@@ -145,245 +233,193 @@ class ACController:
     def __init__(self,
                  uid_config: Dict,
                  logger: logging.Logger,
-                 is_reference: bool = False):  # 添加is_reference参数
-        # 配置初始化
+                 is_reference: bool = False,
+                 target_uid: Optional[str] = None,
+                 device_config: Optional[Dict] = None):
         self.uid_config = uid_config
         self.logger = logger
         self.is_reference = is_reference
 
-        # 添加线程安全锁
-        self.state_lock = threading.Lock()
-        self.params_lock = threading.Lock()
-
-        # 设备UID初始化 - 使用新配置格式
         if 'air_conditioners' not in self.uid_config:
             raise ValueError("UID配置格式不正确，缺少 'air_conditioners' 字段")
 
-        self.logger.info("开始解析空调UID配置")
+        self.state_lock = threading.Lock()
+        self.params_lock = threading.Lock()
 
-        # 获取空调UID和名称
         self.air_conditioner_uids, self.air_conditioner_names = _get_air_conditioner_uids_and_names(self.uid_config)
-        self.logger.info(f"成功提取 {len(self.air_conditioner_uids)} 台空调的UID")
+        if not self.air_conditioner_uids:
+            raise ValueError("空调UID列表为空")
 
-        # 提取温度设定值的UID（支持多种测点名称）
-        temp_point_names = ['温度设定值', '温度设定点', '回风温度设定点（℃）', '送风温度设置点']
-        self.setting_temperature_uids = _extract_uids_from_air_conditioners(self.uid_config, temp_point_names)
+        self.ac_uid = str(target_uid or self.air_conditioner_uids[0])
+        if self.ac_uid not in self.air_conditioner_uids:
+            raise ValueError(f"目标空调UID {self.ac_uid} 不在配置列表中")
 
-        # 提取开关机/制冷模式的UID
-        onoff_point_names = ['监控开关机', '监控开关机状态', '开关机命令']
-        self.onoff_setting_uids = _extract_uids_from_air_conditioners(self.uid_config, onoff_point_names)
+        self.ac_index = self.air_conditioner_uids.index(self.ac_uid)
+        air_conditioner_items = list(self.uid_config['air_conditioners'].items())
+        config_key, config_value = air_conditioner_items[self.ac_index]
+        self.ac_config = device_config or config_value
+        self.ac_name = self.ac_config.get('device_name', config_key)
 
-        # 提取湿度设定值的UID
-        humidity_point_names = ['湿度设置值', '湿度设定点', '回风湿度设定点（%）']
-        self.air_conditioner_setting_humidity_uids = _extract_uids_from_air_conditioners(self.uid_config, humidity_point_names)
+        self.logger.info(f"初始化空调控制器: {self.ac_name} (UID: {self.ac_uid})")
 
-        # 状态和数据处理初始化
+        self.setting_temperature_uid = self._require_device_point(TEMPERATURE_SETTING_CANDIDATES, "温度设定测点")
+        self.setting_humidity_uid = self._require_device_point(HUMIDITY_SETTING_CANDIDATES, "湿度设定测点")
+        self.return_temp_uid = self._get_device_point_uid(RETURN_TEMP_CANDIDATES)
+        self.return_humidity_uid = self._get_device_point_uid(RETURN_HUMIDITY_CANDIDATES)
+        self.device_power_uid = self._get_device_point_uid(POWER_READING_CANDIDATES)
+
+        sensors = self.uid_config.get('sensors', {})
+        if 'temperature_sensor_uid' not in sensors or 'humidity_sensor_uid' not in sensors:
+            raise ValueError("配置文件中缺少温湿度传感器UID配置 (sensors.temperature_sensor_uid / sensors.humidity_sensor_uid)")
+
+        self.temperature_sensor_uids = [str(uid) for uid in sensors['temperature_sensor_uid']]
+        self.humidity_sensor_uids = [str(uid) for uid in sensors['humidity_sensor_uid']]
+        self.power_sensor_uids = [str(uid) for uid in sensors.get('energy_consumption_uid', [])]
+        self.power_meter_index = (self.ac_index % len(self.power_sensor_uids)) if self.power_sensor_uids else None
+
         self.state = OptimizationState.IDLE
         self.result_queue = queue.Queue()
         self.stop_event = threading.Event()
-        # 根据是否为参考优化设置不同的稳定时间
-        self.stabilization_time = 1 if is_reference else 300  # 参考优化1秒钟，实际优化5分钟
+        self.stabilization_time = 1 if is_reference else 300
         self.historical_data: List[DataRecord] = []
-        self.max_historical_records = 1000  # 最多保留1000条历史记录
-        # 根据uid确定空调数量
-        # self.number_of_ac = len(self.air_conditioner_uids)
-        self.previous_best_params = None  # 添加存储上一个最优状态的属性
+        self.max_historical_records = 1000
+        self.previous_best_params = None
+        self.active_thread: Optional[threading.Thread] = None
 
-    def add_historical_data(self, data: pd.DataFrame) -> None:
-        """添加历史数据，每台空调一条记录，根据电表分组正确分配能耗数据"""
+    def _get_device_point_uid(self, candidates: List[str]) -> Optional[str]:
+        measurement_points = self.ac_config.get('measurement_points', {})
+        for name in candidates:
+            if name in measurement_points:
+                return str(measurement_points[name])
+        return None
+
+    def _require_device_point(self, candidates: List[str], description: str) -> str:
+        uid = self._get_device_point_uid(candidates)
+        if uid is None:
+            raise ValueError(f"{self.ac_name} 缺少必要测点: {description}")
+        return uid
+
+    def _prepare_dataframe(self, data: Union[pd.DataFrame, Dict[str, pd.DataFrame]], label: str) -> pd.DataFrame:
+        return _normalize_input_data(data, label)
+
+    def _safe_row_value(self, row: pd.Series, column: Optional[str], default: Optional[float] = None) -> Optional[float]:
+        if column is None or column not in row.index:
+            return default
+        value = row[column]
+        if pd.isna(value):
+            return default
+        return float(value)
+
+    def _mean_from_row(self, row: pd.Series, columns: List[str]) -> Optional[float]:
+        values = [float(row[col]) for col in columns if col in row.index and not pd.isna(row[col])]
+        if not values:
+            return None
+        return sum(values) / len(values)
+
+    def _extract_power_value(self, row: pd.Series, power_cols: List[str]) -> Optional[float]:
+        if self.device_power_uid and self.device_power_uid in row.index and not pd.isna(row[self.device_power_uid]):
+            return float(row[self.device_power_uid])
+
+        if self.power_meter_index is None or not power_cols:
+            return None
+
+        if self.power_meter_index < len(power_cols):
+            column = power_cols[self.power_meter_index]
+            if column in row.index and not pd.isna(row[column]):
+                return float(row[column])
+        return None
+
+    @staticmethod
+    def _wrap_optional(value: Optional[float]) -> List[float]:
+        return [value] if value is not None else []
+
+    def _filter_existing(self, frame: pd.DataFrame, columns: List[str]) -> List[str]:
+        return [col for col in columns if col in frame.columns]
+
+    def _resolve_sensor_columns(self, frame: pd.DataFrame) -> Dict[str, List[str]]:
+        return {
+            'temp': self._filter_existing(frame, self.temperature_sensor_uids),
+            'humidity': self._filter_existing(frame, self.humidity_sensor_uids),
+            'power': self._filter_existing(frame, self.power_sensor_uids),
+        }
+
+    @staticmethod
+    def _coerce_timestamp(value: Any) -> float:
+        if hasattr(value, "timestamp"):
+            return float(value.timestamp())
         try:
+            return float(value)
+        except (TypeError, ValueError):
+            return time.time()
+
+    def _append_history(self, record: DataRecord) -> None:
+        self.historical_data.append(record)
+        if len(self.historical_data) > self.max_historical_records:
+            self.historical_data.pop(0)
+
+    def add_historical_data(self, data: Union[pd.DataFrame, Dict[str, pd.DataFrame]]) -> None:
+        """添加历史数据，支持 DataFrame 或 {uid: DataFrame} 输入"""
+        try:
+            frame = self._prepare_dataframe(data, "historical_data")
+            columns = self._resolve_sensor_columns(frame)
+
+            required = [self.setting_temperature_uid, self.setting_humidity_uid]
+            missing = [col for col in required if col not in frame.columns]
+            if missing:
+                raise ValueError(f"历史数据缺少必要列: {missing}")
+
             self.historical_data.clear()
-            
-            # ==================== 获取温度传感器UID ====================
-            if 'sensors' not in self.uid_config or 'temperature_sensor_uid' not in self.uid_config['sensors']:
-                raise ValueError("配置文件中缺少温度传感器UID配置 (sensors.temperature_sensor_uid)")
 
-            temp_uids = self.uid_config['sensors']['temperature_sensor_uid']
-            self.logger.info(f"读取到 {len(temp_uids)} 个温度传感器")
-            
-            # 温度传感器列名需要去掉前缀，直接使用UID（因为InfluxDB中可能直接用UID作为measurement）
-            temp_cols = [str(uid) for uid in temp_uids]
-            
-            # 获取空调设备的UID列表
-            ac_uids = self.air_conditioner_uids
-            
-            # ==================== 获取空调设定温度的列名 ====================
-            set_temp_uids = self.setting_temperature_uids
-            set_temp_cols = [str(uid) for uid in set_temp_uids]
-            
-            # ==================== 获取能耗数据的UID ====================
-            if 'sensors' in self.uid_config and 'energy_consumption_uid' in self.uid_config['sensors']:
-                power_uids = self.uid_config['sensors']['energy_consumption_uid']
-                self.logger.info(f"读取到 {len(power_uids)} 个能耗采集点")
-            else:
-                self.logger.warning("配置文件中未找到能耗数据配置 (sensors.energy_consumption_uid)，将无法计算功耗")
-                power_uids = []
-            
-            power_cols = [str(uid) for uid in power_uids]
+            for _, row in frame.iterrows():
+                set_temp_value = row[self.setting_temperature_uid]
+                set_humidity_value = row[self.setting_humidity_uid]
+                if pd.isna(set_temp_value) or pd.isna(set_humidity_value):
+                    continue
 
-            # ==================== 定义空调与电表的对应关系 ====================
-            # 注意：这个映射关系需要根据实际的电表配置调整
-            # 目前新配置中有9台空调，需要确定它们的电表分组关系
-            # 如果没有明确的分组信息，可以假设每台空调独立或需要用户配置
-            if power_uids:
-                # 简化处理：假设所有空调平均分配到可用的电表
-                num_ac = len(ac_uids)
-                num_power = len(power_uids)
-                ac_to_power_mapping = {}
-                for i in range(num_ac):
-                    # 按顺序循环分配到电表
-                    ac_to_power_mapping[i] = i % num_power
-                self.logger.info(f"自动生成空调-电表映射关系: {num_ac}台空调 -> {num_power}个电表")
-            else:
-                ac_to_power_mapping = {}
+                avg_temp = self._mean_from_row(row, columns['temp'])
+                avg_humidity = self._mean_from_row(row, columns['humidity'])
+                final_temp = self._safe_row_value(row, self.return_temp_uid, avg_temp)
+                final_humidity = self._safe_row_value(row, self.return_humidity_uid, avg_humidity)
+                power_value = self._extract_power_value(row, columns['power']) or 0.0
 
-            # ==================== 获取湿度传感器UID ====================
-            if 'sensors' not in self.uid_config or 'humidity_sensor_uid' not in self.uid_config['sensors']:
-                raise ValueError("配置文件中缺少湿度传感器UID配置 (sensors.humidity_sensor_uid)")
+                record = DataRecord(
+                    device_uid=self.ac_uid,
+                    set_temp=int(round(float(set_temp_value))),
+                    set_humidity=int(round(float(set_humidity_value))),
+                    final_temp=float(final_temp if final_temp is not None else 0.0),
+                    final_humidity=float(final_humidity if final_humidity is not None else 0.0),
+                    power=float(power_value),
+                    timestamp=self._coerce_timestamp(row.get('_time', time.time())),
+                    is_optimization_result=False
+                )
+                self._append_history(record)
 
-            humidity_uids = self.uid_config['sensors']['humidity_sensor_uid']
-            self.logger.info(f"读取到 {len(humidity_uids)} 个湿度传感器")
-            
-            humidity_cols = [str(uid) for uid in humidity_uids]
-            
-            # ==================== 获取空调设定湿度的列名 ====================
-            set_humidity_uids = self.air_conditioner_setting_humidity_uids
-            set_humidity_cols = [str(uid) for uid in set_humidity_uids]
-            # ==================== 遍历数据并创建历史记录 ====================
-            for _, row in data.iterrows():
-                # 计算所有温度传感器的平均温度
-                avg_temp = row[temp_cols].mean()
-                # 计算所有湿度传感器的平均湿度
-                avg_humidity = row[humidity_cols].mean()
-                
-                # 遍历每台空调
-                for i, _uid in enumerate(ac_uids):
-                    # 确保索引不越界
-                    if i >= len(set_temp_cols) or i >= len(set_humidity_cols):
-                        self.logger.warning(f"空调索引{i}超出设定值列表范围，跳过该空调")
-                        continue
-                    
-                    # 获取该空调的设定温度、设定湿度
-                    set_temp = row[set_temp_cols[i]]  # 设定温度
-                    set_humidity = row[set_humidity_cols[i]]  # 设定湿度
-                    
-                    # 获取功耗数据（如果有）
-                    if power_cols and i in ac_to_power_mapping:
-                        power_index = ac_to_power_mapping[i]
-                        if power_index < len(power_cols):
-                            power = row[power_cols[power_index]]  # 根据映射关系获取对应电表的功耗
-                        else:
-                            power = 0.0  # 如果电表索引越界，使用0
-                            self.logger.warning(f"电表索引{power_index}越界，使用默认值0")
-                    else:
-                        power = 0.0  # 如果没有功耗配置，使用0
-
-                    # 创建一条历史数据记录
-                    record = DataRecord(
-                        set_temp=int(set_temp),  # 设定温度取整数
-                        set_humidity=int(set_humidity),  # 设定湿度取整数
-                        final_temp=float(avg_temp),  # 最终温度(所有传感器平均值)
-                        final_humidity=float(avg_humidity),  # 最终湿度(所有传感器平均值)
-                        power=float(power),  # 根据电表分组获取的功耗
-                        timestamp=row.get('_time', time.time()),  # 时间戳,如果没有则用当前时间
-                        is_optimization_result=False  # 标记为历史数据而非优化结果
-                    )
-                    self.historical_data.append(record)
-            
-            power_info = f"根据电表分组分配功耗" if power_cols else "无功耗数据"
-            self.logger.info(f"成功添加{len(self.historical_data)}条历史数据（每台空调一条，{power_info}）")
+            self.logger.info(f"{self.ac_name} 已载入 {len(self.historical_data)} 条历史数据")
         except Exception as e:
             self.logger.error(f"添加历史数据时发生错误: {str(e)}")
             raise
 
-    def get_system_state(self, current_data: pd.DataFrame) -> Tuple[list, list, list, list, list, list]:
-        """
-        获取当前系统状态
-        Returns:
-            Tuple[list, list, list, list, list, list]:
-            - 所有温度探头的温度列表
-            - 回风温度列表（每台空调）
-            - 功耗列表（电表的值）
-            - 功耗分组信息（标记哪些空调共用电表）
-            - 所有湿度传感器的湿度列表
-            - 回风湿度列表（每台空调）
-        """
+    def get_system_state(self, current_data: Union[pd.DataFrame, Dict[str, pd.DataFrame]]) -> Tuple[list, list, list, list, list, list]:
+        """获取当前空调的实时状态"""
         try:
-            row = current_data.iloc[-1]
-            
-            # ==================== 获取温度传感器数据 ====================
-            if 'sensors' not in self.uid_config or 'temperature_sensor_uid' not in self.uid_config['sensors']:
-                raise ValueError("配置文件中缺少温度传感器UID配置 (sensors.temperature_sensor_uid)")
+            frame = self._prepare_dataframe(current_data, "current_data")
+            row = frame.iloc[-1]
+            columns = self._resolve_sensor_columns(frame)
 
-            temp_uids = self.uid_config['sensors']['temperature_sensor_uid']
-            
-            temp_cols = [str(uid) for uid in temp_uids]
-            temp_list = [row[col] for col in temp_cols]
+            avg_temp = self._mean_from_row(row, columns['temp'])
+            avg_humidity = self._mean_from_row(row, columns['humidity'])
+            return_temp_value = self._safe_row_value(row, self.return_temp_uid)
+            return_humidity_value = self._safe_row_value(row, self.return_humidity_uid)
+            power_value = self._extract_power_value(row, columns['power'])
 
-            # ==================== 获取回风温度数据 ====================
-            # 回风温度：从空调测点中提取"回风温度测量值（℃）"
-            return_temp_point_names = ['回风温度测量值（℃）', '回风温度测量值', '回风温度']
-            return_temp_uids = _extract_uids_from_air_conditioners(self.uid_config, return_temp_point_names)
-
-            if return_temp_uids:
-                return_temp_cols = [str(uid) for uid in return_temp_uids]
-                return_temps = [row[col] for col in return_temp_cols]
-            else:
-                self.logger.warning("未找到回风温度配置，使用空列表")
-                return_temps = []
-
-            # ==================== 获取功耗数据 ====================
-            if 'sensors' in self.uid_config and 'energy_consumption_uid' in self.uid_config['sensors']:
-                power_uids = self.uid_config['sensors']['energy_consumption_uid']
-                power_cols = [str(uid) for uid in power_uids]
-                power_values = [row[col] for col in power_cols]
-            else:
-                self.logger.warning("配置文件中未找到能耗数据配置 (sensors.energy_consumption_uid)")
-                power_values = []
-
-            # ==================== 获取湿度传感器数据 ====================
-            if 'sensors' not in self.uid_config or 'humidity_sensor_uid' not in self.uid_config['sensors']:
-                raise ValueError("配置文件中缺少湿度传感器UID配置 (sensors.humidity_sensor_uid)")
-
-            humidity_uids = self.uid_config['sensors']['humidity_sensor_uid']
-            
-            humidity_cols = [str(uid) for uid in humidity_uids]
-            humidity_list = [row[col] for col in humidity_cols]
-
-            # ==================== 获取回风湿度数据 ====================
-            # 回风湿度：从空调测点中提取"回风湿度测量值（%）"
-            return_humidity_point_names = ['回风湿度测量值（%）', '回风湿度测量值', '回风湿度']
-            return_humidity_uids = _extract_uids_from_air_conditioners(self.uid_config, return_humidity_point_names)
-
-            if return_humidity_uids:
-                return_humidity_cols = [str(uid) for uid in return_humidity_uids]
-                return_humidity_list = [row[col] for col in return_humidity_cols]
-            else:
-                self.logger.warning("未找到回风湿度配置，使用空列表")
-                return_humidity_list = []
-
-            # ==================== 定义功耗分组信息 ====================
-            # 根据空调数量和电表数量自动生成分组
-            num_ac = len(self.air_conditioner_uids)
-            num_power = len(power_values)
-            
-            if num_power > 0:
-                power_groups = []
-                for power_idx in range(num_power):
-                    # 找出使用该电表的所有空调
-                    group = [ac_idx for ac_idx in range(num_ac) if ac_idx % num_power == power_idx]
-                    power_groups.append(group)
-            else:
-                # 如果没有功耗数据，每台空调独立
-                power_groups = [[i] for i in range(num_ac)]
-
-            self.logger.info(f"成功获取系统状态: temp_sensors={len(temp_list)}, "
-                             f"humidity_sensors={len(humidity_list)}, "
-                             f"return_temps={len(return_temps)}, "
-                             f"return_humidity={len(return_humidity_list)}, "
-                             f"power_meters={len(power_values)}")
-
-            return temp_list, return_temps, power_values, power_groups, humidity_list, return_humidity_list
+            return (
+                self._wrap_optional(avg_temp),
+                self._wrap_optional(return_temp_value),
+                self._wrap_optional(power_value),
+                [[0]] if power_value is not None else [],
+                self._wrap_optional(avg_humidity),
+                self._wrap_optional(return_humidity_value)
+            )
         except Exception as e:
             self.logger.error(f"获取系统状态时发生错误: {str(e)}")
             raise
@@ -392,46 +428,42 @@ class ACController:
         """等待系统稳定"""
         time.sleep(self.stabilization_time)
 
+    def register_optimization_thread(self, thread: Optional[threading.Thread]) -> None:
+        """记录当前优化线程，便于重置时正确等待"""
+        with self.state_lock:
+            self.active_thread = thread
+
     def reset(self) -> Optional[Dict]:
-        """重置优化过程并返回上一个最优状态参数"""
+        """重置控制器状态并返回上一次的最优参数"""
         self.logger.info("开始重置优化过程...")
 
         with self.state_lock:
             self.state = OptimizationState.RESETTING
+            active_thread = self.active_thread
 
         self.stop_event.set()
 
-        # 等待优化过程完全停止（添加超时保护）
-        # 注意：这里等待的是外部优化线程结束，而不是状态变化
-        # 状态需要在这个方法中手动设置
-        timeout = 30  # 30秒超时
-        start_time = time.time()
+        if active_thread and active_thread.is_alive():
+            self.logger.info("等待优化线程结束...")
+            active_thread.join(timeout=30)
+            if active_thread.is_alive():
+                self.logger.warning("优化线程未能在超时时间内结束")
 
-        while time.time() - start_time < timeout:
-            # 这里简单等待一段时间，让优化线程有机会响应停止信号
-            # 实际的线程等待应该在 DynamicOptimizer.stop() 中处理
-            time.sleep(0.1)
-            # 可以添加额外的检查逻辑，例如检查优化线程是否还在运行
-            break  # 暂时直接退出，避免长时间等待
-
-        # 保存上一个最优状态
         with self.params_lock:
             previous_params = self.previous_best_params
 
-        # 清理状态
         self.stop_event.clear()
         with self.state_lock:
             self.state = OptimizationState.IDLE
+            self.active_thread = None
 
         if previous_params:
-            self.logger.info(f"重置完成，返回上一个最优状态参数: {previous_params}")
+            self.logger.info(f"重置完成，返回上一个最优状态参数 {previous_params}")
             return previous_params
-        else:
-            self.logger.warning("重置完成，但没有可用的上一个最优状态")
-            return None
 
+        self.logger.warning("重置完成，但没有可用的上一个最优状态")
+        return None
 
-# 定义动态优化器类（重构版本，支持多种优化算法）
 class DynamicOptimizer:
     """
     动态优化器类
@@ -569,8 +601,10 @@ class DynamicOptimizer:
                 finally:
                     with self.controller.state_lock:
                         self.controller.state = OptimizationState.IDLE
+                    self.controller.register_optimization_thread(None)
 
             self.optimization_thread = threading.Thread(target=optimization_loop, daemon=True)
+            self.controller.register_optimization_thread(self.optimization_thread)
             self.optimization_thread.start()
             self.logger.info(f"优化过程已启动，使用算法: {self.algorithm}")
 
@@ -721,8 +755,23 @@ class ACInstanceManager:
             if not ac_uids:
                 raise ValueError("空调UID列表为空")
 
+            uid_to_config = {}
+            for idx, (ac_key, ac_info) in enumerate(uid_config['air_conditioners'].items()):
+                measurement_points = ac_info.get('measurement_points', {})
+                if measurement_points:
+                    device_uid = str(next(iter(measurement_points.values())))
+                else:
+                    device_uid = str(ac_info.get('device_name', ac_key))
+                uid_to_config[device_uid] = ac_info
+
             for uid, name in zip(ac_uids, ac_names):
-                controller = ACController(uid_config, logger, is_reference)
+                controller = ACController(
+                    uid_config,
+                    logger,
+                    is_reference,
+                    target_uid=uid,
+                    device_config=uid_to_config.get(str(uid))
+                )
                 optimizer = DynamicOptimizer(controller, parameter_config, security_boundary_config)
                 self.ac_instances[str(uid)] = optimizer  # 确保uid是字符串
                 logger.info(f"成功创建空调 {name} (UID: {uid}) 的优化器实例")
@@ -749,9 +798,9 @@ def run_optimization(
         uid_config: dict,
         parameter_config: dict,
         security_boundary_config: dict,
-        current_data: pd.DataFrame,
+        current_data: Union[pd.DataFrame, Dict[str, pd.DataFrame]],
         logger: logging.Logger,
-        historical_data: Optional[pd.DataFrame] = None,
+        historical_data: Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]] = None,
         is_reference: bool = False,
         ac_manager: Optional[ACInstanceManager] = None,
         timeout_seconds: Optional[float] = None,
@@ -769,9 +818,9 @@ def run_optimization(
         uid_config: UID配置字典，包含空调和传感器的配置信息
         parameter_config: 模块参数配置，包含优化算法参数
         security_boundary_config: 安全边界配置，包含温湿度约束
-        current_data: 当前系统状态数据（DataFrame格式）
+        current_data: 当前系统状态数据（pandas.DataFrame 或 {uid: DataFrame}）
         logger: 日志记录器
-        historical_data: 历史数据（DataFrame格式，可选）。如果为None，将使用current_data作为历史数据
+        historical_data: 历史数据（pandas.DataFrame 或 {uid: DataFrame}，可选）。如果为None，将使用current_data作为历史数据
         is_reference: 是否为参考优化（快速模式，用于测试）
         ac_manager: 空调实例管理器（可选）。如果为None则自动创建新实例
         timeout_seconds: 优化超时时间（秒）。如果为None则使用默认值（600秒）
@@ -838,9 +887,11 @@ def run_optimization(
     except Exception as e:
         logger.warning(f"配置验证失败: {str(e)}，将继续执行优化")
 
-    # 基本验证
-    if current_data is None or current_data.empty:
+    # 基本验证与数据规范化
+    if current_data is None:
         raise ValueError("current_data 不能为空")
+
+    current_data = _normalize_input_data(current_data, "current_data")
 
     if not isinstance(uid_config, dict) or 'air_conditioners' not in uid_config:
         raise ValueError("uid_config 格式不正确，必须包含 'air_conditioners' 字段")
@@ -855,6 +906,8 @@ def run_optimization(
     if historical_data is None:
         logger.info("未提供历史数据，使用当前数据作为历史数据")
         historical_data = current_data
+    else:
+        historical_data = _normalize_input_data(historical_data, "historical_data")
 
     # 设置默认超时时间
     if timeout_seconds is None:
@@ -908,8 +961,8 @@ def start_optimization_process(
         uid_config: dict,
         parameter_config: dict,
         security_boundary_config: dict,
-        optimization_input: pd.DataFrame,
-        current_data: pd.DataFrame,
+        optimization_input: Union[pd.DataFrame, Dict[str, pd.DataFrame]],
+        current_data: Union[pd.DataFrame, Dict[str, pd.DataFrame]],
         logger: logging.Logger,
         is_reference: bool = False,
         ac_manager: Optional[ACInstanceManager] = None,
@@ -942,8 +995,8 @@ def start_optimization_process(
         uid_config: UID配置信息（支持新格式配置）
         parameter_config: 参数配置信息
         security_boundary_config: 安全边界配置信息
-        optimization_input: 历史数据（过去60分钟），必须提供
-        current_data: 当前系统状态数据，必须提供
+        optimization_input: 历史数据（pandas.DataFrame 或 {uid: DataFrame}，必须提供）
+        current_data: 当前系统状态数据（pandas.DataFrame 或 {uid: DataFrame}，必须提供）
         logger: 日志记录器
         is_reference: 是否为参考优化（快速测试模式）
         ac_manager: 空调实例管理器，如果为None则每次创建新实例
@@ -988,6 +1041,9 @@ def start_optimization_process(
     See Also:
         run_optimization(): 推荐使用的高层封装函数
     """
+    optimization_input = _normalize_input_data(optimization_input, "optimization_input")
+    current_data = _normalize_input_data(current_data, "current_data")
+
     try:
         # 初始化返回结果
         best_params = {
