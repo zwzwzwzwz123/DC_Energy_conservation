@@ -39,9 +39,29 @@ class OptimizerFactory:
     支持优雅降级：如果某些优化器的依赖未安装，会自动回退到可用的优化器
     """
 
+    # 优化器映射表缓存（延迟初始化，避免类定义时出错）
+    _optimizer_map_cache: Optional[Dict[str, Optional[type]]] = None
+
+    @classmethod
+    def get_optimizer_map(cls) -> Dict[str, Optional[type]]:
+        """
+        获取优化器映射表（延迟初始化，线程安全）
+
+        Returns:
+            Dict[str, Optional[type]]: 算法名称到优化器类的映射
+        """
+        if cls._optimizer_map_cache is None:
+            cls._optimizer_map_cache = cls._build_optimizer_map()
+        return cls._optimizer_map_cache
+
     @staticmethod
     def _build_optimizer_map() -> Dict[str, Optional[type]]:
-        """构建优化器映射表（动态检测可用的优化器）"""
+        """
+        构建优化器映射表（动态检测可用的优化器）
+
+        Returns:
+            Dict[str, Optional[type]]: 算法名称到优化器类的映射
+        """
         optimizer_map = {
             'grid_search': GridSearchOptimizer,
             'random_search': RandomSearchOptimizer,
@@ -58,9 +78,6 @@ class OptimizerFactory:
             optimizer_map['rl'] = RLOptimizer  # 简写
 
         return optimizer_map
-
-    # 支持的优化算法映射（动态生成）
-    OPTIMIZER_MAP = _build_optimizer_map.__func__()
     
     @staticmethod
     def create_optimizer(
@@ -95,9 +112,12 @@ class OptimizerFactory:
         # 转换为小写并去除空格
         algorithm = algorithm.lower().strip()
 
+        # 获取优化器映射表（使用类方法，避免直接访问类属性）
+        optimizer_map = OptimizerFactory.get_optimizer_map()
+
         # 检查算法是否支持
-        if algorithm not in OptimizerFactory.OPTIMIZER_MAP:
-            supported_algorithms = ', '.join(OptimizerFactory.OPTIMIZER_MAP.keys())
+        if algorithm not in optimizer_map:
+            supported_algorithms = ', '.join(optimizer_map.keys())
             error_msg = (
                 f"不支持的优化算法: '{algorithm}'. "
                 f"当前可用的算法: {supported_algorithms}"
@@ -116,7 +136,7 @@ class OptimizerFactory:
             raise ValueError(error_msg)
 
         # 创建优化器实例
-        optimizer_class = OptimizerFactory.OPTIMIZER_MAP[algorithm]
+        optimizer_class = optimizer_map[algorithm]
 
         try:
             optimizer = optimizer_class(
@@ -136,15 +156,15 @@ class OptimizerFactory:
                 logger.error(error_msg)
             raise ValueError(error_msg)
     
-    @staticmethod
-    def get_supported_algorithms() -> list:
+    @classmethod
+    def get_supported_algorithms(cls) -> list:
         """
         获取当前可用的优化算法列表（根据已安装的依赖动态确定）
 
         Returns:
             list: 支持的算法名称列表
         """
-        return list(OptimizerFactory.OPTIMIZER_MAP.keys())
+        return list(cls.get_optimizer_map().keys())
 
     @staticmethod
     def get_all_algorithms_info() -> Dict[str, Dict[str, str]]:
