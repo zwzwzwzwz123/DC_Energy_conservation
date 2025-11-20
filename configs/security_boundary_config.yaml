@@ -4,6 +4,16 @@
 # 安全边界配置文件
 # 本配置文件定义了控制范围、约束条件和安全限制
 
+# ==================== 优化模块专用配置 ====================
+# 这些配置项用于优化模块的安全约束检查
+minimum_air_conditioner_setting_temperature: 16    # 空调最低设定温度（℃）
+maximum_air_conditioner_setting_temperature: 30    # 空调最高设定温度（℃）
+minimum_air_conditioner_setting_humidity: 30       # 空调最低设定湿度（%）
+maximum_air_conditioner_setting_humidity: 70       # 空调最高设定湿度（%）
+maximum_safe_indoor_temperature: 28.0              # 室内最高安全温度（℃）
+minimum_safe_indoor_humidity: 30.0                 # 室内最低安全湿度（%）
+maximum_safe_indoor_humidity: 70.0                 # 室内最高安全湿度（%）
+
 # ==================== 控制范围限制 ====================
 control_limits:
   # 温度控制范围

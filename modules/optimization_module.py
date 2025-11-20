@@ -672,10 +672,9 @@ class ACController:
             self.state = OptimizationState.RESETTING
             active_thread = self.active_thread
 
-        try:
-            # 发送停止信号
-            self.stop_event.set()
-            self.logger.debug("已发送停止信号")
+        # 发送停止信号
+        self.stop_event.set()
+        self.logger.debug("已发送停止信号")
 
         if active_thread and active_thread.is_alive():
             self.logger.info("等待优化线程结束...")
