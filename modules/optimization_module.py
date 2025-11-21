@@ -111,16 +111,34 @@ def _normalize_uid_config(uid_config: Dict) -> Dict:
     }
 
     def _append_sensor(attr: Dict) -> None:
-        """? attr ????/????? sensors ????"""
+        """将环境传感器测点按类型归类"""
         name = attr.get('name', '')
         uid = attr.get('uid')
         if not uid:
             return
-        lname = str(name).lower()
-        unit = str(attr.get('unit', '')).lower() if attr.get('unit') else ''
-        if '?' in str(name) or 'temp' in lname or 'c' in unit or '?' in unit:
+
+        name_str = str(name)
+        name_lower = name_str.lower()
+        unit_raw = attr.get('unit', '')
+        unit_lower = str(unit_raw).lower() if unit_raw is not None else ''
+
+        is_temp = (
+            'temp' in name_lower
+            or any(token in name_str for token in ("温", "溫"))
+            or 'temp' in unit_lower
+            or 'c' in unit_lower
+            or ('℃' in str(unit_raw) if unit_raw else False)
+        )
+        is_humidity = (
+            'hum' in name_lower
+            or any(token in name_str for token in ("湿", "濕"))
+            or '%' in unit_lower
+            or 'rh' in unit_lower
+        )
+
+        if is_temp:
             normalized[CONFIG_KEY_SENSORS][CONFIG_KEY_TEMPERATURE_SENSOR].append(str(uid))
-        if '?' in str(name) or 'hum' in lname or '%' in unit or 'rh' in unit:
+        if is_humidity:
             normalized[CONFIG_KEY_SENSORS][CONFIG_KEY_HUMIDITY_SENSOR].append(str(uid))
     # Ƕ�� datacenter -> rooms -> systems -> air_conditioners
     for room in rooms:
@@ -467,11 +485,32 @@ def _normalize_input_data(data: Union[pd.DataFrame, Dict[str, pd.DataFrame]], la
     return normalized
 
 
-TEMPERATURE_SETTING_CANDIDATES = ['?????', '?????', '??????????', '???????', '????????????', '????????????', '???????????????', '???????????????']
-HUMIDITY_SETTING_CANDIDATES = ['?????', '?????', '??????????%??']
-RETURN_TEMP_CANDIDATES = ['??????????', '????', '??????????????', '??????????????']
-RETURN_HUMIDITY_CANDIDATES = ['????????%?', '????', '????????????%??', '?????????????%??']
-POWER_READING_CANDIDATES = ['????', '??', '??', '???????']
+TEMPERATURE_SETTING_CANDIDATES = [
+    "回风温度设定点（℃）",
+    "回风温度设定点(℃)",
+    "回风温度设定点",
+    "远程平均温度设定点（℃）",
+    "远程最高温度设定点（℃）",
+    "温度设定点",
+    "温度设定值",
+]
+HUMIDITY_SETTING_CANDIDATES = [
+    "回风湿度设定点（%）",
+    "回风湿度设定点(%)",
+    "湿度设定点",
+    "湿度设定值",
+]
+RETURN_TEMP_CANDIDATES = [
+    "回风温度测量值（℃）",
+    "回风温度测量值(℃)",
+    "回风温度",
+]
+RETURN_HUMIDITY_CANDIDATES = [
+    "回风湿度测量值（%）",
+    "回风湿度测量值(%)",
+    "回风湿度",
+]
+POWER_READING_CANDIDATES = ["有功功率", "功率", "总功率", "耗电量", "能耗"]
 
 
 # 定义优化模块的三种状态
@@ -1536,6 +1575,7 @@ def run_optimization(
         ...     timeout_seconds=300,
         ...     progress_callback=on_progress
         ... )
+    """
     # ==================== ???? ====================
     normalized_uid_config = _validate_uid_config(uid_config)
 
@@ -1725,6 +1765,7 @@ def start_optimization_process(
     See Also:
         run_optimization(): 推荐使用的高层封装函数
     """
+    normalized_uid_config = _validate_uid_config(uid_config)
     optimization_input = _normalize_input_data(optimization_input, "optimization_input")
     current_data = _normalize_input_data(current_data, "current_data")
 
