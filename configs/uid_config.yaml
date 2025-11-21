@@ -1,0 +1,769 @@
+# uid_config.yaml - 数据中心结构与UID映射配置
+# 本配置文件定义了整个数据中心的层次结构和所有属性的 uid 映射
+
+datacenter:
+  name: "示例数据中心"
+  uid: "DC_001"
+  location: "北京市海淀区"
+
+  # ==================== 数据中心级别的环境传感器 ====================
+  environment_sensors:
+    - sensor_name: "室外温度传感器1"
+      sensor_uid: "ENV_DC_TEMP_001"
+      location: "数据中心楼顶"
+      attributes:
+        - name: "室外环境温度"
+          uid: "dc_outdoor_temp_001"
+          attr_type: "telemetry"
+          field_key: "value"
+          unit: "℃"
+          description: "数据中心室外环境温度"
+
+    - sensor_name: "室外湿度传感器1"
+      sensor_uid: "ENV_DC_HUM_001"
+      location: "数据中心楼顶"
+      attributes:
+        - name: "室外环境湿度"
+          uid: "dc_outdoor_hum_001"
+          attr_type: "telemetry"
+          field_key: "value"
+          unit: "%"
+          description: "数据中心室外环境湿度"
+
+  # ==================== 数据中心级别的属性 ====================
+  datacenter_attributes:
+    - name: "数据中心总有功功率"
+      uid: "dc_total_power_001"
+      attr_type: "telemetry"
+      field_key: "value"
+      unit: "kW"
+      description: "数据中心总有功功率"
+
+    - name: "数据中心总累计能耗"
+      uid: "dc_total_energy_001"
+      attr_type: "telemetry"
+      field_key: "value"
+      unit: "kWh"
+      description: "数据中心总累计能耗"
+
+  # ==================== 机房列表 ====================
+  computer_rooms:
+    # ========== 机房1: 风冷机房 ==========
+    - room_name: "A栋1层机房"
+      room_uid: "CR_A1"
+      room_type: "AirCooled"
+      location: "A栋1层"
+      is_available: True
+
+      # 机房级别的环境传感器
+      environment_sensors:
+        - sensor_name: "A1机房温度传感器1"
+          sensor_uid: "ENV_CR_A1_TEMP_001"
+          location: "A1机房北侧"
+          attributes:
+            - name: "室内环境温度测点1"
+              uid: "cr_a1_indoor_temp_001"
+              attr_type: "telemetry"
+              field_key: "value"
+              unit: "℃"
+
+        - sensor_name: "A1机房温度传感器2"
+          sensor_uid: "ENV_CR_A1_TEMP_002"
+          location: "A1机房南侧"
+          attributes:
+            - name: "室内环境温度测点2"
+              uid: "cr_a1_indoor_temp_002"
+              attr_type: "telemetry"
+              field_key: "value"
+              unit: "℃"
+
+        - sensor_name: "A1机房湿度传感器1"
+          sensor_uid: "ENV_CR_A1_HUM_001"
+          location: "A1机房中央"
+          attributes:
+            - name: "室内环境湿度测点1"
+              uid: "cr_a1_indoor_hum_001"
+              attr_type: "telemetry"
+              field_key: "value"
+              unit: "%"
+
+      # 机房级别的属性
+      room_attributes:
+        - name: "机房总有功功率"
+          uid: "cr_a1_total_power"
+          attr_type: "telemetry"
+          field_key: "value"
+          unit: "kW"
+
+        - name: "机房总累计能耗"
+          uid: "cr_a1_total_energy"
+          attr_type: "telemetry"
+          field_key: "value"
+          unit: "kWh"
+
+      # 风冷空调系统列表
+      air_cooled_systems:
+        # 风冷系统1
+        - system_name: "A1机房风冷系统1"
+          system_uid: "ACAC_A1_001"
+          is_available: True
+
+          # 室内空调
+          air_conditioners:
+            - device_name: "A1-AC-001"
+              device_uid: "AC_A1_001"
+              location: "A1机房北侧"
+              is_available: True
+              attributes:
+                - name: "空调开关状态"
+                  uid: "ac_a1_001_switch_status"
+                  attr_type: "telesignaling"
+                  field_key: "value"
+                  description: "0=关闭, 1=开启"
+
+                - name: "空调送风温度"
+                  uid: "ac_a1_001_supply_temp"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "℃"
+
+                - name: "空调回风温度"
+                  uid: "ac_a1_001_return_temp"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "℃"
+
+                - name: "空调风机转速"
+                  uid: "ac_a1_001_fan_speed"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "rpm"
+
+                - name: "空调温度设定值设置模式"
+                  uid: "ac_a1_001_temp_mode"
+                  attr_type: "telesignaling"
+                  field_key: "value"
+                  description: "0=送风模式, 1=回风模式"
+
+                - name: "空调有功功率"
+                  uid: "ac_a1_001_power"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "kW"
+
+                - name: "空调累计能耗"
+                  uid: "ac_a1_001_energy"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "kWh"
+
+                # 控制属性
+                - name: "空调开机设定点"
+                  uid: "ac_a1_001_on_setpoint"
+                  attr_type: "telecontrol"
+                  field_key: "value"
+                  description: "0=无操作, 1=开机"
+
+                - name: "空调关机设定点"
+                  uid: "ac_a1_001_off_setpoint"
+                  attr_type: "telecontrol"
+                  field_key: "value"
+                  description: "0=无操作, 1=关机"
+
+                - name: "空调送风温度设定点"
+                  uid: "ac_a1_001_supply_temp_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "℃"
+
+                - name: "空调回风温度设定点"
+                  uid: "ac_a1_001_return_temp_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "℃"
+
+                - name: "空调风机最小转速设定点"
+                  uid: "ac_a1_001_fan_min_speed_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "rpm"
+
+                - name: "空调风机最大转速设定点"
+                  uid: "ac_a1_001_fan_max_speed_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "rpm"
+
+          # 压缩机
+          compressors:
+            - device_name: "A1-COMP-001"
+              device_uid: "COMP_A1_001"
+              location: "A1机房北侧"
+              is_available: True
+              attributes:
+                - name: "压缩机开关状态"
+                  uid: "comp_a1_001_switch_status"
+                  attr_type: "telesignaling"
+                  field_key: "value"
+                  description: "0=关闭, 1=开启"
+
+                - name: "压缩机频率"
+                  uid: "comp_a1_001_frequency"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "Hz"
+
+                - name: "压缩机有功功率"
+                  uid: "comp_a1_001_power"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "kW"
+
+                - name: "压缩机累计能耗"
+                  uid: "comp_a1_001_energy"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "kWh"
+
+                # 控制属性
+                - name: "压缩机开机设定点"
+                  uid: "comp_a1_001_on_setpoint"
+                  attr_type: "telecontrol"
+                  field_key: "value"
+                  description: "0=无操作, 1=开机"
+
+                - name: "压缩机关机设定点"
+                  uid: "comp_a1_001_off_setpoint"
+                  attr_type: "telecontrol"
+                  field_key: "value"
+                  description: "0=无操作, 1=关机"
+
+                - name: "压缩机频率设定点"
+                  uid: "comp_a1_001_freq_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "Hz"
+
+          # 冷凝器
+          condensers:
+            - device_name: "A1-COND-001"
+              device_uid: "COND_A1_001"
+              location: "A1机房室外"
+              is_available: True
+              attributes:
+                - name: "冷凝器温度"
+                  uid: "cond_a1_001_temp"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "℃"
+
+                - name: "冷凝器压力"
+                  uid: "cond_a1_001_pressure"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "MPa"
+
+                - name: "冷凝器风机转速"
+                  uid: "cond_a1_001_fan_speed"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "rpm"
+
+                - name: "冷凝器有功功率"
+                  uid: "cond_a1_001_power"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "kW"
+
+                - name: "冷凝器累计能耗"
+                  uid: "cond_a1_001_energy"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "kWh"
+
+                # 控制属性
+                - name: "冷凝器风机最小转速设定点"
+                  uid: "cond_a1_001_fan_min_speed_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "rpm"
+
+                - name: "冷凝器风机最大转速设定点"
+                  uid: "cond_a1_001_fan_max_speed_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "rpm"
+
+          # 膨胀阀
+          expansion_valves:
+            - device_name: "A1-EV-001"
+              device_uid: "EV_A1_001"
+              location: "A1机房北侧"
+              is_available: True
+              attributes:
+                - name: "膨胀阀开度"
+                  uid: "ev_a1_001_opening"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "%"
+
+                # 控制属性
+                - name: "膨胀阀开度设定点"
+                  uid: "ev_a1_001_opening_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "%"
+
+    # ========== 机房2: 水冷机房 ==========
+    - room_name: "B栋2层机房"
+      room_uid: "CR_B2"
+      room_type: "WaterCooled"
+      location: "B栋2层"
+      is_available: True
+
+      # 机房级别的环境传感器
+      environment_sensors:
+        - sensor_name: "B2机房温度传感器1"
+          sensor_uid: "ENV_CR_B2_TEMP_001"
+          location: "B2机房东侧"
+          attributes:
+            - name: "室内环境温度测点1"
+              uid: "cr_b2_indoor_temp_001"
+              attr_type: "telemetry"
+              field_key: "value"
+              unit: "℃"
+
+        - sensor_name: "B2机房温度传感器2"
+          sensor_uid: "ENV_CR_B2_TEMP_002"
+          location: "B2机房西侧"
+          attributes:
+            - name: "室内环境温度测点2"
+              uid: "cr_b2_indoor_temp_002"
+              attr_type: "telemetry"
+              field_key: "value"
+              unit: "℃"
+
+        - sensor_name: "B2机房湿度传感器1"
+          sensor_uid: "ENV_CR_B2_HUM_001"
+          location: "B2机房中央"
+          attributes:
+            - name: "室内环境湿度测点1"
+              uid: "cr_b2_indoor_hum_001"
+              attr_type: "telemetry"
+              field_key: "value"
+              unit: "%"
+
+      # 机房级别的属性
+      room_attributes:
+        - name: "机房总有功功率"
+          uid: "cr_b2_total_power"
+          attr_type: "telemetry"
+          field_key: "value"
+          unit: "kW"
+
+        - name: "机房总累计能耗"
+          uid: "cr_b2_total_energy"
+          attr_type: "telemetry"
+          field_key: "value"
+          unit: "kWh"
+
+      # 水冷空调系统列表
+      water_cooled_systems:
+        # 水冷系统1
+        - system_name: "B2机房水冷系统1"
+          system_uid: "WCAC_B2_001"
+          is_available: True
+
+          # 室内空调
+          air_conditioners:
+            - device_name: "B2-AC-001"
+              device_uid: "AC_B2_001"
+              location: "B2机房东侧"
+              is_available: True
+              attributes:
+                - name: "空调开关状态"
+                  uid: "ac_b2_001_switch_status"
+                  attr_type: "telesignaling"
+                  field_key: "value"
+                  description: "0=关闭, 1=开启"
+
+                - name: "空调送风温度"
+                  uid: "ac_b2_001_supply_temp"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "℃"
+
+                - name: "空调回风温度"
+                  uid: "ac_b2_001_return_temp"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "℃"
+
+                - name: "空调风机转速"
+                  uid: "ac_b2_001_fan_speed"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "rpm"
+
+                - name: "空调温度设定值设置模式"
+                  uid: "ac_b2_001_temp_mode"
+                  attr_type: "telesignaling"
+                  field_key: "value"
+                  description: "0=送风模式, 1=回风模式"
+
+                - name: "水阀开度"
+                  uid: "ac_b2_001_valve_opening"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "%"
+
+                - name: "冷冻水出水温度"
+                  uid: "ac_b2_001_chw_supply_temp"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "℃"
+
+                - name: "冷冻水回水温度"
+                  uid: "ac_b2_001_chw_return_temp"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "℃"
+
+                - name: "空调有功功率"
+                  uid: "ac_b2_001_power"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "kW"
+
+                - name: "空调累计能耗"
+                  uid: "ac_b2_001_energy"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "kWh"
+
+                # 控制属性
+                - name: "空调开机设定点"
+                  uid: "ac_b2_001_on_setpoint"
+                  attr_type: "telecontrol"
+                  field_key: "value"
+                  description: "0=无操作, 1=开机"
+
+                - name: "空调关机设定点"
+                  uid: "ac_b2_001_off_setpoint"
+                  attr_type: "telecontrol"
+                  field_key: "value"
+                  description: "0=无操作, 1=关机"
+
+                - name: "空调送风温度设定点"
+                  uid: "ac_b2_001_supply_temp_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "℃"
+
+                - name: "空调回风温度设定点"
+                  uid: "ac_b2_001_return_temp_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "℃"
+
+                - name: "空调风机最小转速设定点"
+                  uid: "ac_b2_001_fan_min_speed_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "rpm"
+
+                - name: "空调风机最大转速设定点"
+                  uid: "ac_b2_001_fan_max_speed_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "rpm"
+
+                - name: "水阀最小开度设定点"
+                  uid: "ac_b2_001_valve_min_opening_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "%"
+
+                - name: "水阀最大开度设定点"
+                  uid: "ac_b2_001_valve_max_opening_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "%"
+
+          # 冷水机组
+          chillers:
+            - device_name: "B2-CH-001"
+              device_uid: "CH_B2_001"
+              location: "B2机房制冷机房"
+              is_available: True
+              attributes:
+                - name: "冷水机组开关状态"
+                  uid: "ch_b2_001_switch_status"
+                  attr_type: "telesignaling"
+                  field_key: "value"
+                  description: "0=关闭, 1=开启"
+
+                - name: "冷水机组负荷百分比"
+                  uid: "ch_b2_001_load_percent"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "%"
+
+                - name: "冷水机组用电量"
+                  uid: "ch_b2_001_electricity"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "kWh"
+
+                - name: "冷冻水出水温度"
+                  uid: "ch_b2_001_chw_supply_temp"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "℃"
+
+                - name: "冷冻水回水温度"
+                  uid: "ch_b2_001_chw_return_temp"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "℃"
+
+                - name: "冷却水出水温度"
+                  uid: "ch_b2_001_cw_supply_temp"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "℃"
+
+                - name: "冷却水回水温度"
+                  uid: "ch_b2_001_cw_return_temp"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "℃"
+
+                - name: "冷水机组有功功率"
+                  uid: "ch_b2_001_power"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "kW"
+
+                - name: "冷水机组累计能耗"
+                  uid: "ch_b2_001_energy"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "kWh"
+
+                # 控制属性
+                - name: "冷水机组开机设定点"
+                  uid: "ch_b2_001_on_setpoint"
+                  attr_type: "telecontrol"
+                  field_key: "value"
+                  description: "0=无操作, 1=开机"
+
+                - name: "冷水机组关机设定点"
+                  uid: "ch_b2_001_off_setpoint"
+                  attr_type: "telecontrol"
+                  field_key: "value"
+                  description: "0=无操作, 1=关机"
+
+                - name: "冷冻水出水温度设定点"
+                  uid: "ch_b2_001_chw_supply_temp_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "℃"
+
+          # 冷冻水泵
+          chilled_water_pumps:
+            - device_name: "B2-CHWP-001"
+              device_uid: "CHWP_B2_001"
+              location: "B2机房制冷机房"
+              is_available: True
+              attributes:
+                - name: "冷冻水泵开关状态"
+                  uid: "chwp_b2_001_switch_status"
+                  attr_type: "telesignaling"
+                  field_key: "value"
+                  description: "0=关闭, 1=开启"
+
+                - name: "冷冻水泵压力"
+                  uid: "chwp_b2_001_pressure"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "MPa"
+
+                - name: "冷冻水泵频率反馈"
+                  uid: "chwp_b2_001_freq_feedback"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "Hz"
+
+                - name: "冷冻水泵有功功率"
+                  uid: "chwp_b2_001_power"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "kW"
+
+                - name: "冷冻水泵累计能耗"
+                  uid: "chwp_b2_001_energy"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "kWh"
+
+                # 控制属性
+                - name: "冷冻水泵开机设定点"
+                  uid: "chwp_b2_001_on_setpoint"
+                  attr_type: "telecontrol"
+                  field_key: "value"
+                  description: "0=无操作, 1=开机"
+
+                - name: "冷冻水泵关机设定点"
+                  uid: "chwp_b2_001_off_setpoint"
+                  attr_type: "telecontrol"
+                  field_key: "value"
+                  description: "0=无操作, 1=关机"
+
+                - name: "冷冻水泵频率设定点"
+                  uid: "chwp_b2_001_freq_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "Hz"
+
+                - name: "冷冻水压差设定点"
+                  uid: "chwp_b2_001_pressure_diff_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "MPa"
+
+          # 冷却水泵
+          cooling_water_pumps:
+            - device_name: "B2-CWP-001"
+              device_uid: "CWP_B2_001"
+              location: "B2机房制冷机房"
+              is_available: True
+              attributes:
+                - name: "冷却水泵开关状态"
+                  uid: "cwp_b2_001_switch_status"
+                  attr_type: "telesignaling"
+                  field_key: "value"
+                  description: "0=关闭, 1=开启"
+
+                - name: "冷却水泵压力"
+                  uid: "cwp_b2_001_pressure"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "MPa"
+
+                - name: "冷却水泵频率反馈"
+                  uid: "cwp_b2_001_freq_feedback"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "Hz"
+
+                - name: "冷却水泵有功功率"
+                  uid: "cwp_b2_001_power"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "kW"
+
+                - name: "冷却水泵累计能耗"
+                  uid: "cwp_b2_001_energy"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "kWh"
+
+                # 控制属性
+                - name: "冷却水泵开机设定点"
+                  uid: "cwp_b2_001_on_setpoint"
+                  attr_type: "telecontrol"
+                  field_key: "value"
+                  description: "0=无操作, 1=开机"
+
+                - name: "冷却水泵关机设定点"
+                  uid: "cwp_b2_001_off_setpoint"
+                  attr_type: "telecontrol"
+                  field_key: "value"
+                  description: "0=无操作, 1=关机"
+
+                - name: "冷却水泵频率设定点"
+                  uid: "cwp_b2_001_freq_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "Hz"
+
+                - name: "冷却水压差设定点"
+                  uid: "cwp_b2_001_pressure_diff_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "MPa"
+
+          # 冷却塔
+          cooling_towers:
+            - device_name: "B2-CT-001"
+              device_uid: "CT_B2_001"
+              location: "B2机房楼顶"
+              is_available: True
+              attributes:
+                - name: "冷却塔开关状态"
+                  uid: "ct_b2_001_switch_status"
+                  attr_type: "telesignaling"
+                  field_key: "value"
+                  description: "0=关闭, 1=开启"
+
+                - name: "冷却塔出水温度"
+                  uid: "ct_b2_001_supply_temp"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "℃"
+
+                - name: "冷却塔回水温度"
+                  uid: "ct_b2_001_return_temp"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "℃"
+
+                - name: "冷却塔风机转速"
+                  uid: "ct_b2_001_fan_speed"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "rpm"
+
+                - name: "冷却塔有功功率"
+                  uid: "ct_b2_001_power"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "kW"
+
+                - name: "冷却塔累计能耗"
+                  uid: "ct_b2_001_energy"
+                  attr_type: "telemetry"
+                  field_key: "value"
+                  unit: "kWh"
+
+                # 控制属性
+                - name: "冷却塔开机设定点"
+                  uid: "ct_b2_001_on_setpoint"
+                  attr_type: "telecontrol"
+                  field_key: "value"
+                  description: "0=无操作, 1=开机"
+
+                - name: "冷却塔关机设定点"
+                  uid: "ct_b2_001_off_setpoint"
+                  attr_type: "telecontrol"
+                  field_key: "value"
+                  description: "0=无操作, 1=关机"
+
+                - name: "冷却塔风机转速设定点"
+                  uid: "ct_b2_001_fan_speed_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "rpm"
+
+                - name: "冷却水出水温度设定点"
+                  uid: "ct_b2_001_supply_temp_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "℃"
+
+                - name: "冷却水温差设定点"
+                  uid: "ct_b2_001_temp_diff_setpoint"
+                  attr_type: "teleadjusting"
+                  field_key: "value"
+                  unit: "℃"
