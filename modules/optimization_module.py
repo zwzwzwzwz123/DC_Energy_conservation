@@ -1,23 +1,20 @@
-"""
+﻿"""
 空调优化模块
 
-本模块提供空调系统的智能优化功能，支持多种优化算法。
+提供数据中心空调的智能优化能力，支持多种优化算法。
 
-主要组件：
+核心组件：
     OptimizationState: 优化状态枚举
     DataRecord: 历史数据记录模型
-    ACController: 空调控制器，管理设备状态和历史数据
-    DynamicOptimizer: 动态优化器，支持多种优化算法
+    ACController: 空调控制器，管理设备状态与历史数据
+    DynamicOptimizer: 动态优化器，调度具体优化算法
     ACInstanceManager: 空调实例管理器
 
-主要API：
-    run_optimization(): 一行代码启动优化流程（推荐使用）
+主要 API：
+    run_optimization(): 推荐入口，一行代码启动优化
     start_optimization_process(): 核心优化逻辑（高级用法）
 
-使用示例：
-    >>> from modules.optimization_module import run_optimization
-    >>>
-    >>> # 最简单的调用方式
+示例：
     >>> best_params = run_optimization(
     ...     uid_config=normalized_uid_config,
     ...     parameter_config=modules_config,
@@ -25,23 +22,21 @@
     ...     current_data=current_data,
     ...     logger=logger
     ... )
-    >>>
-    >>> # 结果包含每台空调的优化参数
     >>> print(best_params['air_conditioner_setting_temperature'])
     >>> print(best_params['air_conditioner_setting_humidity'])
 
 架构说明：
-    本模块采用分层架构：
-    1. 数据模型层：定义数据结构（OptimizationState, DataRecord）
-    2. 工具函数层：提供配置解析和数据处理工具
-    3. 核心业务层：实现优化逻辑（ACController, DynamicOptimizer）
-    4. API层：提供高层接口（run_optimization等）
+    1) 数据模型层：OptimizationState, DataRecord
+    2) 工具函数层：配置解析、数据处理
+    3) 核心业务层：ACController, DynamicOptimizer
+    4) API 层：run_optimization 等高层接口
 
-注意事项：
-    - 本模块不执行实际的设备控制，只计算优化参数
-    - 实际的参数应用由主程序负责写入InfluxDB
-    - 支持多种优化算法，通过配置文件选择
+注意：
+    - 本模块只计算推荐参数，不直接下发设备
+    - 写入 InfluxDB 或控制设备由上层负责
+    - 算法选择由配置文件指定
 """
+
 
 import pandas as pd
 import time
