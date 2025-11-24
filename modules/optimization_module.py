@@ -465,7 +465,7 @@ def _normalize_input_data(data: Union[pd.DataFrame, Dict[str, pd.DataFrame]], la
     """
     将输入规范化为 DataFrame。
     支持两种输入：
-        1. 直接的 DataFrame
+        1. 直接是 DataFrame
         2. {uid: DataFrame} 的字典结构（与 DataCenterDataReader 对齐）
     """
     if isinstance(data, pd.DataFrame):
@@ -492,6 +492,8 @@ TEMPERATURE_SETTING_CANDIDATES = [
 HUMIDITY_SETTING_CANDIDATES = [
     "回风湿度设定点（%）",
     "回风湿度设定点(%)",
+    "回风湿度设定点（%RH）",
+    "回风湿度设定点(%RH)",
     "湿度设定点",
     "湿度设定值",
 ]
@@ -503,11 +505,11 @@ RETURN_TEMP_CANDIDATES = [
 RETURN_HUMIDITY_CANDIDATES = [
     "回风湿度测量值（%）",
     "回风湿度测量值(%)",
+    "回风湿度测量值（%RH）",
+    "回风湿度测量值(%RH)",
     "回风湿度",
 ]
 POWER_READING_CANDIDATES = ["有功功率", "功率", "总功率", "耗电量", "能耗"]
-
-
 # 定义优化模块的三种状态
 class OptimizationState(Enum):
     """
