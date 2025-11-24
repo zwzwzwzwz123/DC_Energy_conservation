@@ -80,24 +80,24 @@ CONFIG_KEY_ENERGY_CONSUMPTION = 'energy_consumption_uid'
 CONFIG_KEY_OPTIMIZATION_MODULE = 'optimization_module'
 
 # ============================================================================
-# ���ö�ȡ���ߺ���
+# 配置读取与工具函数
 # ============================================================================
 
 
 def _normalize_uid_config(uid_config: Dict) -> Dict:
     """
-    ��������础datacenter��Ƕ�ײ�ṹ���ɵ�扁���ṹ��
-    �������ڹ�ϵͳ���ɵ��� air_conditioners/sensors �ֶΡ�
+    将旧版 datacenter 嵌套结构转换为扁平结构。
+    优先使用新系统生成的 air_conditioners/sensors 字段。
     """
     if not isinstance(uid_config, dict):
-        raise ValueError("uid_config �������ֵ�����")
+        raise ValueError("uid_config 必须是字典类型")
 
-    # ����ڴ�ִ�л�ʽ���Ѿ�����扁��
+    # 如果已经是扁平化结构，则直接返回
     if CONFIG_KEY_AIR_CONDITIONERS in uid_config:
         return uid_config
 
     if "datacenter" not in uid_config:
-        raise ValueError("uid_config �в���� datacenter �ֶΣ����Զ�ת��")
+        raise ValueError("uid_config 中缺少 datacenter 字段，无法自动转换")
 
     dc = uid_config.get("datacenter", {})
     rooms = dc.get("computer_rooms", []) or []
@@ -140,7 +140,7 @@ def _normalize_uid_config(uid_config: Dict) -> Dict:
             normalized[CONFIG_KEY_SENSORS][CONFIG_KEY_TEMPERATURE_SENSOR].append(str(uid))
         if is_humidity:
             normalized[CONFIG_KEY_SENSORS][CONFIG_KEY_HUMIDITY_SENSOR].append(str(uid))
-    # Ƕ�� datacenter -> rooms -> systems -> air_conditioners
+    # 递归 datacenter -> rooms -> systems -> air_conditioners
     for room in rooms:
         for sensor in room.get("environment_sensors", []) or []:
             for attr in sensor.get("attributes", []) or []:
@@ -162,14 +162,14 @@ def _normalize_uid_config(uid_config: Dict) -> Dict:
                     "measurement_points": measurement_points,
                 }
 
-    # ���� sensors �ֶη����������ݣ������ظ�����
+    # 合并 sensors 字段已有数据，避免重复覆盖
     if CONFIG_KEY_SENSORS in uid_config:
         sensors = uid_config[CONFIG_KEY_SENSORS] or {}
         for k in [CONFIG_KEY_TEMPERATURE_SENSOR, CONFIG_KEY_HUMIDITY_SENSOR, CONFIG_KEY_ENERGY_CONSUMPTION]:
             if k in sensors:
                 normalized[CONFIG_KEY_SENSORS][k] = [str(uid) for uid in sensors.get(k, [])]
 
-    # ȥ������� UID �ظ�
+    # 去重并确保 UID 唯一
     for k, lst in normalized[CONFIG_KEY_SENSORS].items():
         if isinstance(lst, list):
             normalized[CONFIG_KEY_SENSORS][k] = list(dict.fromkeys(lst))
