@@ -1,0 +1,2718 @@
+datacenter:
+  name: 广东东莞华南数据中心
+  uid: DC_DC
+  location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+  computer_rooms:
+  - room_name: 103A信息化机房
+    room_uid: CR_103A
+    room_type: WaterCooled
+    location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+    environment_sensors:
+    - sensor_name: 1F IDC机房冷通道11#温湿度
+      sensor_uid: N2_S0_E91
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E91_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E91_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房冷通道12#温湿度
+      sensor_uid: N2_S0_E92
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E92_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E92_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房冷通道15#温湿度
+      sensor_uid: N2_S0_E95
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E95_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E95_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房冷通道16#温湿度
+      sensor_uid: N2_S0_E96
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E96_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E96_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房冷通道19#温湿度
+      sensor_uid: N2_S0_E99
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E99_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E99_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房冷通道20#温湿度
+      sensor_uid: N2_S0_E100
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E100_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E100_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房冷通道24#温湿度
+      sensor_uid: 62875abb-b261-4fa2-af42-49413b25f637
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 1#温度
+        uid: be578260_b5e1_4e29_888f_4ba9d2c1b138
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 1#湿度
+        uid: 8e318fc0_0003_43c3_8817_0920307d4e1a
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房冷通道26#温湿度
+      sensor_uid: 34dc121a-aa9a-4c7b-a59a-57915ddf8c3c
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 1#温度
+        uid: a10310ed_ff3a_4bdf_b02e_0362f5808958
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 1#湿度
+        uid: 0dc718ed_ea4c_4d82_be43_6d94b9943fa7
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房冷通道28#温湿度
+      sensor_uid: a51b87eb-529b-42f1-b988-2869353c2cef
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 1#温度
+        uid: f50dd4c9_c782_4c40_81e6_14dcfd755436
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 1#湿度
+        uid: dd6f7451_7a3d_4656_97ef_b350af38491a
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房冷通道3#温湿度
+      sensor_uid: N2_S0_E83
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E83_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E83_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房冷通道30#温湿度
+      sensor_uid: f4a698e8-1222-4f5c-b4af-bf7d750e2040
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 1#温度
+        uid: 44686a4e_336a_471f_9f04_abfe29f12c8a
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 1#湿度
+        uid: 24e69074_556e_421e_88bc_d983f21e2a46
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房冷通道32#温湿度
+      sensor_uid: 05a5e35e-a1ad-4736-b733-403f64c11099
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 1#温度
+        uid: a38944a0_b951_45b2_a13c_13a6fa9223e4
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 1#湿度
+        uid: 600edf85_f3ec_46e5_a811_855f82ae07f4
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房冷通道4#温湿度
+      sensor_uid: N2_S0_E84
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E84_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E84_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房冷通道7#温湿度
+      sensor_uid: N2_S0_E87
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E87_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E87_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房冷通道8#温湿度
+      sensor_uid: N2_S0_E88
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E88_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E88_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房热通道1#温湿度
+      sensor_uid: N2_S0_E81
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E81_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E81_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房热通道10#温湿度
+      sensor_uid: N2_S0_E90
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E90_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E90_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房热通道13#温湿度
+      sensor_uid: N2_S0_E93
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E93_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E93_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房热通道14#温湿度
+      sensor_uid: N2_S0_E94
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E94_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E94_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房热通道17#温湿度
+      sensor_uid: N2_S0_E97
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E97_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E97_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房热通道18#温湿度
+      sensor_uid: N2_S0_E98
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E98_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E98_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房热通道2#温湿度
+      sensor_uid: N2_S0_E82
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E82_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E82_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房热通道21#温湿度
+      sensor_uid: N2_S0_E101
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E101_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E101_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房热通道22#温湿度
+      sensor_uid: N2_S0_E102
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E102_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E102_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房热通道23#温湿度
+      sensor_uid: d95f6576-ad3e-4eca-bab8-10fb28738764
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 1#温度
+        uid: ad0a96f7_8d56_4120_b0fd_666f6419da54
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 1#湿度
+        uid: 50811f02_536c_4bdb_88f7_1769d6110ea1
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房热通道25#温湿度
+      sensor_uid: 1dcae536-3d1b-4f49-a81a-cb39cbc44bfb
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 1#温度
+        uid: 07bb7d1d_b635_4ca9_909c_7bdaf3ceab10
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 1#湿度
+        uid: e8700958_d7b7_4050_874d_294fbe149531
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房热通道27#温湿度
+      sensor_uid: 45b591fe-d54c-4fec-b608-ce5b9932dcc6
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 1#温度
+        uid: bdb38c2a_f0c6_49c0_b62a_d4e0fc5fd0ea
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 1#湿度
+        uid: b3582d8f_390a_4db6_8f42_68be2cad1339
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房热通道29#温湿度
+      sensor_uid: d57c1e45-e292-4fd7-b01d-670088cd3e17
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 1#温度
+        uid: 0ab54859_d564_4e3d_9810_2d74a26d007d
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 1#湿度
+        uid: 25c42ff2_2278_42ca_b97c_43f82cf29737
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房热通道31#温湿度
+      sensor_uid: 674fffca-7b8e-4342-a4d4-5159ab87519b
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 1#温度
+        uid: 4fe07996_cd59_4771_ab80_bab15210849b
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 1#湿度
+        uid: b111676c_bfed_4fca_a23e_91774e9736fa
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房热通道33#温湿度
+      sensor_uid: 4f133ebb-4d48-4509-9115-fd007f6bf901
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 1#温度
+        uid: a7217828_ed16_4ffa_b789_04ada92a2e75
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 1#湿度
+        uid: 52664cb3_a254_46c0_9674_777ef3b68793
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房热通道5#温湿度
+      sensor_uid: N2_S0_E85
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E85_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E85_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房热通道6#温湿度
+      sensor_uid: N2_S0_E86
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E86_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E86_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    - sensor_name: 1F IDC机房热通道9#温湿度
+      sensor_uid: N2_S0_E89
+      location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+      attributes:
+      - name: 温度
+        uid: N2_S0_E89_A1
+        attr_type: telemetry
+        field_key: value
+        unit: ℃
+      - name: 湿度
+        uid: N2_S0_E89_A2
+        attr_type: telemetry
+        field_key: value
+        unit: '%RH'
+    water_cooled_systems:
+    - system_name: 103A信息化机房水冷空调系统
+      system_uid: WC_103A_001
+      is_available: true
+      air_conditioners:
+      - device_name: 1F IDC机房1#空调
+        device_uid: N2_S0_E1
+        location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+        is_available: true
+        attributes:
+        - name: 风机转速（%）
+          uid: N2_S0_E1_A1
+          attr_type: telemetry
+          field_key: value
+        - name: 水阀开度（%）
+          uid: N2_S0_E1_A2
+          attr_type: telemetry
+          field_key: value
+        - name: 回风湿度测量值（%）
+          uid: N2_S0_E1_A3
+          attr_type: telemetry
+          field_key: value
+        - name: 回风温度测量值（℃）
+          uid: N2_S0_E1_A4
+          attr_type: telemetry
+          field_key: value
+        - name: 风压设定点（Pa）
+          uid: N2_S0_E1_A26
+          attr_type: telemetry
+          field_key: value
+        - name: 回风湿度设定点（%）
+          uid: N2_S0_E1_A27
+          attr_type: teleadjusting
+          field_key: value
+        - name: 回风温度设定点（℃）
+          uid: N2_S0_E1_A28
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程平均温度设定点（℃）
+          uid: N2_S0_E1_A30
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程最高温度设定点（℃）
+          uid: N2_S0_E1_A31
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程关机报警状态
+          uid: N2_S0_E1_D1
+          attr_type: telesignaling
+          field_key: value
+        - name: 地板溢水报警状态
+          uid: N2_S0_E1_D2
+          attr_type: telesignaling
+          field_key: value
+        - name: 高水位报警状态
+          uid: N2_S0_E1_D3
+          attr_type: telesignaling
+          field_key: value
+        - name: 加湿器报警状态
+          uid: N2_S0_E1_D4
+          attr_type: telesignaling
+          field_key: value
+        - name: 电加热报警状态
+          uid: N2_S0_E1_D5
+          attr_type: telesignaling
+          field_key: value
+        - name: 风机报警状态
+          uid: N2_S0_E1_D6
+          attr_type: telesignaling
+          field_key: value
+        - name: 冷凝水泵报警状态
+          uid: N2_S0_E1_D7
+          attr_type: telesignaling
+          field_key: value
+        - name: 烟感报警状态
+          uid: N2_S0_E1_D8
+          attr_type: telesignaling
+          field_key: value
+        - name: 水流丢失报警状态
+          uid: N2_S0_E1_D9
+          attr_type: telesignaling
+          field_key: value
+        - name: 气流丢失报警状态
+          uid: N2_S0_E1_D10
+          attr_type: telesignaling
+          field_key: value
+        - name: 过滤网堵塞报警状态
+          uid: N2_S0_E1_D11
+          attr_type: telesignaling
+          field_key: value
+        - name: 过滤网维护报警状态
+          uid: N2_S0_E1_D12
+          attr_type: telesignaling
+          field_key: value
+        - name: 缺省1报警状态
+          uid: N2_S0_E1_D13
+          attr_type: telesignaling
+          field_key: value
+        - name: 缺省2报警状态
+          uid: N2_S0_E1_D14
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风高湿报警状态
+          uid: N2_S0_E1_D15
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风低湿报警状态
+          uid: N2_S0_E1_D16
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风高温报警状态
+          uid: N2_S0_E1_D17
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风低温报警状态
+          uid: N2_S0_E1_D18
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风高温报警状态
+          uid: N2_S0_E1_D19
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风低温报警状态
+          uid: N2_S0_E1_D20
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程高温报警状态
+          uid: N2_S0_E1_D21
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程低温报警状态
+          uid: N2_S0_E1_D22
+          attr_type: telesignaling
+          field_key: value
+        - name: 进水高温报警状态
+          uid: N2_S0_E1_D23
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风温度传感器故障报警状态
+          uid: N2_S0_E1_D24
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风湿度传感器故障报警状态
+          uid: N2_S0_E1_D25
+          attr_type: telesignaling
+          field_key: value
+        - name: 气流温度传感器故障报警状态
+          uid: N2_S0_E1_D26
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风温度传感器故障报警状态
+          uid: N2_S0_E1_D27
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程温度传感器故障报警状态
+          uid: N2_S0_E1_D28
+          attr_type: telesignaling
+          field_key: value
+        - name: 进水温度传感器故障报警状态
+          uid: N2_S0_E1_D29
+          attr_type: telesignaling
+          field_key: value
+        - name: 出水温度传感器故障报警状态
+          uid: N2_S0_E1_D30
+          attr_type: telesignaling
+          field_key: value
+        - name: 风压1传感器故障报警状态
+          uid: N2_S0_E1_D31
+          attr_type: telesignaling
+          field_key: value
+        - name: 风压2传感器故障报警状态
+          uid: N2_S0_E1_D32
+          attr_type: telesignaling
+          field_key: value
+        - name: 水压1传感器故障报警状态
+          uid: N2_S0_E1_D33
+          attr_type: telesignaling
+          field_key: value
+        - name: 水压2传感器故障报警状态
+          uid: N2_S0_E1_D34
+          attr_type: telesignaling
+          field_key: value
+        - name: 水流量传感器故障报警状态
+          uid: N2_S0_E1_D35
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源丢失报警状态
+          uid: N2_S0_E1_D36
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源过压报警状态
+          uid: N2_S0_E1_D37
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源欠压报警状态
+          uid: N2_S0_E1_D38
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源频偏报警状态
+          uid: N2_S0_E1_D39
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源缺相报警状态
+          uid: N2_S0_E1_D40
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源反相报警状态
+          uid: N2_S0_E1_D41
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组制冷状态
+          uid: N2_S0_E1_D42
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组加热状态
+          uid: N2_S0_E1_D43
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组加湿状态
+          uid: N2_S0_E1_D44
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组除湿状态
+          uid: N2_S0_E1_D45
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程关机状态
+          uid: N2_S0_E1_D46
+          attr_type: telesignaling
+          field_key: value
+        - name: 本地关机状态
+          uid: N2_S0_E1_D47
+          attr_type: telesignaling
+          field_key: value
+        - name: 监控关机状态
+          uid: N2_S0_E1_D48
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组运行状态
+          uid: N2_S0_E1_D49
+          attr_type: telesignaling
+          field_key: value
+        - name: 风机控制模式
+          uid: N2_S0_E1_D50
+          attr_type: telesignaling
+          field_key: value
+        - name: 水阀控制模式
+          uid: N2_S0_E1_D51
+          attr_type: telesignaling
+          field_key: value
+        - name: 监控开关机状态
+          uid: N2_S0_E1_D52
+          attr_type: telecontrol
+          field_key: value
+      - device_name: 1F IDC机房2#空调
+        device_uid: N2_S0_E2
+        location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+        is_available: true
+        attributes:
+        - name: 风机转速（%）
+          uid: N2_S0_E2_A1
+          attr_type: telemetry
+          field_key: value
+        - name: 水阀开度（%）
+          uid: N2_S0_E2_A2
+          attr_type: telemetry
+          field_key: value
+        - name: 回风湿度测量值（%）
+          uid: N2_S0_E2_A3
+          attr_type: telemetry
+          field_key: value
+        - name: 回风温度测量值（℃）
+          uid: N2_S0_E2_A4
+          attr_type: telemetry
+          field_key: value
+        - name: 风压设定点（Pa）
+          uid: N2_S0_E2_A26
+          attr_type: telemetry
+          field_key: value
+        - name: 回风湿度设定点（%）
+          uid: N2_S0_E2_A27
+          attr_type: teleadjusting
+          field_key: value
+        - name: 回风温度设定点（℃）
+          uid: N2_S0_E2_A28
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程平均温度设定点（℃）
+          uid: N2_S0_E2_A30
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程最高温度设定点（℃）
+          uid: N2_S0_E2_A31
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程关机报警状态
+          uid: N2_S0_E2_D1
+          attr_type: telesignaling
+          field_key: value
+        - name: 地板溢水报警状态
+          uid: N2_S0_E2_D2
+          attr_type: telesignaling
+          field_key: value
+        - name: 高水位报警状态
+          uid: N2_S0_E2_D3
+          attr_type: telesignaling
+          field_key: value
+        - name: 加湿器报警状态
+          uid: N2_S0_E2_D4
+          attr_type: telesignaling
+          field_key: value
+        - name: 电加热报警状态
+          uid: N2_S0_E2_D5
+          attr_type: telesignaling
+          field_key: value
+        - name: 风机报警状态
+          uid: N2_S0_E2_D6
+          attr_type: telesignaling
+          field_key: value
+        - name: 冷凝水泵报警状态
+          uid: N2_S0_E2_D7
+          attr_type: telesignaling
+          field_key: value
+        - name: 烟感报警状态
+          uid: N2_S0_E2_D8
+          attr_type: telesignaling
+          field_key: value
+        - name: 水流丢失报警状态
+          uid: N2_S0_E2_D9
+          attr_type: telesignaling
+          field_key: value
+        - name: 气流丢失报警状态
+          uid: N2_S0_E2_D10
+          attr_type: telesignaling
+          field_key: value
+        - name: 过滤网堵塞报警状态
+          uid: N2_S0_E2_D11
+          attr_type: telesignaling
+          field_key: value
+        - name: 过滤网维护报警状态
+          uid: N2_S0_E2_D12
+          attr_type: telesignaling
+          field_key: value
+        - name: 缺省1报警状态
+          uid: N2_S0_E2_D13
+          attr_type: telesignaling
+          field_key: value
+        - name: 缺省2报警状态
+          uid: N2_S0_E2_D14
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风高湿报警状态
+          uid: N2_S0_E2_D15
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风低湿报警状态
+          uid: N2_S0_E2_D16
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风高温报警状态
+          uid: N2_S0_E2_D17
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风低温报警状态
+          uid: N2_S0_E2_D18
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风高温报警状态
+          uid: N2_S0_E2_D19
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风低温报警状态
+          uid: N2_S0_E2_D20
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程高温报警状态
+          uid: N2_S0_E2_D21
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程低温报警状态
+          uid: N2_S0_E2_D22
+          attr_type: telesignaling
+          field_key: value
+        - name: 进水高温报警状态
+          uid: N2_S0_E2_D23
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风温度传感器故障报警状态
+          uid: N2_S0_E2_D24
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风湿度传感器故障报警状态
+          uid: N2_S0_E2_D25
+          attr_type: telesignaling
+          field_key: value
+        - name: 气流温度传感器故障报警状态
+          uid: N2_S0_E2_D26
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风温度传感器故障报警状态
+          uid: N2_S0_E2_D27
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程温度传感器故障报警状态
+          uid: N2_S0_E2_D28
+          attr_type: telesignaling
+          field_key: value
+        - name: 进水温度传感器故障报警状态
+          uid: N2_S0_E2_D29
+          attr_type: telesignaling
+          field_key: value
+        - name: 出水温度传感器故障报警状态
+          uid: N2_S0_E2_D30
+          attr_type: telesignaling
+          field_key: value
+        - name: 风压1传感器故障报警状态
+          uid: N2_S0_E2_D31
+          attr_type: telesignaling
+          field_key: value
+        - name: 风压2传感器故障报警状态
+          uid: N2_S0_E2_D32
+          attr_type: telesignaling
+          field_key: value
+        - name: 水压1传感器故障报警状态
+          uid: N2_S0_E2_D33
+          attr_type: telesignaling
+          field_key: value
+        - name: 水压2传感器故障报警状态
+          uid: N2_S0_E2_D34
+          attr_type: telesignaling
+          field_key: value
+        - name: 水流量传感器故障报警状态
+          uid: N2_S0_E2_D35
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源丢失报警状态
+          uid: N2_S0_E2_D36
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源过压报警状态
+          uid: N2_S0_E2_D37
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源欠压报警状态
+          uid: N2_S0_E2_D38
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源频偏报警状态
+          uid: N2_S0_E2_D39
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源缺相报警状态
+          uid: N2_S0_E2_D40
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源反相报警状态
+          uid: N2_S0_E2_D41
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组制冷状态
+          uid: N2_S0_E2_D42
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组加热状态
+          uid: N2_S0_E2_D43
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组加湿状态
+          uid: N2_S0_E2_D44
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组除湿状态
+          uid: N2_S0_E2_D45
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程关机状态
+          uid: N2_S0_E2_D46
+          attr_type: telesignaling
+          field_key: value
+        - name: 本地关机状态
+          uid: N2_S0_E2_D47
+          attr_type: telesignaling
+          field_key: value
+        - name: 监控关机状态
+          uid: N2_S0_E2_D48
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组运行状态
+          uid: N2_S0_E2_D49
+          attr_type: telesignaling
+          field_key: value
+        - name: 风机控制模式
+          uid: N2_S0_E2_D50
+          attr_type: telesignaling
+          field_key: value
+        - name: 水阀控制模式
+          uid: N2_S0_E2_D51
+          attr_type: telesignaling
+          field_key: value
+        - name: 监控开关机状态
+          uid: N2_S0_E2_D52
+          attr_type: telecontrol
+          field_key: value
+      - device_name: 1F IDC机房3#空调
+        device_uid: N2_S0_E3
+        location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+        is_available: true
+        attributes:
+        - name: 风机转速（%）
+          uid: N2_S0_E3_A1
+          attr_type: telemetry
+          field_key: value
+        - name: 水阀开度（%）
+          uid: N2_S0_E3_A2
+          attr_type: telemetry
+          field_key: value
+        - name: 回风湿度测量值（%）
+          uid: N2_S0_E3_A3
+          attr_type: telemetry
+          field_key: value
+        - name: 回风温度测量值（℃）
+          uid: N2_S0_E3_A4
+          attr_type: telemetry
+          field_key: value
+        - name: 风压设定点（Pa）
+          uid: N2_S0_E3_A26
+          attr_type: telemetry
+          field_key: value
+        - name: 回风湿度设定点（%）
+          uid: N2_S0_E3_A27
+          attr_type: teleadjusting
+          field_key: value
+        - name: 回风温度设定点（℃）
+          uid: N2_S0_E3_A28
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程平均温度设定点（℃）
+          uid: N2_S0_E3_A30
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程最高温度设定点（℃）
+          uid: N2_S0_E3_A31
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程关机报警状态
+          uid: N2_S0_E3_D1
+          attr_type: telesignaling
+          field_key: value
+        - name: 地板溢水报警状态
+          uid: N2_S0_E3_D2
+          attr_type: telesignaling
+          field_key: value
+        - name: 高水位报警状态
+          uid: N2_S0_E3_D3
+          attr_type: telesignaling
+          field_key: value
+        - name: 加湿器报警状态
+          uid: N2_S0_E3_D4
+          attr_type: telesignaling
+          field_key: value
+        - name: 电加热报警状态
+          uid: N2_S0_E3_D5
+          attr_type: telesignaling
+          field_key: value
+        - name: 风机报警状态
+          uid: N2_S0_E3_D6
+          attr_type: telesignaling
+          field_key: value
+        - name: 冷凝水泵报警状态
+          uid: N2_S0_E3_D7
+          attr_type: telesignaling
+          field_key: value
+        - name: 烟感报警状态
+          uid: N2_S0_E3_D8
+          attr_type: telesignaling
+          field_key: value
+        - name: 水流丢失报警状态
+          uid: N2_S0_E3_D9
+          attr_type: telesignaling
+          field_key: value
+        - name: 气流丢失报警状态
+          uid: N2_S0_E3_D10
+          attr_type: telesignaling
+          field_key: value
+        - name: 过滤网堵塞报警状态
+          uid: N2_S0_E3_D11
+          attr_type: telesignaling
+          field_key: value
+        - name: 过滤网维护报警状态
+          uid: N2_S0_E3_D12
+          attr_type: telesignaling
+          field_key: value
+        - name: 缺省1报警状态
+          uid: N2_S0_E3_D13
+          attr_type: telesignaling
+          field_key: value
+        - name: 缺省2报警状态
+          uid: N2_S0_E3_D14
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风高湿报警状态
+          uid: N2_S0_E3_D15
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风低湿报警状态
+          uid: N2_S0_E3_D16
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风高温报警状态
+          uid: N2_S0_E3_D17
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风低温报警状态
+          uid: N2_S0_E3_D18
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风高温报警状态
+          uid: N2_S0_E3_D19
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风低温报警状态
+          uid: N2_S0_E3_D20
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程高温报警状态
+          uid: N2_S0_E3_D21
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程低温报警状态
+          uid: N2_S0_E3_D22
+          attr_type: telesignaling
+          field_key: value
+        - name: 进水高温报警状态
+          uid: N2_S0_E3_D23
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风温度传感器故障报警状态
+          uid: N2_S0_E3_D24
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风湿度传感器故障报警状态
+          uid: N2_S0_E3_D25
+          attr_type: telesignaling
+          field_key: value
+        - name: 气流温度传感器故障报警状态
+          uid: N2_S0_E3_D26
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风温度传感器故障报警状态
+          uid: N2_S0_E3_D27
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程温度传感器故障报警状态
+          uid: N2_S0_E3_D28
+          attr_type: telesignaling
+          field_key: value
+        - name: 进水温度传感器故障报警状态
+          uid: N2_S0_E3_D29
+          attr_type: telesignaling
+          field_key: value
+        - name: 出水温度传感器故障报警状态
+          uid: N2_S0_E3_D30
+          attr_type: telesignaling
+          field_key: value
+        - name: 风压1传感器故障报警状态
+          uid: N2_S0_E3_D31
+          attr_type: telesignaling
+          field_key: value
+        - name: 风压2传感器故障报警状态
+          uid: N2_S0_E3_D32
+          attr_type: telesignaling
+          field_key: value
+        - name: 水压1传感器故障报警状态
+          uid: N2_S0_E3_D33
+          attr_type: telesignaling
+          field_key: value
+        - name: 水压2传感器故障报警状态
+          uid: N2_S0_E3_D34
+          attr_type: telesignaling
+          field_key: value
+        - name: 水流量传感器故障报警状态
+          uid: N2_S0_E3_D35
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源丢失报警状态
+          uid: N2_S0_E3_D36
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源过压报警状态
+          uid: N2_S0_E3_D37
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源欠压报警状态
+          uid: N2_S0_E3_D38
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源频偏报警状态
+          uid: N2_S0_E3_D39
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源缺相报警状态
+          uid: N2_S0_E3_D40
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源反相报警状态
+          uid: N2_S0_E3_D41
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组制冷状态
+          uid: N2_S0_E3_D42
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组加热状态
+          uid: N2_S0_E3_D43
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组加湿状态
+          uid: N2_S0_E3_D44
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组除湿状态
+          uid: N2_S0_E3_D45
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程关机状态
+          uid: N2_S0_E3_D46
+          attr_type: telesignaling
+          field_key: value
+        - name: 本地关机状态
+          uid: N2_S0_E3_D47
+          attr_type: telesignaling
+          field_key: value
+        - name: 监控关机状态
+          uid: N2_S0_E3_D48
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组运行状态
+          uid: N2_S0_E3_D49
+          attr_type: telesignaling
+          field_key: value
+        - name: 风机控制模式
+          uid: N2_S0_E3_D50
+          attr_type: telesignaling
+          field_key: value
+        - name: 水阀控制模式
+          uid: N2_S0_E3_D51
+          attr_type: telesignaling
+          field_key: value
+        - name: 监控开关机状态
+          uid: N2_S0_E3_D52
+          attr_type: telecontrol
+          field_key: value
+      - device_name: 1F IDC机房4#空调
+        device_uid: N2_S0_E4
+        location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+        is_available: true
+        attributes:
+        - name: 风机转速（%）
+          uid: N2_S0_E4_A1
+          attr_type: telemetry
+          field_key: value
+        - name: 水阀开度（%）
+          uid: N2_S0_E4_A2
+          attr_type: telemetry
+          field_key: value
+        - name: 回风湿度测量值（%）
+          uid: N2_S0_E4_A3
+          attr_type: telemetry
+          field_key: value
+        - name: 回风温度测量值（℃）
+          uid: N2_S0_E4_A4
+          attr_type: telemetry
+          field_key: value
+        - name: 风压设定点（Pa）
+          uid: N2_S0_E4_A26
+          attr_type: telemetry
+          field_key: value
+        - name: 回风湿度设定点（%）
+          uid: N2_S0_E4_A27
+          attr_type: teleadjusting
+          field_key: value
+        - name: 回风温度设定点（℃）
+          uid: N2_S0_E4_A28
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程平均温度设定点（℃）
+          uid: N2_S0_E4_A30
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程最高温度设定点（℃）
+          uid: N2_S0_E4_A31
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程关机报警状态
+          uid: N2_S0_E4_D1
+          attr_type: telesignaling
+          field_key: value
+        - name: 地板溢水报警状态
+          uid: N2_S0_E4_D2
+          attr_type: telesignaling
+          field_key: value
+        - name: 高水位报警状态
+          uid: N2_S0_E4_D3
+          attr_type: telesignaling
+          field_key: value
+        - name: 加湿器报警状态
+          uid: N2_S0_E4_D4
+          attr_type: telesignaling
+          field_key: value
+        - name: 电加热报警状态
+          uid: N2_S0_E4_D5
+          attr_type: telesignaling
+          field_key: value
+        - name: 风机报警状态
+          uid: N2_S0_E4_D6
+          attr_type: telesignaling
+          field_key: value
+        - name: 冷凝水泵报警状态
+          uid: N2_S0_E4_D7
+          attr_type: telesignaling
+          field_key: value
+        - name: 烟感报警状态
+          uid: N2_S0_E4_D8
+          attr_type: telesignaling
+          field_key: value
+        - name: 水流丢失报警状态
+          uid: N2_S0_E4_D9
+          attr_type: telesignaling
+          field_key: value
+        - name: 气流丢失报警状态
+          uid: N2_S0_E4_D10
+          attr_type: telesignaling
+          field_key: value
+        - name: 过滤网堵塞报警状态
+          uid: N2_S0_E4_D11
+          attr_type: telesignaling
+          field_key: value
+        - name: 过滤网维护报警状态
+          uid: N2_S0_E4_D12
+          attr_type: telesignaling
+          field_key: value
+        - name: 缺省1报警状态
+          uid: N2_S0_E4_D13
+          attr_type: telesignaling
+          field_key: value
+        - name: 缺省2报警状态
+          uid: N2_S0_E4_D14
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风高湿报警状态
+          uid: N2_S0_E4_D15
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风低湿报警状态
+          uid: N2_S0_E4_D16
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风高温报警状态
+          uid: N2_S0_E4_D17
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风低温报警状态
+          uid: N2_S0_E4_D18
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风高温报警状态
+          uid: N2_S0_E4_D19
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风低温报警状态
+          uid: N2_S0_E4_D20
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程高温报警状态
+          uid: N2_S0_E4_D21
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程低温报警状态
+          uid: N2_S0_E4_D22
+          attr_type: telesignaling
+          field_key: value
+        - name: 进水高温报警状态
+          uid: N2_S0_E4_D23
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风温度传感器故障报警状态
+          uid: N2_S0_E4_D24
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风湿度传感器故障报警状态
+          uid: N2_S0_E4_D25
+          attr_type: telesignaling
+          field_key: value
+        - name: 气流温度传感器故障报警状态
+          uid: N2_S0_E4_D26
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风温度传感器故障报警状态
+          uid: N2_S0_E4_D27
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程温度传感器故障报警状态
+          uid: N2_S0_E4_D28
+          attr_type: telesignaling
+          field_key: value
+        - name: 进水温度传感器故障报警状态
+          uid: N2_S0_E4_D29
+          attr_type: telesignaling
+          field_key: value
+        - name: 出水温度传感器故障报警状态
+          uid: N2_S0_E4_D30
+          attr_type: telesignaling
+          field_key: value
+        - name: 风压1传感器故障报警状态
+          uid: N2_S0_E4_D31
+          attr_type: telesignaling
+          field_key: value
+        - name: 风压2传感器故障报警状态
+          uid: N2_S0_E4_D32
+          attr_type: telesignaling
+          field_key: value
+        - name: 水压1传感器故障报警状态
+          uid: N2_S0_E4_D33
+          attr_type: telesignaling
+          field_key: value
+        - name: 水压2传感器故障报警状态
+          uid: N2_S0_E4_D34
+          attr_type: telesignaling
+          field_key: value
+        - name: 水流量传感器故障报警状态
+          uid: N2_S0_E4_D35
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源丢失报警状态
+          uid: N2_S0_E4_D36
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源过压报警状态
+          uid: N2_S0_E4_D37
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源欠压报警状态
+          uid: N2_S0_E4_D38
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源频偏报警状态
+          uid: N2_S0_E4_D39
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源缺相报警状态
+          uid: N2_S0_E4_D40
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源反相报警状态
+          uid: N2_S0_E4_D41
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组制冷状态
+          uid: N2_S0_E4_D42
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组加热状态
+          uid: N2_S0_E4_D43
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组加湿状态
+          uid: N2_S0_E4_D44
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组除湿状态
+          uid: N2_S0_E4_D45
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程关机状态
+          uid: N2_S0_E4_D46
+          attr_type: telesignaling
+          field_key: value
+        - name: 本地关机状态
+          uid: N2_S0_E4_D47
+          attr_type: telesignaling
+          field_key: value
+        - name: 监控关机状态
+          uid: N2_S0_E4_D48
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组运行状态
+          uid: N2_S0_E4_D49
+          attr_type: telesignaling
+          field_key: value
+        - name: 风机控制模式
+          uid: N2_S0_E4_D50
+          attr_type: telesignaling
+          field_key: value
+        - name: 水阀控制模式
+          uid: N2_S0_E4_D51
+          attr_type: telesignaling
+          field_key: value
+        - name: 监控开关机状态
+          uid: N2_S0_E4_D52
+          attr_type: telecontrol
+          field_key: value
+      - device_name: 1F IDC机房5#空调
+        device_uid: N2_S0_E5
+        location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+        is_available: true
+        attributes:
+        - name: 风机转速（%）
+          uid: N2_S0_E5_A1
+          attr_type: telemetry
+          field_key: value
+        - name: 水阀开度（%）
+          uid: N2_S0_E5_A2
+          attr_type: telemetry
+          field_key: value
+        - name: 回风湿度测量值（%）
+          uid: N2_S0_E5_A3
+          attr_type: telemetry
+          field_key: value
+        - name: 回风温度测量值（℃）
+          uid: N2_S0_E5_A4
+          attr_type: telemetry
+          field_key: value
+        - name: 风压设定点（Pa）
+          uid: N2_S0_E5_A26
+          attr_type: telemetry
+          field_key: value
+        - name: 回风湿度设定点（%）
+          uid: N2_S0_E5_A27
+          attr_type: teleadjusting
+          field_key: value
+        - name: 回风温度设定点（℃）
+          uid: N2_S0_E5_A28
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程平均温度设定点（℃）
+          uid: N2_S0_E5_A30
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程最高温度设定点（℃）
+          uid: N2_S0_E5_A31
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程关机报警状态
+          uid: N2_S0_E5_D1
+          attr_type: telesignaling
+          field_key: value
+        - name: 地板溢水报警状态
+          uid: N2_S0_E5_D2
+          attr_type: telesignaling
+          field_key: value
+        - name: 高水位报警状态
+          uid: N2_S0_E5_D3
+          attr_type: telesignaling
+          field_key: value
+        - name: 加湿器报警状态
+          uid: N2_S0_E5_D4
+          attr_type: telesignaling
+          field_key: value
+        - name: 电加热报警状态
+          uid: N2_S0_E5_D5
+          attr_type: telesignaling
+          field_key: value
+        - name: 风机报警状态
+          uid: N2_S0_E5_D6
+          attr_type: telesignaling
+          field_key: value
+        - name: 冷凝水泵报警状态
+          uid: N2_S0_E5_D7
+          attr_type: telesignaling
+          field_key: value
+        - name: 烟感报警状态
+          uid: N2_S0_E5_D8
+          attr_type: telesignaling
+          field_key: value
+        - name: 水流丢失报警状态
+          uid: N2_S0_E5_D9
+          attr_type: telesignaling
+          field_key: value
+        - name: 气流丢失报警状态
+          uid: N2_S0_E5_D10
+          attr_type: telesignaling
+          field_key: value
+        - name: 过滤网堵塞报警状态
+          uid: N2_S0_E5_D11
+          attr_type: telesignaling
+          field_key: value
+        - name: 过滤网维护报警状态
+          uid: N2_S0_E5_D12
+          attr_type: telesignaling
+          field_key: value
+        - name: 缺省1报警状态
+          uid: N2_S0_E5_D13
+          attr_type: telesignaling
+          field_key: value
+        - name: 缺省2报警状态
+          uid: N2_S0_E5_D14
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风高湿报警状态
+          uid: N2_S0_E5_D15
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风低湿报警状态
+          uid: N2_S0_E5_D16
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风高温报警状态
+          uid: N2_S0_E5_D17
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风低温报警状态
+          uid: N2_S0_E5_D18
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风高温报警状态
+          uid: N2_S0_E5_D19
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风低温报警状态
+          uid: N2_S0_E5_D20
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程高温报警状态
+          uid: N2_S0_E5_D21
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程低温报警状态
+          uid: N2_S0_E5_D22
+          attr_type: telesignaling
+          field_key: value
+        - name: 进水高温报警状态
+          uid: N2_S0_E5_D23
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风温度传感器故障报警状态
+          uid: N2_S0_E5_D24
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风湿度传感器故障报警状态
+          uid: N2_S0_E5_D25
+          attr_type: telesignaling
+          field_key: value
+        - name: 气流温度传感器故障报警状态
+          uid: N2_S0_E5_D26
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风温度传感器故障报警状态
+          uid: N2_S0_E5_D27
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程温度传感器故障报警状态
+          uid: N2_S0_E5_D28
+          attr_type: telesignaling
+          field_key: value
+        - name: 进水温度传感器故障报警状态
+          uid: N2_S0_E5_D29
+          attr_type: telesignaling
+          field_key: value
+        - name: 出水温度传感器故障报警状态
+          uid: N2_S0_E5_D30
+          attr_type: telesignaling
+          field_key: value
+        - name: 风压1传感器故障报警状态
+          uid: N2_S0_E5_D31
+          attr_type: telesignaling
+          field_key: value
+        - name: 风压2传感器故障报警状态
+          uid: N2_S0_E5_D32
+          attr_type: telesignaling
+          field_key: value
+        - name: 水压1传感器故障报警状态
+          uid: N2_S0_E5_D33
+          attr_type: telesignaling
+          field_key: value
+        - name: 水压2传感器故障报警状态
+          uid: N2_S0_E5_D34
+          attr_type: telesignaling
+          field_key: value
+        - name: 水流量传感器故障报警状态
+          uid: N2_S0_E5_D35
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源丢失报警状态
+          uid: N2_S0_E5_D36
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源过压报警状态
+          uid: N2_S0_E5_D37
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源欠压报警状态
+          uid: N2_S0_E5_D38
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源频偏报警状态
+          uid: N2_S0_E5_D39
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源缺相报警状态
+          uid: N2_S0_E5_D40
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源反相报警状态
+          uid: N2_S0_E5_D41
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组制冷状态
+          uid: N2_S0_E5_D42
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组加热状态
+          uid: N2_S0_E5_D43
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组加湿状态
+          uid: N2_S0_E5_D44
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组除湿状态
+          uid: N2_S0_E5_D45
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程关机状态
+          uid: N2_S0_E5_D46
+          attr_type: telesignaling
+          field_key: value
+        - name: 本地关机状态
+          uid: N2_S0_E5_D47
+          attr_type: telesignaling
+          field_key: value
+        - name: 监控关机状态
+          uid: N2_S0_E5_D48
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组运行状态
+          uid: N2_S0_E5_D49
+          attr_type: telesignaling
+          field_key: value
+        - name: 风机控制模式
+          uid: N2_S0_E5_D50
+          attr_type: telesignaling
+          field_key: value
+        - name: 水阀控制模式
+          uid: N2_S0_E5_D51
+          attr_type: telesignaling
+          field_key: value
+        - name: 监控开关机状态
+          uid: N2_S0_E5_D52
+          attr_type: telecontrol
+          field_key: value
+      - device_name: 1F IDC机房6#空调
+        device_uid: N2_S0_E6
+        location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+        is_available: true
+        attributes:
+        - name: 风机转速（%）
+          uid: N2_S0_E6_A1
+          attr_type: telemetry
+          field_key: value
+        - name: 水阀开度（%）
+          uid: N2_S0_E6_A2
+          attr_type: telemetry
+          field_key: value
+        - name: 回风湿度测量值（%）
+          uid: N2_S0_E6_A3
+          attr_type: telemetry
+          field_key: value
+        - name: 回风温度测量值（℃）
+          uid: N2_S0_E6_A4
+          attr_type: telemetry
+          field_key: value
+        - name: 风压设定点（Pa）
+          uid: N2_S0_E6_A26
+          attr_type: telemetry
+          field_key: value
+        - name: 回风湿度设定点（%）
+          uid: N2_S0_E6_A27
+          attr_type: teleadjusting
+          field_key: value
+        - name: 回风温度设定点（℃）
+          uid: N2_S0_E6_A28
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程平均温度设定点（℃）
+          uid: N2_S0_E6_A30
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程最高温度设定点（℃）
+          uid: N2_S0_E6_A31
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程关机报警状态
+          uid: N2_S0_E6_D1
+          attr_type: telesignaling
+          field_key: value
+        - name: 地板溢水报警状态
+          uid: N2_S0_E6_D2
+          attr_type: telesignaling
+          field_key: value
+        - name: 高水位报警状态
+          uid: N2_S0_E6_D3
+          attr_type: telesignaling
+          field_key: value
+        - name: 加湿器报警状态
+          uid: N2_S0_E6_D4
+          attr_type: telesignaling
+          field_key: value
+        - name: 电加热报警状态
+          uid: N2_S0_E6_D5
+          attr_type: telesignaling
+          field_key: value
+        - name: 风机报警状态
+          uid: N2_S0_E6_D6
+          attr_type: telesignaling
+          field_key: value
+        - name: 冷凝水泵报警状态
+          uid: N2_S0_E6_D7
+          attr_type: telesignaling
+          field_key: value
+        - name: 烟感报警状态
+          uid: N2_S0_E6_D8
+          attr_type: telesignaling
+          field_key: value
+        - name: 水流丢失报警状态
+          uid: N2_S0_E6_D9
+          attr_type: telesignaling
+          field_key: value
+        - name: 气流丢失报警状态
+          uid: N2_S0_E6_D10
+          attr_type: telesignaling
+          field_key: value
+        - name: 过滤网堵塞报警状态
+          uid: N2_S0_E6_D11
+          attr_type: telesignaling
+          field_key: value
+        - name: 过滤网维护报警状态
+          uid: N2_S0_E6_D12
+          attr_type: telesignaling
+          field_key: value
+        - name: 缺省1报警状态
+          uid: N2_S0_E6_D13
+          attr_type: telesignaling
+          field_key: value
+        - name: 缺省2报警状态
+          uid: N2_S0_E6_D14
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风高湿报警状态
+          uid: N2_S0_E6_D15
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风低湿报警状态
+          uid: N2_S0_E6_D16
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风高温报警状态
+          uid: N2_S0_E6_D17
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风低温报警状态
+          uid: N2_S0_E6_D18
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风高温报警状态
+          uid: N2_S0_E6_D19
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风低温报警状态
+          uid: N2_S0_E6_D20
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程高温报警状态
+          uid: N2_S0_E6_D21
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程低温报警状态
+          uid: N2_S0_E6_D22
+          attr_type: telesignaling
+          field_key: value
+        - name: 进水高温报警状态
+          uid: N2_S0_E6_D23
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风温度传感器故障报警状态
+          uid: N2_S0_E6_D24
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风湿度传感器故障报警状态
+          uid: N2_S0_E6_D25
+          attr_type: telesignaling
+          field_key: value
+        - name: 气流温度传感器故障报警状态
+          uid: N2_S0_E6_D26
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风温度传感器故障报警状态
+          uid: N2_S0_E6_D27
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程温度传感器故障报警状态
+          uid: N2_S0_E6_D28
+          attr_type: telesignaling
+          field_key: value
+        - name: 进水温度传感器故障报警状态
+          uid: N2_S0_E6_D29
+          attr_type: telesignaling
+          field_key: value
+        - name: 出水温度传感器故障报警状态
+          uid: N2_S0_E6_D30
+          attr_type: telesignaling
+          field_key: value
+        - name: 风压1传感器故障报警状态
+          uid: N2_S0_E6_D31
+          attr_type: telesignaling
+          field_key: value
+        - name: 风压2传感器故障报警状态
+          uid: N2_S0_E6_D32
+          attr_type: telesignaling
+          field_key: value
+        - name: 水压1传感器故障报警状态
+          uid: N2_S0_E6_D33
+          attr_type: telesignaling
+          field_key: value
+        - name: 水压2传感器故障报警状态
+          uid: N2_S0_E6_D34
+          attr_type: telesignaling
+          field_key: value
+        - name: 水流量传感器故障报警状态
+          uid: N2_S0_E6_D35
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源丢失报警状态
+          uid: N2_S0_E6_D36
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源过压报警状态
+          uid: N2_S0_E6_D37
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源欠压报警状态
+          uid: N2_S0_E6_D38
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源频偏报警状态
+          uid: N2_S0_E6_D39
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源缺相报警状态
+          uid: N2_S0_E6_D40
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源反相报警状态
+          uid: N2_S0_E6_D41
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组制冷状态
+          uid: N2_S0_E6_D42
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组加热状态
+          uid: N2_S0_E6_D43
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组加湿状态
+          uid: N2_S0_E6_D44
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组除湿状态
+          uid: N2_S0_E6_D45
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程关机状态
+          uid: N2_S0_E6_D46
+          attr_type: telesignaling
+          field_key: value
+        - name: 本地关机状态
+          uid: N2_S0_E6_D47
+          attr_type: telesignaling
+          field_key: value
+        - name: 监控关机状态
+          uid: N2_S0_E6_D48
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组运行状态
+          uid: N2_S0_E6_D49
+          attr_type: telesignaling
+          field_key: value
+        - name: 风机控制模式
+          uid: N2_S0_E6_D50
+          attr_type: telesignaling
+          field_key: value
+        - name: 水阀控制模式
+          uid: N2_S0_E6_D51
+          attr_type: telesignaling
+          field_key: value
+        - name: 监控开关机状态
+          uid: N2_S0_E6_D52
+          attr_type: telecontrol
+          field_key: value
+      - device_name: 1F IDC机房7#空调
+        device_uid: N2_S0_E7
+        location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+        is_available: true
+        attributes:
+        - name: 风机转速（%）
+          uid: N2_S0_E7_A1
+          attr_type: telemetry
+          field_key: value
+        - name: 水阀开度（%）
+          uid: N2_S0_E7_A2
+          attr_type: telemetry
+          field_key: value
+        - name: 回风湿度测量值（%）
+          uid: N2_S0_E7_A3
+          attr_type: telemetry
+          field_key: value
+        - name: 回风温度测量值（℃）
+          uid: N2_S0_E7_A4
+          attr_type: telemetry
+          field_key: value
+        - name: 风压设定点（Pa）
+          uid: N2_S0_E7_A26
+          attr_type: telemetry
+          field_key: value
+        - name: 回风湿度设定点（%）
+          uid: N2_S0_E7_A27
+          attr_type: teleadjusting
+          field_key: value
+        - name: 回风温度设定点（℃）
+          uid: N2_S0_E7_A28
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程平均温度设定点（℃）
+          uid: N2_S0_E7_A30
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程最高温度设定点（℃）
+          uid: N2_S0_E7_A31
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程关机报警状态
+          uid: N2_S0_E7_D1
+          attr_type: telesignaling
+          field_key: value
+        - name: 地板溢水报警状态
+          uid: N2_S0_E7_D2
+          attr_type: telesignaling
+          field_key: value
+        - name: 高水位报警状态
+          uid: N2_S0_E7_D3
+          attr_type: telesignaling
+          field_key: value
+        - name: 加湿器报警状态
+          uid: N2_S0_E7_D4
+          attr_type: telesignaling
+          field_key: value
+        - name: 电加热报警状态
+          uid: N2_S0_E7_D5
+          attr_type: telesignaling
+          field_key: value
+        - name: 风机报警状态
+          uid: N2_S0_E7_D6
+          attr_type: telesignaling
+          field_key: value
+        - name: 冷凝水泵报警状态
+          uid: N2_S0_E7_D7
+          attr_type: telesignaling
+          field_key: value
+        - name: 烟感报警状态
+          uid: N2_S0_E7_D8
+          attr_type: telesignaling
+          field_key: value
+        - name: 水流丢失报警状态
+          uid: N2_S0_E7_D9
+          attr_type: telesignaling
+          field_key: value
+        - name: 气流丢失报警状态
+          uid: N2_S0_E7_D10
+          attr_type: telesignaling
+          field_key: value
+        - name: 过滤网堵塞报警状态
+          uid: N2_S0_E7_D11
+          attr_type: telesignaling
+          field_key: value
+        - name: 过滤网维护报警状态
+          uid: N2_S0_E7_D12
+          attr_type: telesignaling
+          field_key: value
+        - name: 缺省1报警状态
+          uid: N2_S0_E7_D13
+          attr_type: telesignaling
+          field_key: value
+        - name: 缺省2报警状态
+          uid: N2_S0_E7_D14
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风高湿报警状态
+          uid: N2_S0_E7_D15
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风低湿报警状态
+          uid: N2_S0_E7_D16
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风高温报警状态
+          uid: N2_S0_E7_D17
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风低温报警状态
+          uid: N2_S0_E7_D18
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风高温报警状态
+          uid: N2_S0_E7_D19
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风低温报警状态
+          uid: N2_S0_E7_D20
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程高温报警状态
+          uid: N2_S0_E7_D21
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程低温报警状态
+          uid: N2_S0_E7_D22
+          attr_type: telesignaling
+          field_key: value
+        - name: 进水高温报警状态
+          uid: N2_S0_E7_D23
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风温度传感器故障报警状态
+          uid: N2_S0_E7_D24
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风湿度传感器故障报警状态
+          uid: N2_S0_E7_D25
+          attr_type: telesignaling
+          field_key: value
+        - name: 气流温度传感器故障报警状态
+          uid: N2_S0_E7_D26
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风温度传感器故障报警状态
+          uid: N2_S0_E7_D27
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程温度传感器故障报警状态
+          uid: N2_S0_E7_D28
+          attr_type: telesignaling
+          field_key: value
+        - name: 进水温度传感器故障报警状态
+          uid: N2_S0_E7_D29
+          attr_type: telesignaling
+          field_key: value
+        - name: 出水温度传感器故障报警状态
+          uid: N2_S0_E7_D30
+          attr_type: telesignaling
+          field_key: value
+        - name: 风压1传感器故障报警状态
+          uid: N2_S0_E7_D31
+          attr_type: telesignaling
+          field_key: value
+        - name: 风压2传感器故障报警状态
+          uid: N2_S0_E7_D32
+          attr_type: telesignaling
+          field_key: value
+        - name: 水压1传感器故障报警状态
+          uid: N2_S0_E7_D33
+          attr_type: telesignaling
+          field_key: value
+        - name: 水压2传感器故障报警状态
+          uid: N2_S0_E7_D34
+          attr_type: telesignaling
+          field_key: value
+        - name: 水流量传感器故障报警状态
+          uid: N2_S0_E7_D35
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源丢失报警状态
+          uid: N2_S0_E7_D36
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源过压报警状态
+          uid: N2_S0_E7_D37
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源欠压报警状态
+          uid: N2_S0_E7_D38
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源频偏报警状态
+          uid: N2_S0_E7_D39
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源缺相报警状态
+          uid: N2_S0_E7_D40
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源反相报警状态
+          uid: N2_S0_E7_D41
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组制冷状态
+          uid: N2_S0_E7_D42
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组加热状态
+          uid: N2_S0_E7_D43
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组加湿状态
+          uid: N2_S0_E7_D44
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组除湿状态
+          uid: N2_S0_E7_D45
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程关机状态
+          uid: N2_S0_E7_D46
+          attr_type: telesignaling
+          field_key: value
+        - name: 本地关机状态
+          uid: N2_S0_E7_D47
+          attr_type: telesignaling
+          field_key: value
+        - name: 监控关机状态
+          uid: N2_S0_E7_D48
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组运行状态
+          uid: N2_S0_E7_D49
+          attr_type: telesignaling
+          field_key: value
+        - name: 风机控制模式
+          uid: N2_S0_E7_D50
+          attr_type: telesignaling
+          field_key: value
+        - name: 水阀控制模式
+          uid: N2_S0_E7_D51
+          attr_type: telesignaling
+          field_key: value
+        - name: 监控开关机状态
+          uid: N2_S0_E7_D52
+          attr_type: telecontrol
+          field_key: value
+      - device_name: 1F IDC机房8#空调
+        device_uid: N2_S0_E8
+        location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+        is_available: true
+        attributes:
+        - name: 风机转速（%）
+          uid: N2_S0_E8_A1
+          attr_type: telemetry
+          field_key: value
+        - name: 水阀开度（%）
+          uid: N2_S0_E8_A2
+          attr_type: telemetry
+          field_key: value
+        - name: 回风湿度测量值（%）
+          uid: N2_S0_E8_A3
+          attr_type: telemetry
+          field_key: value
+        - name: 回风温度测量值（℃）
+          uid: N2_S0_E8_A4
+          attr_type: telemetry
+          field_key: value
+        - name: 风压设定点（Pa）
+          uid: N2_S0_E8_A26
+          attr_type: telemetry
+          field_key: value
+        - name: 回风湿度设定点（%）
+          uid: N2_S0_E8_A27
+          attr_type: teleadjusting
+          field_key: value
+        - name: 回风温度设定点（℃）
+          uid: N2_S0_E8_A28
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程平均温度设定点（℃）
+          uid: N2_S0_E8_A30
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程最高温度设定点（℃）
+          uid: N2_S0_E8_A31
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程关机报警状态
+          uid: N2_S0_E8_D1
+          attr_type: telesignaling
+          field_key: value
+        - name: 地板溢水报警状态
+          uid: N2_S0_E8_D2
+          attr_type: telesignaling
+          field_key: value
+        - name: 高水位报警状态
+          uid: N2_S0_E8_D3
+          attr_type: telesignaling
+          field_key: value
+        - name: 加湿器报警状态
+          uid: N2_S0_E8_D4
+          attr_type: telesignaling
+          field_key: value
+        - name: 电加热报警状态
+          uid: N2_S0_E8_D5
+          attr_type: telesignaling
+          field_key: value
+        - name: 风机报警状态
+          uid: N2_S0_E8_D6
+          attr_type: telesignaling
+          field_key: value
+        - name: 冷凝水泵报警状态
+          uid: N2_S0_E8_D7
+          attr_type: telesignaling
+          field_key: value
+        - name: 烟感报警状态
+          uid: N2_S0_E8_D8
+          attr_type: telesignaling
+          field_key: value
+        - name: 水流丢失报警状态
+          uid: N2_S0_E8_D9
+          attr_type: telesignaling
+          field_key: value
+        - name: 气流丢失报警状态
+          uid: N2_S0_E8_D10
+          attr_type: telesignaling
+          field_key: value
+        - name: 过滤网堵塞报警状态
+          uid: N2_S0_E8_D11
+          attr_type: telesignaling
+          field_key: value
+        - name: 过滤网维护报警状态
+          uid: N2_S0_E8_D12
+          attr_type: telesignaling
+          field_key: value
+        - name: 缺省1报警状态
+          uid: N2_S0_E8_D13
+          attr_type: telesignaling
+          field_key: value
+        - name: 缺省2报警状态
+          uid: N2_S0_E8_D14
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风高湿报警状态
+          uid: N2_S0_E8_D15
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风低湿报警状态
+          uid: N2_S0_E8_D16
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风高温报警状态
+          uid: N2_S0_E8_D17
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风低温报警状态
+          uid: N2_S0_E8_D18
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风高温报警状态
+          uid: N2_S0_E8_D19
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风低温报警状态
+          uid: N2_S0_E8_D20
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程高温报警状态
+          uid: N2_S0_E8_D21
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程低温报警状态
+          uid: N2_S0_E8_D22
+          attr_type: telesignaling
+          field_key: value
+        - name: 进水高温报警状态
+          uid: N2_S0_E8_D23
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风温度传感器故障报警状态
+          uid: N2_S0_E8_D24
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风湿度传感器故障报警状态
+          uid: N2_S0_E8_D25
+          attr_type: telesignaling
+          field_key: value
+        - name: 气流温度传感器故障报警状态
+          uid: N2_S0_E8_D26
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风温度传感器故障报警状态
+          uid: N2_S0_E8_D27
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程温度传感器故障报警状态
+          uid: N2_S0_E8_D28
+          attr_type: telesignaling
+          field_key: value
+        - name: 进水温度传感器故障报警状态
+          uid: N2_S0_E8_D29
+          attr_type: telesignaling
+          field_key: value
+        - name: 出水温度传感器故障报警状态
+          uid: N2_S0_E8_D30
+          attr_type: telesignaling
+          field_key: value
+        - name: 风压1传感器故障报警状态
+          uid: N2_S0_E8_D31
+          attr_type: telesignaling
+          field_key: value
+        - name: 风压2传感器故障报警状态
+          uid: N2_S0_E8_D32
+          attr_type: telesignaling
+          field_key: value
+        - name: 水压1传感器故障报警状态
+          uid: N2_S0_E8_D33
+          attr_type: telesignaling
+          field_key: value
+        - name: 水压2传感器故障报警状态
+          uid: N2_S0_E8_D34
+          attr_type: telesignaling
+          field_key: value
+        - name: 水流量传感器故障报警状态
+          uid: N2_S0_E8_D35
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源丢失报警状态
+          uid: N2_S0_E8_D36
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源过压报警状态
+          uid: N2_S0_E8_D37
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源欠压报警状态
+          uid: N2_S0_E8_D38
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源频偏报警状态
+          uid: N2_S0_E8_D39
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源缺相报警状态
+          uid: N2_S0_E8_D40
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源反相报警状态
+          uid: N2_S0_E8_D41
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组制冷状态
+          uid: N2_S0_E8_D42
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组加热状态
+          uid: N2_S0_E8_D43
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组加湿状态
+          uid: N2_S0_E8_D44
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组除湿状态
+          uid: N2_S0_E8_D45
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程关机状态
+          uid: N2_S0_E8_D46
+          attr_type: telesignaling
+          field_key: value
+        - name: 本地关机状态
+          uid: N2_S0_E8_D47
+          attr_type: telesignaling
+          field_key: value
+        - name: 监控关机状态
+          uid: N2_S0_E8_D48
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组运行状态
+          uid: N2_S0_E8_D49
+          attr_type: telesignaling
+          field_key: value
+        - name: 风机控制模式
+          uid: N2_S0_E8_D50
+          attr_type: telesignaling
+          field_key: value
+        - name: 水阀控制模式
+          uid: N2_S0_E8_D51
+          attr_type: telesignaling
+          field_key: value
+        - name: 监控开关机状态
+          uid: N2_S0_E8_D52
+          attr_type: telecontrol
+          field_key: value
+      - device_name: 1F IDC机房9#空调
+        device_uid: N2_S0_E9
+        location: 广东东莞华南数据中心/1号IDC机房楼/一楼/103A信息化机房
+        is_available: true
+        attributes:
+        - name: 风机转速（%）
+          uid: N2_S0_E9_A1
+          attr_type: telemetry
+          field_key: value
+        - name: 水阀开度（%）
+          uid: N2_S0_E9_A2
+          attr_type: telemetry
+          field_key: value
+        - name: 回风湿度测量值（%）
+          uid: N2_S0_E9_A3
+          attr_type: telemetry
+          field_key: value
+        - name: 回风温度测量值（℃）
+          uid: N2_S0_E9_A4
+          attr_type: telemetry
+          field_key: value
+        - name: 风压设定点（Pa）
+          uid: N2_S0_E9_A26
+          attr_type: telemetry
+          field_key: value
+        - name: 回风湿度设定点（%）
+          uid: N2_S0_E9_A27
+          attr_type: teleadjusting
+          field_key: value
+        - name: 回风温度设定点（℃）
+          uid: N2_S0_E9_A28
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程平均温度设定点（℃）
+          uid: N2_S0_E9_A30
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程最高温度设定点（℃）
+          uid: N2_S0_E9_A31
+          attr_type: teleadjusting
+          field_key: value
+        - name: 远程关机报警状态
+          uid: N2_S0_E9_D1
+          attr_type: telesignaling
+          field_key: value
+        - name: 地板溢水报警状态
+          uid: N2_S0_E9_D2
+          attr_type: telesignaling
+          field_key: value
+        - name: 高水位报警状态
+          uid: N2_S0_E9_D3
+          attr_type: telesignaling
+          field_key: value
+        - name: 加湿器报警状态
+          uid: N2_S0_E9_D4
+          attr_type: telesignaling
+          field_key: value
+        - name: 电加热报警状态
+          uid: N2_S0_E9_D5
+          attr_type: telesignaling
+          field_key: value
+        - name: 风机报警状态
+          uid: N2_S0_E9_D6
+          attr_type: telesignaling
+          field_key: value
+        - name: 冷凝水泵报警状态
+          uid: N2_S0_E9_D7
+          attr_type: telesignaling
+          field_key: value
+        - name: 烟感报警状态
+          uid: N2_S0_E9_D8
+          attr_type: telesignaling
+          field_key: value
+        - name: 水流丢失报警状态
+          uid: N2_S0_E9_D9
+          attr_type: telesignaling
+          field_key: value
+        - name: 气流丢失报警状态
+          uid: N2_S0_E9_D10
+          attr_type: telesignaling
+          field_key: value
+        - name: 过滤网堵塞报警状态
+          uid: N2_S0_E9_D11
+          attr_type: telesignaling
+          field_key: value
+        - name: 过滤网维护报警状态
+          uid: N2_S0_E9_D12
+          attr_type: telesignaling
+          field_key: value
+        - name: 缺省1报警状态
+          uid: N2_S0_E9_D13
+          attr_type: telesignaling
+          field_key: value
+        - name: 缺省2报警状态
+          uid: N2_S0_E9_D14
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风高湿报警状态
+          uid: N2_S0_E9_D15
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风低湿报警状态
+          uid: N2_S0_E9_D16
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风高温报警状态
+          uid: N2_S0_E9_D17
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风低温报警状态
+          uid: N2_S0_E9_D18
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风高温报警状态
+          uid: N2_S0_E9_D19
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风低温报警状态
+          uid: N2_S0_E9_D20
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程高温报警状态
+          uid: N2_S0_E9_D21
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程低温报警状态
+          uid: N2_S0_E9_D22
+          attr_type: telesignaling
+          field_key: value
+        - name: 进水高温报警状态
+          uid: N2_S0_E9_D23
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风温度传感器故障报警状态
+          uid: N2_S0_E9_D24
+          attr_type: telesignaling
+          field_key: value
+        - name: 回风湿度传感器故障报警状态
+          uid: N2_S0_E9_D25
+          attr_type: telesignaling
+          field_key: value
+        - name: 气流温度传感器故障报警状态
+          uid: N2_S0_E9_D26
+          attr_type: telesignaling
+          field_key: value
+        - name: 送风温度传感器故障报警状态
+          uid: N2_S0_E9_D27
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程温度传感器故障报警状态
+          uid: N2_S0_E9_D28
+          attr_type: telesignaling
+          field_key: value
+        - name: 进水温度传感器故障报警状态
+          uid: N2_S0_E9_D29
+          attr_type: telesignaling
+          field_key: value
+        - name: 出水温度传感器故障报警状态
+          uid: N2_S0_E9_D30
+          attr_type: telesignaling
+          field_key: value
+        - name: 风压1传感器故障报警状态
+          uid: N2_S0_E9_D31
+          attr_type: telesignaling
+          field_key: value
+        - name: 风压2传感器故障报警状态
+          uid: N2_S0_E9_D32
+          attr_type: telesignaling
+          field_key: value
+        - name: 水压1传感器故障报警状态
+          uid: N2_S0_E9_D33
+          attr_type: telesignaling
+          field_key: value
+        - name: 水压2传感器故障报警状态
+          uid: N2_S0_E9_D34
+          attr_type: telesignaling
+          field_key: value
+        - name: 水流量传感器故障报警状态
+          uid: N2_S0_E9_D35
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源丢失报警状态
+          uid: N2_S0_E9_D36
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源过压报警状态
+          uid: N2_S0_E9_D37
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源欠压报警状态
+          uid: N2_S0_E9_D38
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源频偏报警状态
+          uid: N2_S0_E9_D39
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源缺相报警状态
+          uid: N2_S0_E9_D40
+          attr_type: telesignaling
+          field_key: value
+        - name: 电源反相报警状态
+          uid: N2_S0_E9_D41
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组制冷状态
+          uid: N2_S0_E9_D42
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组加热状态
+          uid: N2_S0_E9_D43
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组加湿状态
+          uid: N2_S0_E9_D44
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组除湿状态
+          uid: N2_S0_E9_D45
+          attr_type: telesignaling
+          field_key: value
+        - name: 远程关机状态
+          uid: N2_S0_E9_D46
+          attr_type: telesignaling
+          field_key: value
+        - name: 本地关机状态
+          uid: N2_S0_E9_D47
+          attr_type: telesignaling
+          field_key: value
+        - name: 监控关机状态
+          uid: N2_S0_E9_D48
+          attr_type: telesignaling
+          field_key: value
+        - name: 机组运行状态
+          uid: N2_S0_E9_D49
+          attr_type: telesignaling
+          field_key: value
+        - name: 风机控制模式
+          uid: N2_S0_E9_D50
+          attr_type: telesignaling
+          field_key: value
+        - name: 水阀控制模式
+          uid: N2_S0_E9_D51
+          attr_type: telesignaling
+          field_key: value
+        - name: 监控开关机状态
+          uid: N2_S0_E9_D52
+          attr_type: telecontrol
+          field_key: value

@@ -19,7 +19,7 @@
     >>>
     >>> # 最简单的调用方式
     >>> best_params = run_optimization(
-    ...     uid_config=uid_config,
+    ...     uid_config=normalized_uid_config,
     ...     parameter_config=modules_config,
     ...     security_boundary_config=security_config,
     ...     current_data=current_data,
@@ -78,6 +78,103 @@ CONFIG_KEY_TEMPERATURE_SENSOR = 'temperature_sensor_uid'
 CONFIG_KEY_HUMIDITY_SENSOR = 'humidity_sensor_uid'
 CONFIG_KEY_ENERGY_CONSUMPTION = 'energy_consumption_uid'
 CONFIG_KEY_OPTIMIZATION_MODULE = 'optimization_module'
+
+# ============================================================================
+# 配置读取与工具函数
+# ============================================================================
+
+
+def _normalize_uid_config(uid_config: Dict) -> Dict:
+    """
+    将旧版 datacenter 嵌套结构转换为扁平结构。
+    优先使用新系统生成的 air_conditioners/sensors 字段。
+    """
+    if not isinstance(uid_config, dict):
+        raise ValueError("uid_config 必须是字典类型")
+
+    # 如果已经是扁平化结构，则直接返回
+    if CONFIG_KEY_AIR_CONDITIONERS in uid_config:
+        return uid_config
+
+    if "datacenter" not in uid_config:
+        raise ValueError("uid_config 中缺少 datacenter 字段，无法自动转换")
+
+    dc = uid_config.get("datacenter", {})
+    rooms = dc.get("computer_rooms", []) or []
+
+    normalized: Dict[str, Dict] = {
+        CONFIG_KEY_AIR_CONDITIONERS: {},
+        CONFIG_KEY_SENSORS: {
+            CONFIG_KEY_TEMPERATURE_SENSOR: [],
+            CONFIG_KEY_HUMIDITY_SENSOR: []
+        }
+    }
+
+    def _append_sensor(attr: Dict) -> None:
+        """将环境传感器测点按类型归类"""
+        name = attr.get('name', '')
+        uid = attr.get('uid')
+        if not uid:
+            return
+
+        name_str = str(name)
+        name_lower = name_str.lower()
+        unit_raw = attr.get('unit', '')
+        unit_lower = str(unit_raw).lower() if unit_raw is not None else ''
+
+        is_temp = (
+            'temp' in name_lower
+            or any(token in name_str for token in ("温", "溫"))
+            or 'temp' in unit_lower
+            or 'c' in unit_lower
+            or ('℃' in str(unit_raw) if unit_raw else False)
+        )
+        is_humidity = (
+            'hum' in name_lower
+            or any(token in name_str for token in ("湿", "濕"))
+            or '%' in unit_lower
+            or 'rh' in unit_lower
+        )
+
+        if is_temp:
+            normalized[CONFIG_KEY_SENSORS][CONFIG_KEY_TEMPERATURE_SENSOR].append(str(uid))
+        if is_humidity:
+            normalized[CONFIG_KEY_SENSORS][CONFIG_KEY_HUMIDITY_SENSOR].append(str(uid))
+    # 递归 datacenter -> rooms -> systems -> air_conditioners
+    for room in rooms:
+        for sensor in room.get("environment_sensors", []) or []:
+            for attr in sensor.get("attributes", []) or []:
+                _append_sensor(attr)
+
+        for system in room.get("water_cooled_systems", []) or []:
+            for ac in system.get("air_conditioners", []) or []:
+                measurement_points: Dict[str, str] = {}
+                for attr in ac.get("attributes", []) or []:
+                    name = attr.get("name")
+                    uid = attr.get("uid")
+                    if name and uid:
+                        measurement_points[str(name)] = str(uid)
+
+                key = str(ac.get("device_uid") or ac.get("device_name") or f"AC_{len(normalized[CONFIG_KEY_AIR_CONDITIONERS]) + 1}")
+                normalized[CONFIG_KEY_AIR_CONDITIONERS][key] = {
+                    "device_name": ac.get("device_name", key),
+                    "device_uid": ac.get("device_uid", key),
+                    "measurement_points": measurement_points,
+                }
+
+    # 合并 sensors 字段已有数据，避免重复覆盖
+    if CONFIG_KEY_SENSORS in uid_config:
+        sensors = uid_config[CONFIG_KEY_SENSORS] or {}
+        for k in [CONFIG_KEY_TEMPERATURE_SENSOR, CONFIG_KEY_HUMIDITY_SENSOR, CONFIG_KEY_ENERGY_CONSUMPTION]:
+            if k in sensors:
+                normalized[CONFIG_KEY_SENSORS][k] = [str(uid) for uid in sensors.get(k, [])]
+
+    # 去重并确保 UID 唯一
+    for k, lst in normalized[CONFIG_KEY_SENSORS].items():
+        if isinstance(lst, list):
+            normalized[CONFIG_KEY_SENSORS][k] = list(dict.fromkeys(lst))
+
+    return normalized
 
 
 # ============================================================================
@@ -180,42 +277,44 @@ def _load_optimization_defaults(parameter_config: Dict, logger: Optional[logging
 # 配置解析工具函数
 # ============================================================================
 
-def _validate_uid_config(uid_config: Dict) -> None:
+def _validate_uid_config(uid_config: Dict) -> Dict:
     """
-    验证UID配置的完整性
-
+    校验并规范化 UID 配置，确保格式正确且包含空调信息。
+    
     Args:
-        uid_config: UID配置字典
-
+        uid_config: UID 配置字典
+    
     Raises:
-        ValueError: 如果配置不完整或格式错误
+        ValueError: 当配置缺失必需字段或格式错误时抛出
+    
+    Returns:
+        Dict: 规范化后的 UID 配置字典
     """
-    if not isinstance(uid_config, dict):
-        raise ValueError("uid_config 必须是字典类型")
-
-    if CONFIG_KEY_AIR_CONDITIONERS not in uid_config:
-        raise ValueError(f"UID配置中缺少 '{CONFIG_KEY_AIR_CONDITIONERS}' 字段")
-
-    air_conditioners = uid_config[CONFIG_KEY_AIR_CONDITIONERS]
+    normalized = _normalize_uid_config(uid_config)
+    
+    if CONFIG_KEY_AIR_CONDITIONERS not in normalized:
+        raise ValueError(f"UID 配置缺少必需的 '{CONFIG_KEY_AIR_CONDITIONERS}' 字段")
+    
+    air_conditioners = normalized[CONFIG_KEY_AIR_CONDITIONERS]
     if not air_conditioners:
-        raise ValueError("空调配置不能为空")
-
+        raise ValueError("空调列表为空，请检查 UID 配置")
+    return normalized
 
 def _get_air_conditioner_uids_and_names(uid_config: Dict) -> Tuple[List[str], List[str]]:
     """
-    从UID配置中提取空调的UID和名称列表
-
+    从 UID 配置中提取空调的 UID 和名称列表。
+    
     Args:
-        uid_config: UID配置字典（新格式，包含 'air_conditioners' 字段）
-
+        uid_config: UID 配置字典（新格式，包含 'air_conditioners' 字段）
+    
     Returns:
-        Tuple[List[str], List[str]]: (UID列表, 名称列表)
-            - UID列表：每台空调的第一个测点UID（作为设备标识）
+        Tuple[List[str], List[str]]: (UID 列表, 名称列表)
+            - UID 列表：每台空调的第一个测点 UID（作为设备标识）
             - 名称列表：每台空调的设备名称
-
+    
     Raises:
-        ValueError: 如果配置格式不正确
-
+        ValueError: 配置格式不正确
+    
     Example:
         >>> uid_config = {
         ...     "air_conditioners": {
@@ -225,32 +324,28 @@ def _get_air_conditioner_uids_and_names(uid_config: Dict) -> Tuple[List[str], Li
         ...         }
         ...     }
         ... }
-        >>> uids, names = _get_air_conditioner_uids_and_names(uid_config)
+        >>> uids, names = _get_air_conditioner_uids_and_names(normalized_uid_config)
         >>> # uids = ["uid1"], names = ["空调1"]
     """
-    _validate_uid_config(uid_config)
+    normalized = _validate_uid_config(uid_config)
 
-    air_conditioners = uid_config[CONFIG_KEY_AIR_CONDITIONERS]
+    air_conditioners = normalized[CONFIG_KEY_AIR_CONDITIONERS]
     uids = []
     names = []
-
     for ac_name, ac_info in air_conditioners.items():
         # 获取设备名称
-        device_name = ac_info.get('device_name', ac_name)
+        device_name = ac_info.get("device_name", ac_name)
         names.append(device_name)
-
-        # 获取第一个测点的UID作为设备标识
-        measurement_points = ac_info.get('measurement_points', {})
+        # 获取第一个测点 UID 作为设备标识
+        measurement_points = ac_info.get("measurement_points", {})
         if measurement_points:
-            # 取第一个测点的UID作为设备标识
+            # 取第一个测点 UID 作为设备标识
             first_uid = next(iter(measurement_points.values()))
             uids.append(first_uid)
         else:
-            # 如果没有测点，使用设备名称作为UID（向后兼容）
+            # 如果没有测点，使用设备名称作为 UID（向后兼容）
             uids.append(device_name)
-
     return uids, names
-
 
 def _extract_uids_from_air_conditioners(uid_config: Dict, point_names: List[str]) -> List[str]:
     """
@@ -283,9 +378,9 @@ def _extract_uids_from_air_conditioners(uid_config: Dict, point_names: List[str]
         >>> uids = _extract_uids_from_air_conditioners(uid_config, ['温度设定值', '温度设定点'])
         >>> # uids = ["uid1", "uid3"]
     """
-    _validate_uid_config(uid_config)
+    normalized = _validate_uid_config(uid_config)
 
-    air_conditioners = uid_config[CONFIG_KEY_AIR_CONDITIONERS]
+    air_conditioners = normalized[CONFIG_KEY_AIR_CONDITIONERS]
     uids = []
 
     for _ac_name, ac_info in air_conditioners.items():
@@ -385,11 +480,32 @@ def _normalize_input_data(data: Union[pd.DataFrame, Dict[str, pd.DataFrame]], la
     return normalized
 
 
-TEMPERATURE_SETTING_CANDIDATES = ['温度设定值', '温度设定点', '回风温度设定点（℃）', '送风温度设置点']
-HUMIDITY_SETTING_CANDIDATES = ['湿度设置点', '湿度设定点', '回风湿度设定点（%）']
-RETURN_TEMP_CANDIDATES = ['回风温度测量值（℃）', '回风温度测量值', '回风温度']
-RETURN_HUMIDITY_CANDIDATES = ['回风湿度测量值（%）', '回风湿度测量值', '回风湿度']
-POWER_READING_CANDIDATES = ['有功功率', '功耗', '监控功率', '有功电度']
+TEMPERATURE_SETTING_CANDIDATES = [
+    "回风温度设定点（℃）",
+    "回风温度设定点(℃)",
+    "回风温度设定点",
+    "远程平均温度设定点（℃）",
+    "远程最高温度设定点（℃）",
+    "温度设定点",
+    "温度设定值",
+]
+HUMIDITY_SETTING_CANDIDATES = [
+    "回风湿度设定点（%）",
+    "回风湿度设定点(%)",
+    "湿度设定点",
+    "湿度设定值",
+]
+RETURN_TEMP_CANDIDATES = [
+    "回风温度测量值（℃）",
+    "回风温度测量值(℃)",
+    "回风温度",
+]
+RETURN_HUMIDITY_CANDIDATES = [
+    "回风湿度测量值（%）",
+    "回风湿度测量值(%)",
+    "回风湿度",
+]
+POWER_READING_CANDIDATES = ["有功功率", "功率", "总功率", "耗电量", "能耗"]
 
 
 # 定义优化模块的三种状态
@@ -452,12 +568,9 @@ class ACController:
                  is_reference: bool = False,
                  target_uid: Optional[str] = None,
                  device_config: Optional[Dict] = None):
-        self.uid_config = uid_config
+        self.uid_config = _validate_uid_config(uid_config)
         self.logger = logger
         self.is_reference = is_reference
-
-        if 'air_conditioners' not in self.uid_config:
-            raise ValueError("UID配置格式不正确，缺少 'air_conditioners' 字段")
 
         self.state_lock = threading.Lock()
         self.params_lock = threading.Lock()
@@ -1151,13 +1264,14 @@ class ACInstanceManager:
             # 清除现有实例
             self.ac_instances.clear()
 
+            normalized_uid_config = _validate_uid_config(uid_config)
             # 获取空调UID列表
-            ac_uids, ac_names = _get_air_conditioner_uids_and_names(uid_config)
+            ac_uids, ac_names = _get_air_conditioner_uids_and_names(normalized_uid_config)
             if not ac_uids:
                 raise ValueError("空调UID列表为空")
 
             uid_to_config = {}
-            for idx, (ac_key, ac_info) in enumerate(uid_config['air_conditioners'].items()):
+            for idx, (ac_key, ac_info) in enumerate(normalized_uid_config['air_conditioners'].items()):
                 measurement_points = ac_info.get('measurement_points', {})
                 if measurement_points:
                     device_uid = str(next(iter(measurement_points.values())))
@@ -1167,7 +1281,7 @@ class ACInstanceManager:
 
             for uid, name in zip(ac_uids, ac_names):
                 controller = ACController(
-                    uid_config,
+                    normalized_uid_config,
                     logger,
                     is_reference,
                     target_uid=uid,
@@ -1317,7 +1431,7 @@ def _validate_optimization_result(params: Dict, uid_config: Dict,
             return False
 
         # 3. 检查与空调数量是否匹配
-        expected_count = len(uid_config.get('air_conditioners', {}))
+        expected_count = len(_validate_uid_config(uid_config).get('air_conditioners', {}))
         if len(temp_list) != expected_count:
             logger.error(
                 f"❌ 优化结果数量 ({len(temp_list)}) 与空调数量 ({expected_count}) 不匹配"
@@ -1356,7 +1470,7 @@ def _get_safe_fallback_params(uid_config: Dict, parameter_config: Dict,
     Returns:
         Dict: 安全的默认参数
     """
-    num_acs = len(uid_config.get('air_conditioners', {}))
+    num_acs = len(_validate_uid_config(uid_config).get('air_conditioners', {}))
 
     # 从配置读取默认值
     defaults = _load_optimization_defaults(parameter_config, logger)
@@ -1435,7 +1549,7 @@ def run_optimization(
     Example:
         >>> # 最简单的调用方式
         >>> best_params = run_optimization(
-        ...     uid_config=uid_config,
+        ...     uid_config=normalized_uid_config,
         ...     parameter_config=modules_config,
         ...     security_boundary_config=security_config,
         ...     current_data=current_data,
@@ -1447,7 +1561,7 @@ def run_optimization(
         ...     print(f"优化进度: [{idx}/{total}] {name} - {status}")
         >>>
         >>> best_params = run_optimization(
-        ...     uid_config=uid_config,
+        ...     uid_config=normalized_uid_config,
         ...     parameter_config=modules_config,
         ...     security_boundary_config=security_config,
         ...     current_data=current_data,
@@ -1457,44 +1571,36 @@ def run_optimization(
         ...     progress_callback=on_progress
         ... )
     """
-    # ==================== 输入验证 ====================
-    # 尝试导入验证器（如果可用）
+    # ==================== 配置校验 ====================
+    normalized_uid_config = _validate_uid_config(uid_config)
+
     try:
         from utils.optimization_validator import validate_optimization_config
 
-        # 执行配置验证
         is_valid = validate_optimization_config(
-            uid_config=uid_config,
+            uid_config=normalized_uid_config,
             parameter_config=parameter_config,
             security_boundary_config=security_boundary_config,
             current_data=current_data,
             logger=logger,
-            print_report=False  # 不打印报告，只记录日志
+            print_report=False  # 不打印校验报告
         )
 
         if not is_valid:
-            logger.warning("配置验证发现问题，但将继续执行优化")
+            logger.warning("优化配置校验未通过")
     except ImportError:
-        logger.debug("优化验证器不可用，跳过配置验证")
+        logger.debug("未找到优化校验工具，跳过校验")
     except Exception as e:
-        logger.warning(f"配置验证失败: {str(e)}，将继续执行优化")
+        logger.warning(f"运行配置校验出错: {str(e)}，将继续执行")
 
-    # 基本验证与数据规范化
     if current_data is None:
         raise ValueError("current_data 不能为空")
 
-    current_data = _normalize_input_data(current_data, "current_data")
-
-    if not isinstance(uid_config, dict) or 'air_conditioners' not in uid_config:
-        raise ValueError("uid_config 格式不正确，必须包含 'air_conditioners' 字段")
-
     if not isinstance(parameter_config, dict):
-        raise ValueError("parameter_config 必须是字典类型")
+        raise ValueError("parameter_config 必须为字典")
 
     if not isinstance(security_boundary_config, dict):
-        raise ValueError("security_boundary_config 必须是字典类型")
-
-    # 如果没有提供历史数据，使用当前数据作为历史数据
+        raise ValueError("security_boundary_config 必须为字典")
     if historical_data is None:
         logger.info("未提供历史数据，使用当前数据作为历史数据")
         historical_data = current_data
@@ -1516,7 +1622,7 @@ def run_optimization(
     try:
         # 调用原有的优化函数
         best_params = start_optimization_process(
-            uid_config=uid_config,
+            uid_config=normalized_uid_config,
             parameter_config=parameter_config,
             security_boundary_config=security_boundary_config,
             optimization_input=historical_data,
@@ -1539,9 +1645,9 @@ def run_optimization(
 
         # ✨ 新增：验证结果完整性
         logger.info("验证优化结果...")
-        if not _validate_optimization_result(best_params, uid_config, logger):
+        if not _validate_optimization_result(best_params, normalized_uid_config, logger):
             logger.error("优化结果验证失败，使用安全回退参数")
-            return _get_safe_fallback_params(uid_config, parameter_config, logger)
+            return _get_safe_fallback_params(normalized_uid_config, parameter_config, logger)
 
         # 添加优化元数据
         best_params['optimization_metadata'] = {
@@ -1564,7 +1670,7 @@ def run_optimization(
         logger.warning("使用安全回退参数")
 
         # ✨ 新增：失败时返回安全默认值，而不是抛出异常
-        return _get_safe_fallback_params(uid_config, parameter_config, logger)
+        return _get_safe_fallback_params(normalized_uid_config, parameter_config, logger)
 
 
 def start_optimization_process(
@@ -1630,7 +1736,7 @@ def start_optimization_process(
     Example:
         >>> # 直接调用（高级用法）
         >>> best_params = start_optimization_process(
-        ...     uid_config=uid_config,
+        ...     uid_config=normalized_uid_config,
         ...     parameter_config=modules_config,
         ...     security_boundary_config=security_config,
         ...     optimization_input=historical_data,  # 必须提供
@@ -1641,7 +1747,7 @@ def start_optimization_process(
 
         >>> # 推荐用法（使用高层封装）
         >>> best_params = run_optimization(
-        ...     uid_config=uid_config,
+        ...     uid_config=normalized_uid_config,
         ...     parameter_config=modules_config,
         ...     security_boundary_config=security_config,
         ...     current_data=current_data,
@@ -1651,6 +1757,7 @@ def start_optimization_process(
     See Also:
         run_optimization(): 推荐使用的高层封装函数
     """
+    normalized_uid_config = _validate_uid_config(uid_config)
     optimization_input = _normalize_input_data(optimization_input, "optimization_input")
     current_data = _normalize_input_data(current_data, "current_data")
 
@@ -1663,7 +1770,7 @@ def start_optimization_process(
         }
 
         # 获取空调UID列表（支持新格式配置）
-        ac_uids, ac_names = _get_air_conditioner_uids_and_names(uid_config)
+        ac_uids, ac_names = _get_air_conditioner_uids_and_names(normalized_uid_config)
         if not ac_uids:
             raise ValueError("空调UID列表为空")
 
@@ -1673,7 +1780,7 @@ def start_optimization_process(
         if ac_manager is None:
             logger.info("未提供空调实例管理器，创建新的实例管理器")
             ac_manager = ACInstanceManager()
-            ac_manager.initialize_instances(uid_config, parameter_config, security_boundary_config, logger,
+            ac_manager.initialize_instances(normalized_uid_config, parameter_config, security_boundary_config, logger,
                                             is_reference)
 
         # 遍历所有空调进行优化
