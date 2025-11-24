@@ -300,6 +300,53 @@ def _validate_uid_config(uid_config: Dict) -> Dict:
         raise ValueError("空调列表为空，请检查 UID 配置")
     return normalized
 
+
+def validate_optimization_config(
+    uid_config: Dict,
+    parameter_config: Dict,
+    security_boundary_config: Dict,
+    current_data: Union[pd.DataFrame, Dict[str, pd.DataFrame]],
+    logger: Optional[logging.Logger] = None,
+    print_report: bool = False
+) -> bool:
+    """
+    轻量级优化配置校验：
+    - 校验 UID 配置格式与非空
+    - 校验参数/安全边界为字典
+    - 尝试规范化当前数据格式
+    """
+    ok = True
+
+    def _log(level: str, msg: str) -> None:
+        if logger:
+            getattr(logger, level)(msg)
+
+    # UID 配置
+    try:
+        _validate_uid_config(uid_config)
+    except Exception as exc:  # noqa: BLE001
+        _log("warning", f"UID 配置校验失败: {exc}")
+        ok = False
+
+    # 类型校验
+    if not isinstance(parameter_config, dict):
+        _log("warning", "parameter_config 必须为字典")
+        ok = False
+    if not isinstance(security_boundary_config, dict):
+        _log("warning", "security_boundary_config 必须为字典")
+        ok = False
+
+    # 当前数据规范化尝试
+    try:
+        _normalize_input_data(current_data, "current_data")
+    except Exception as exc:  # noqa: BLE001
+        _log("warning", f"current_data 规范化失败: {exc}")
+        ok = False
+
+    if print_report and logger:
+        _log("info", f"优化配置校验结果: {'通过' if ok else '未通过'}")
+
+    return ok
 def _get_air_conditioner_uids_and_names(uid_config: Dict) -> Tuple[List[str], List[str]]:
     """
     从 UID 配置中提取空调的 UID 和名称列表。
@@ -1577,8 +1624,6 @@ def run_optimization(
     normalized_uid_config = _validate_uid_config(uid_config)
 
     try:
-        from utils.optimization_validator import validate_optimization_config
-
         is_valid = validate_optimization_config(
             uid_config=normalized_uid_config,
             parameter_config=parameter_config,
@@ -1590,8 +1635,6 @@ def run_optimization(
 
         if not is_valid:
             logger.warning("优化配置校验未通过")
-    except ImportError:
-        logger.debug("未找到优化校验工具，跳过校验")
     except Exception as e:
         logger.warning(f"运行配置校验出错: {str(e)}，将继续执行")
 
