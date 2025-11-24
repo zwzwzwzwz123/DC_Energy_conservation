@@ -279,43 +279,42 @@ def _load_optimization_defaults(parameter_config: Dict, logger: Optional[logging
 
 def _validate_uid_config(uid_config: Dict) -> Dict:
     """
-    ???UID???????????
-
+    校验并规范化 UID 配置，确保格式正确且包含空调信息。
+    
     Args:
-        uid_config: UID???????
-
+        uid_config: UID 配置字典
+    
     Raises:
-        ValueError: ????????????????????
-
+        ValueError: 当配置缺失必需字段或格式错误时抛出
+    
     Returns:
-        Dict: ??????????????? UID ????
+        Dict: 规范化后的 UID 配置字典
     """
     normalized = _normalize_uid_config(uid_config)
-
+    
     if CONFIG_KEY_AIR_CONDITIONERS not in normalized:
-        raise ValueError(f"UID????????? '{CONFIG_KEY_AIR_CONDITIONERS}' ???")
-
+        raise ValueError(f"UID 配置缺少必需的 '{CONFIG_KEY_AIR_CONDITIONERS}' 字段")
+    
     air_conditioners = normalized[CONFIG_KEY_AIR_CONDITIONERS]
     if not air_conditioners:
-        raise ValueError("?????????????")
+        raise ValueError("空调列表为空，请检查 UID 配置")
     return normalized
-
 
 def _get_air_conditioner_uids_and_names(uid_config: Dict) -> Tuple[List[str], List[str]]:
     """
-    从UID配置中提取空调的UID和名称列表
-
+    从 UID 配置中提取空调的 UID 和名称列表。
+    
     Args:
-        uid_config: UID配置字典（新格式，包含 'air_conditioners' 字段）
-
+        uid_config: UID 配置字典（新格式，包含 'air_conditioners' 字段）
+    
     Returns:
-        Tuple[List[str], List[str]]: (UID列表, 名称列表)
-            - UID列表：每台空调的第一个测点UID（作为设备标识）
+        Tuple[List[str], List[str]]: (UID 列表, 名称列表)
+            - UID 列表：每台空调的第一个测点 UID（作为设备标识）
             - 名称列表：每台空调的设备名称
-
+    
     Raises:
-        ValueError: 如果配置格式不正确
-
+        ValueError: 配置格式不正确
+    
     Example:
         >>> uid_config = {
         ...     "air_conditioners": {
@@ -333,24 +332,20 @@ def _get_air_conditioner_uids_and_names(uid_config: Dict) -> Tuple[List[str], Li
     air_conditioners = normalized[CONFIG_KEY_AIR_CONDITIONERS]
     uids = []
     names = []
-
     for ac_name, ac_info in air_conditioners.items():
         # 获取设备名称
-        device_name = ac_info.get('device_name', ac_name)
+        device_name = ac_info.get("device_name", ac_name)
         names.append(device_name)
-
-        # 获取第一个测点的UID作为设备标识
-        measurement_points = ac_info.get('measurement_points', {})
+        # 获取第一个测点 UID 作为设备标识
+        measurement_points = ac_info.get("measurement_points", {})
         if measurement_points:
-            # 取第一个测点的UID作为设备标识
+            # 取第一个测点 UID 作为设备标识
             first_uid = next(iter(measurement_points.values()))
             uids.append(first_uid)
         else:
-            # 如果没有测点，使用设备名称作为UID（向后兼容）
+            # 如果没有测点，使用设备名称作为 UID（向后兼容）
             uids.append(device_name)
-
     return uids, names
-
 
 def _extract_uids_from_air_conditioners(uid_config: Dict, point_names: List[str]) -> List[str]:
     """
@@ -1576,7 +1571,7 @@ def run_optimization(
         ...     progress_callback=on_progress
         ... )
     """
-    # ==================== ???? ====================
+    # ==================== 配置校验 ====================
     normalized_uid_config = _validate_uid_config(uid_config)
 
     try:
@@ -1588,27 +1583,24 @@ def run_optimization(
             security_boundary_config=security_boundary_config,
             current_data=current_data,
             logger=logger,
-            print_report=False  # ???????????
+            print_report=False  # 不打印校验报告
         )
 
         if not is_valid:
-            logger.warning("????????????????")
+            logger.warning("优化配置校验未通过")
     except ImportError:
-        logger.debug("?????????????")
+        logger.debug("未找到优化校验工具，跳过校验")
     except Exception as e:
-        logger.warning(f"??????: {str(e)}???????")
+        logger.warning(f"运行配置校验出错: {str(e)}，将继续执行")
 
     if current_data is None:
-        raise ValueError("current_data ????")
+        raise ValueError("current_data 不能为空")
 
     if not isinstance(parameter_config, dict):
-        raise ValueError("parameter_config ???????")
+        raise ValueError("parameter_config 必须为字典")
 
     if not isinstance(security_boundary_config, dict):
-        raise ValueError("security_boundary_config ???????")
-
-
-    # 如果没有提供历史数据，使用当前数据作为历史数据
+        raise ValueError("security_boundary_config 必须为字典")
     if historical_data is None:
         logger.info("未提供历史数据，使用当前数据作为历史数据")
         historical_data = current_data
