@@ -1,23 +1,20 @@
-"""
+﻿"""
 空调优化模块
 
-本模块提供空调系统的智能优化功能，支持多种优化算法。
+提供数据中心空调的智能优化能力，支持多种优化算法。
 
-主要组件：
+核心组件：
     OptimizationState: 优化状态枚举
     DataRecord: 历史数据记录模型
-    ACController: 空调控制器，管理设备状态和历史数据
-    DynamicOptimizer: 动态优化器，支持多种优化算法
+    ACController: 空调控制器，管理设备状态与历史数据
+    DynamicOptimizer: 动态优化器，调度具体优化算法
     ACInstanceManager: 空调实例管理器
 
-主要API：
-    run_optimization(): 一行代码启动优化流程（推荐使用）
+主要 API：
+    run_optimization(): 推荐入口，一行代码启动优化
     start_optimization_process(): 核心优化逻辑（高级用法）
 
-使用示例：
-    >>> from modules.optimization_module import run_optimization
-    >>>
-    >>> # 最简单的调用方式
+示例：
     >>> best_params = run_optimization(
     ...     uid_config=normalized_uid_config,
     ...     parameter_config=modules_config,
@@ -25,23 +22,21 @@
     ...     current_data=current_data,
     ...     logger=logger
     ... )
-    >>>
-    >>> # 结果包含每台空调的优化参数
     >>> print(best_params['air_conditioner_setting_temperature'])
     >>> print(best_params['air_conditioner_setting_humidity'])
 
 架构说明：
-    本模块采用分层架构：
-    1. 数据模型层：定义数据结构（OptimizationState, DataRecord）
-    2. 工具函数层：提供配置解析和数据处理工具
-    3. 核心业务层：实现优化逻辑（ACController, DynamicOptimizer）
-    4. API层：提供高层接口（run_optimization等）
+    1) 数据模型层：OptimizationState, DataRecord
+    2) 工具函数层：配置解析、数据处理
+    3) 核心业务层：ACController, DynamicOptimizer
+    4) API 层：run_optimization 等高层接口
 
-注意事项：
-    - 本模块不执行实际的设备控制，只计算优化参数
-    - 实际的参数应用由主程序负责写入InfluxDB
-    - 支持多种优化算法，通过配置文件选择
+注意：
+    - 本模块只计算推荐参数，不直接下发设备
+    - 写入 InfluxDB 或控制设备由上层负责
+    - 算法选择由配置文件指定
 """
+
 
 import pandas as pd
 import time
@@ -300,6 +295,53 @@ def _validate_uid_config(uid_config: Dict) -> Dict:
         raise ValueError("空调列表为空，请检查 UID 配置")
     return normalized
 
+
+def validate_optimization_config(
+    uid_config: Dict,
+    parameter_config: Dict,
+    security_boundary_config: Dict,
+    current_data: Union[pd.DataFrame, Dict[str, pd.DataFrame]],
+    logger: Optional[logging.Logger] = None,
+    print_report: bool = False
+) -> bool:
+    """
+    轻量级优化配置校验：
+    - 校验 UID 配置格式与非空
+    - 校验参数/安全边界为字典
+    - 尝试规范化当前数据格式
+    """
+    ok = True
+
+    def _log(level: str, msg: str) -> None:
+        if logger:
+            getattr(logger, level)(msg)
+
+    # UID 配置
+    try:
+        _validate_uid_config(uid_config)
+    except Exception as exc:  # noqa: BLE001
+        _log("warning", f"UID 配置校验失败: {exc}")
+        ok = False
+
+    # 类型校验
+    if not isinstance(parameter_config, dict):
+        _log("warning", "parameter_config 必须为字典")
+        ok = False
+    if not isinstance(security_boundary_config, dict):
+        _log("warning", "security_boundary_config 必须为字典")
+        ok = False
+
+    # 当前数据规范化尝试
+    try:
+        _normalize_input_data(current_data, "current_data")
+    except Exception as exc:  # noqa: BLE001
+        _log("warning", f"current_data 规范化失败: {exc}")
+        ok = False
+
+    if print_report and logger:
+        _log("info", f"优化配置校验结果: {'通过' if ok else '未通过'}")
+
+    return ok
 def _get_air_conditioner_uids_and_names(uid_config: Dict) -> Tuple[List[str], List[str]]:
     """
     从 UID 配置中提取空调的 UID 和名称列表。
@@ -465,7 +507,7 @@ def _normalize_input_data(data: Union[pd.DataFrame, Dict[str, pd.DataFrame]], la
     """
     将输入规范化为 DataFrame。
     支持两种输入：
-        1. 直接的 DataFrame
+        1. 直接是 DataFrame
         2. {uid: DataFrame} 的字典结构（与 DataCenterDataReader 对齐）
     """
     if isinstance(data, pd.DataFrame):
@@ -492,6 +534,8 @@ TEMPERATURE_SETTING_CANDIDATES = [
 HUMIDITY_SETTING_CANDIDATES = [
     "回风湿度设定点（%）",
     "回风湿度设定点(%)",
+    "回风湿度设定点（%RH）",
+    "回风湿度设定点(%RH)",
     "湿度设定点",
     "湿度设定值",
 ]
@@ -503,11 +547,11 @@ RETURN_TEMP_CANDIDATES = [
 RETURN_HUMIDITY_CANDIDATES = [
     "回风湿度测量值（%）",
     "回风湿度测量值(%)",
+    "回风湿度测量值（%RH）",
+    "回风湿度测量值(%RH)",
     "回风湿度",
 ]
 POWER_READING_CANDIDATES = ["有功功率", "功率", "总功率", "耗电量", "能耗"]
-
-
 # 定义优化模块的三种状态
 class OptimizationState(Enum):
     """
@@ -1575,8 +1619,6 @@ def run_optimization(
     normalized_uid_config = _validate_uid_config(uid_config)
 
     try:
-        from utils.optimization_validator import validate_optimization_config
-
         is_valid = validate_optimization_config(
             uid_config=normalized_uid_config,
             parameter_config=parameter_config,
@@ -1588,8 +1630,6 @@ def run_optimization(
 
         if not is_valid:
             logger.warning("优化配置校验未通过")
-    except ImportError:
-        logger.debug("未找到优化校验工具，跳过校验")
     except Exception as e:
         logger.warning(f"运行配置校验出错: {str(e)}，将继续执行")
 
