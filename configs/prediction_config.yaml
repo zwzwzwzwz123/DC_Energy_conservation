@@ -1,0 +1,38 @@
+# 预测模型配置文件（示例；需根据现场数据调整）
+
+# ==================== 预测模型配置 ====================
+prediction_model:
+  # 深度模型类型（如需使用序列模型）
+  model_type: "LSTM"
+
+  # 估计器选择（表格型特征的 TwinPredictor 使用）
+  estimator:
+    # 可选: random_forest / mlp / gradient_boosting
+    name: "random_forest"
+    # 对应 sklearn 模型的参数，可按需覆盖
+    params:
+      n_estimators: 240
+      random_state: 42
+
+  # 模型架构参数（如使用 LSTM/GRU）
+  architecture:
+    input_size: 10
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.2
+    bidirectional: false
+
+  # 训练参数
+  training:
+    batch_size: 32
+    learning_rate: 0.001
+    epochs: 100
+    early_stopping_patience: 10
+    optimizer: "Adam"
+    loss_function: "MSE"
+
+  # 模型保存配置
+  checkpoint:
+    save_dir: "./checkpoints/prediction"
+    save_interval: 10     # 每10个epoch保存一次
+    keep_best_only: true  # 只保留最佳模型
