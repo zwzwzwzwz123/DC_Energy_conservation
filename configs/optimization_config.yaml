@@ -1,5 +1,4 @@
-# 优化模块配置文件
-# 配置优化算法的选择和参数
+# 优化模块配置文件（仅优化相关参数；预测配置见 prediction_config.yaml）
 
 optimization_module:
   # ==================== 默认值配置 ====================
@@ -8,28 +7,28 @@ optimization_module:
     # 空调设定默认值
     temperature: 24                      # 默认温度设定值（℃）
     humidity: 50                         # 默认湿度设定值（%）
-    cooling_mode: 1                      # 默认制冷模式（0=空闲，1=制冷）
+    cooling_mode: 1                      # 默认制冷模式（0=空闲,1=制冷）
 
     # 时间相关配置
     stabilization_time: 300              # 默认稳定时间（秒），实际优化模式下等待系统稳定的时间
     reference_stabilization_time: 1      # 参考模式稳定时间（秒），快速测试模式下的等待时间
-    optimization_timeout: 600            # 默认优化超时时间（秒），单次优化的最大允许时间
+    optimization_timeout: 600            # 默认优化超时时间（秒），单次优化的最大允许时长
 
     # 数据管理配置
     max_historical_records: 1000         # 最大历史记录数，超过此数量将自动清理旧记录
 
   # ==================== 优化算法选择 ====================
-  # 可选算法:
+  # 可选算法：
   #   - bayesian: 贝叶斯优化（使用 Optuna TPE 采样器）
-  #   - reinforcement_learning (或 rl): 强化学习优化（使用 PPO 算法）
+  #   - reinforcement_learning (rl): 强化学习优化（使用 PPO / DQN / SAC）
   #   - grid_search: 网格搜索（遍历所有参数组合）
   #   - random_search: 随机搜索（随机采样参数空间）
   #   - genetic: 遗传算法（模拟自然进化）
-  #   - simulated_annealing: 模拟退火（通过逐步降温的随机搜索找到近似全局最优解）
+  #   - simulated_annealing: 模拟退火（逐步降温的随机搜索）
   algorithm: "bayesian"
 
   # ==================== 通用参数 ====================
-  # 历史数据权重（0-1之间，越大越依赖历史数据）
+  # 历史数据权重，0-1之间，越大越依赖历史数据
   historical_weight: 0.3
 
   # 最大试验次数（适用于贝叶斯优化、随机搜索）
@@ -83,41 +82,38 @@ optimization_module:
     seed: 42
 
   # ==================== 遗传算法参数 ====================
-
-  # ==================== ?????? ====================
-
   genetic:
-    # ????
+    # 种群规模
     population_size: 50
 
-    # ????
+    # 迭代代数
     generations: 30
 
-    # ????0-1???
+    # 变异率 (0-1)
     mutation_rate: 0.1
 
-    # ????0-1???
+    # 交叉率 (0-1)
     crossover_rate: 0.8
 
-  # ==================== ?????? ====================
+  # ==================== 模拟退火参数 ====================
   simulated_annealing:
-    # ????????????????
+    # 初始温度
     initial_temperature: 10.0
 
-    # ??????????????
+    # 最小温度
     min_temperature: 0.5
 
-    # ????0-1??????????
+    # 降温速率 (0-1)
     cooling_rate: 0.85
 
-    # ???????
+    # 最大迭代次数
     max_iterations: 50
 
-    # ???????????
+    # 每个温度的迭代次数
     iterations_per_temp: 5
 
-    # ??????
+    # 温度调节步长
     temperature_step: 1
 
-    # ??????
+    # 湿度调节步长
     humidity_step: 5

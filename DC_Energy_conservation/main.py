@@ -38,8 +38,8 @@ class AppContext:
         # ========== 配置文件（全局只读） ==========
         main_config: 主配置字典，从 main_config.yaml 加载（线程参数、关闭超时等）
         uid_config: UID 配置字典，从 uid_config.yaml 加载（数据中心架构和UID映射）
-        models_config: 模型配置字典，从 models_config.yaml 加载（预测模型、优化模型参数）
-        modules_config: 模块配置字典，从 modules_config.yaml 加载（各模块的运行参数）
+        prediction_config: 预测模型配置字典，从 prediction_config.yaml 加载
+        optimization_config: 优化模块配置字典，从 optimization_config.yaml 加载
         security_boundary_config: 安全边界配置字典，从 security_boundary_config.yaml 加载（控制范围、约束条件）
         utils_config: 工具配置字典，从 utils_config.yaml 加载（日志、InfluxDB连接配置）
         influxdb_read_write_config: InfluxDB读写配置字典，从 influxdb_read_write_config.yaml 加载（数据读写策略）
@@ -70,8 +70,8 @@ class AppContext:
     # ========== 所有配置文件（全局只读） ==========
     main_config: Dict
     uid_config: Dict
-    models_config: Dict
-    modules_config: Dict
+    prediction_config: Dict
+    optimization_config: Dict
     security_boundary_config: Dict
     utils_config: Dict
     influxdb_read_write_config: Dict
@@ -539,7 +539,7 @@ def initialize_system():
 
     # 1. 加载配置文件
     print("\n[1/7] 加载配置文件...")
-    main_config, models_config, modules_config, security_boundary_config, uid_config, utils_config, influxdb_read_write_config = load_configs()
+    main_config, prediction_config, optimization_config, security_boundary_config, uid_config, utils_config, influxdb_read_write_config = load_configs()
     print("✓ 配置文件加载成功")
 
     # 2. 初始化多层级日志系统
@@ -646,8 +646,8 @@ def initialize_system():
             # ========== 所有配置文件 ==========
             main_config=main_config,
             uid_config=uid_config,
-            models_config=models_config,
-            modules_config=modules_config,
+            prediction_config=prediction_config,
+            optimization_config=optimization_config,
             security_boundary_config=security_boundary_config,
             utils_config=utils_config,
             influxdb_read_write_config=influxdb_read_write_config,

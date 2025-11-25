@@ -17,7 +17,7 @@
 示例：
     >>> best_params = run_optimization(
     ...     uid_config=normalized_uid_config,
-    ...     parameter_config=modules_config,
+    ...     parameter_config=optimization_config,
     ...     security_boundary_config=security_config,
     ...     current_data=current_data,
     ...     logger=logger
@@ -1594,7 +1594,7 @@ def run_optimization(
         >>> # 最简单的调用方式
         >>> best_params = run_optimization(
         ...     uid_config=normalized_uid_config,
-        ...     parameter_config=modules_config,
+        ...     parameter_config=optimization_config,
         ...     security_boundary_config=security_config,
         ...     current_data=current_data,
         ...     logger=logger
@@ -1606,7 +1606,7 @@ def run_optimization(
         >>>
         >>> best_params = run_optimization(
         ...     uid_config=normalized_uid_config,
-        ...     parameter_config=modules_config,
+        ...     parameter_config=optimization_config,
         ...     security_boundary_config=security_config,
         ...     current_data=current_data,
         ...     historical_data=historical_data,
@@ -1777,7 +1777,7 @@ def start_optimization_process(
         >>> # 直接调用（高级用法）
         >>> best_params = start_optimization_process(
         ...     uid_config=normalized_uid_config,
-        ...     parameter_config=modules_config,
+        ...     parameter_config=optimization_config,
         ...     security_boundary_config=security_config,
         ...     optimization_input=historical_data,  # 必须提供
         ...     current_data=current_data,           # 必须提供
@@ -1788,7 +1788,7 @@ def start_optimization_process(
         >>> # 推荐用法（使用高层封装）
         >>> best_params = run_optimization(
         ...     uid_config=normalized_uid_config,
-        ...     parameter_config=modules_config,
+        ...     parameter_config=optimization_config,
         ...     security_boundary_config=security_config,
         ...     current_data=current_data,
         ...     logger=logger
