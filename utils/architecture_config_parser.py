@@ -117,7 +117,8 @@ class DataCenterConfigParser:
                     datacenter.add_environment_sensor(sensor)
                     self.logger.info(f"  添加数据中心环境传感器: {sensor.sensor_name}")
                 except Exception as e:
-                    self.logger.warning(f"  解析数据中心环境传感器（{sensor.sensor_name}）失败: {e}，跳过该传感器")
+                    sensor_name = sensor_config.get('sensor_name', 'unknown')
+                    self.logger.warning(f"  解析数据中心环境传感器（{sensor_name}）失败: {e}，跳过该传感器")
 
         # 解析数据中心级别的属性
         if 'datacenter_attributes' in dc_config:
@@ -127,7 +128,8 @@ class DataCenterConfigParser:
                     datacenter.add_dc_attribute(attr)
                     self.logger.info(f"  添加数据中心属性: {attr.name}")
                 except Exception as e:
-                    self.logger.warning(f"  解析数据中心属性（{attr.name}）失败: {e}，跳过该属性")
+                    attr_name = attr_config.get('name', 'unknown')
+                    self.logger.warning(f"  解析数据中心属性（{attr_name}）失败: {e}，跳过该属性")
 
         # 解析机房列表
         if 'computer_rooms' in dc_config:
@@ -137,7 +139,8 @@ class DataCenterConfigParser:
                     datacenter.add_computer_room(room)
                     self.logger.info(f"  成功解析机房: {room.room_name} (UID: {room.room_uid})")
                 except Exception as e:
-                    self.logger.error(f"  解析机房（{room.room_name}）失败: {e}，跳过该机房")
+                    room_name = room_config.get('room_name', 'unknown')
+                    self.logger.error(f"  解析机房（{room_name}）失败: {e}，跳过该机房")
 
         # 输出统计信息
         stats = datacenter.get_statistics()

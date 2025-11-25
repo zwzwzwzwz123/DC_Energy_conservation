@@ -1,4 +1,4 @@
- """
+"""
 数据中心数据读写器模块
 
 本模块负责从 InfluxDB 读取数据和向 InfluxDB 写入数据。
@@ -65,6 +65,8 @@ class DataCenterDataReader:
         self.read_config = read_config
         self.influxdb_clients = influxdb_clients
         self.logger = logger
+        # 预先构建 uid -> field_key 映射，优先使用配置的 field_key，缺省回退默认值
+        self.uid_field_key_map = self._build_uid_field_key_map(datacenter)
 
         # 获取默认配置
         default_config = read_config.get('default', {})
@@ -93,6 +95,45 @@ class DataCenterDataReader:
         if self.enable_parallel_query:
             self.logger.info(f"    并行线程数: {self.parallel_threads}")
         self.logger.info(f"    单批最大uid数: {self.max_uids_per_query}")
+
+    @staticmethod
+    def _build_uid_field_key_map(datacenter: DataCenter) -> Dict[str, str]:
+        """
+        遍历数据中心，提取所有属性的 uid -> field_key 映射，缺省为 'value'
+        """
+        mapping: Dict[str, str] = {}
+
+        def _record_attr(attr: Attribute) -> None:
+            if attr and attr.uid:
+                mapping[str(attr.uid)] = attr.field_key or 'value'
+
+        for room in datacenter.get_all_rooms(include_unavailable=True):
+            # 机房属性
+            for attr in room.room_attributes.values():
+                _record_attr(attr)
+            # 环境传感器
+            for sensor in room.environment_sensors:
+                for attr in sensor.attributes.values():
+                    _record_attr(attr)
+            # 设备
+            for device in room.get_all_devices(include_unavailable=True):
+                for attr in device.attributes.values():
+                    _record_attr(attr)
+
+        # 数据中心级别属性和传感器
+        for attr in datacenter.dc_attributes.values():
+            _record_attr(attr)
+        for sensor in datacenter.environment_sensors:
+            for attr in sensor.attributes.values():
+                _record_attr(attr)
+
+        return mapping
+
+    def _get_field_key_for_uid(self, uid: str) -> str:
+        """
+        获取指定 uid 应使用的 field_key，默认回退到全局默认值
+        """
+        return self.uid_field_key_map.get(uid, self.default_field_key)
 
     def read_all_observable_data(
         self,
@@ -596,8 +637,8 @@ class DataCenterDataReader:
         返回:
             str: InfluxDB 查询语句
         """
-        # 获取 field_key（从实例属性读取，这是只读配置，不会被临时修改）
-        field_key = self.default_field_key
+        # 获取 field_key（优先属性定义，缺省使用默认值）
+        field_key = self._get_field_key_for_uid(uid)
 
         # 构建 Tag 过滤条件
         tag_conditions = []
