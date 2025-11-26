@@ -104,7 +104,7 @@ read:
       read_method: "read_room_data"
 
       # 必填（当 read_method 为 read_room_data 时）：指定要读取的机房 UID 列表
-      room_uids: [ "CR_A1" ]
+      room_uids: [ "CR_103A" ]
 
       include_unavailable: false
 
