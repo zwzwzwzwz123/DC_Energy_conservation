@@ -8,11 +8,23 @@ prediction_model:
   # 估计器选择（表格型特征的 TwinPredictor 使用）
   estimator:
     # 可选: random_forest / mlp / gradient_boosting
-    name: "random_forest"
-    # 对应 sklearn 模型的参数，可按需覆盖
+    name: "mlp"
+    # 对应 sklearn 模型的参数，可按需覆盖；可为不同模型分别配置
     params:
-      n_estimators: 240
-      random_state: 42
+      random_forest:
+        n_estimators: 240
+        random_state: 42
+        min_samples_leaf: 2
+      mlp:
+        hidden_layer_sizes: [128, 64]
+        learning_rate_init: 0.001
+        max_iter: 500
+        random_state: 42
+      gradient_boosting:
+        n_estimators: 300
+        learning_rate: 0.05
+        max_depth: 3
+        random_state: 42
 
   # 模型架构参数（如使用 LSTM/GRU）
   architecture:

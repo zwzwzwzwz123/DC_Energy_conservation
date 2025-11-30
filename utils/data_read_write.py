@@ -77,6 +77,7 @@ class DataCenterDataReader:
         self.default_time_order = default_config.get('time_order', 'desc').lower()  # 默认降序（时间最新的放在最上面）
         self.default_include_unavailable = default_config.get('include_unavailable', False)  # 默认不包含不可用设备
         self.default_tag_filters = default_config.get('tag_filters', {})  # 默认 Tag 过滤配置
+        self.default_fallback_on_empty = default_config.get('fallback_on_empty')  # 默认兜底策略（可选）
 
         # 查询优化配置
         query_opt = read_config.get('query_optimization', {})
@@ -142,7 +143,8 @@ class DataCenterDataReader:
         time_range: Dict[str, Any],
         last_n_points: Dict[str, Any],
         include_unavailable: bool = False,
-        tag_filters: Dict[str, Any] = None
+        tag_filters: Dict[str, Any] = None,
+        fallback_on_empty: Optional[Dict[str, Any]] = None
     ) -> Dict[str, pd.DataFrame]:
         """
         读取所有可观测点数据
@@ -176,6 +178,16 @@ class DataCenterDataReader:
         if tag_filters is None:
             tag_filters = {}
         result = self._batch_read_data(all_uids, client, mode, time_range, last_n_points, tag_filters)
+        result = self._apply_fallback_on_empty(
+            result=result,
+            fallback_config=fallback_on_empty,
+            uids=all_uids,
+            client=client,
+            mode=mode,
+            time_range=time_range,
+            last_n_points=last_n_points,
+            tag_filters=tag_filters
+        )
 
         self.logger.info(f"成功读取 {len(result)} 个可观测点的数据")
         return result
@@ -188,7 +200,8 @@ class DataCenterDataReader:
         time_range: Dict[str, Any],
         last_n_points: Dict[str, Any],
         include_unavailable: bool = False,
-        tag_filters: Dict[str, Any] = None
+        tag_filters: Dict[str, Any] = None,
+        fallback_on_empty: Optional[Dict[str, Any]] = None
     ) -> Dict[str, pd.DataFrame]:
         """
         读取指定机房的所有数据
@@ -230,6 +243,16 @@ class DataCenterDataReader:
         if tag_filters is None:
             tag_filters = {}
         result = self._batch_read_data(room_uids, client, mode, time_range, last_n_points, tag_filters)
+        result = self._apply_fallback_on_empty(
+            result=result,
+            fallback_config=fallback_on_empty,
+            uids=room_uids,
+            client=client,
+            mode=mode,
+            time_range=time_range,
+            last_n_points=last_n_points,
+            tag_filters=tag_filters
+        )
 
         self.logger.info(f"成功读取机房 {room.room_name} 的 {len(result)} 个可观测点数据")
         return result
@@ -242,7 +265,8 @@ class DataCenterDataReader:
         time_range: Dict[str, Any],
         last_n_points: Dict[str, Any],
         include_unavailable: bool = False,
-        tag_filters: Dict[str, Any] = None
+        tag_filters: Dict[str, Any] = None,
+        fallback_on_empty: Optional[Dict[str, Any]] = None
     ) -> Dict[str, pd.DataFrame]:
         """
         读取指定设备的所有数据
@@ -284,6 +308,16 @@ class DataCenterDataReader:
         if tag_filters is None:
             tag_filters = {}
         result = self._batch_read_data(device_uids, client, mode, time_range, last_n_points, tag_filters)
+        result = self._apply_fallback_on_empty(
+            result=result,
+            fallback_config=fallback_on_empty,
+            uids=device_uids,
+            client=client,
+            mode=mode,
+            time_range=time_range,
+            last_n_points=last_n_points,
+            tag_filters=tag_filters
+        )
 
         self.logger.info(f"成功读取设备 {device.device_name} 的 {len(result)} 个可观测点数据")
         return result
@@ -295,7 +329,8 @@ class DataCenterDataReader:
         mode: str,
         time_range: Dict[str, Any],
         last_n_points: Dict[str, Any],
-        tag_filters: Dict[str, Any] = None
+        tag_filters: Dict[str, Any] = None,
+        fallback_on_empty: Optional[Dict[str, Any]] = None
     ) -> Dict[str, pd.DataFrame]:
         """
         读取指定 UID 列表的数据
@@ -322,6 +357,16 @@ class DataCenterDataReader:
         if tag_filters is None:
             tag_filters = {}
         result = self._batch_read_data(uids, client, mode, time_range, last_n_points, tag_filters)
+        result = self._apply_fallback_on_empty(
+            result=result,
+            fallback_config=fallback_on_empty,
+            uids=uids,
+            client=client,
+            mode=mode,
+            time_range=time_range,
+            last_n_points=last_n_points,
+            tag_filters=tag_filters
+        )
 
         self.logger.info(f"成功读取 {len(result)} 个 UID 的数据")
         return result
@@ -371,6 +416,7 @@ class DataCenterDataReader:
         last_n_points = read_params['last_n_points']
         include_unavailable = read_params['include_unavailable']
         tag_filters = read_params['tag_filters']
+        fallback_on_empty = read_params['fallback_on_empty']
 
         # 4. 获取特定于方法的参数
         room_uids = config.get('room_uids', [])
@@ -383,7 +429,15 @@ class DataCenterDataReader:
         if read_method == 'read_all_observable_data':
             # 调用 read_all_observable_data
             self.logger.info(f"  调用 read_all_observable_data(include_unavailable={include_unavailable})")
-            result = self.read_all_observable_data(client, mode, time_range, last_n_points, include_unavailable, tag_filters)
+            result = self.read_all_observable_data(
+                client,
+                mode,
+                time_range,
+                last_n_points,
+                include_unavailable,
+                tag_filters,
+                fallback_on_empty
+            )
 
         elif read_method == 'read_room_data':
             # 调用 read_room_data
@@ -392,7 +446,16 @@ class DataCenterDataReader:
             self.logger.info(f"  读取 {len(room_uids)} 个机房的数据: {room_uids}")
             for room_uid in room_uids:
                 try:
-                    room_data = self.read_room_data(room_uid, client, mode, time_range, last_n_points, include_unavailable, tag_filters)
+                    room_data = self.read_room_data(
+                        room_uid,
+                        client,
+                        mode,
+                        time_range,
+                        last_n_points,
+                        include_unavailable,
+                        tag_filters,
+                        fallback_on_empty
+                    )
                     result.update(room_data)
                 except ValueError as e:
                     self.logger.warning(f"  读取机房 {room_uid} 失败: {e}")
@@ -404,7 +467,16 @@ class DataCenterDataReader:
             self.logger.info(f"  读取 {len(device_uids)} 个设备的数据: {device_uids}")
             for device_uid in device_uids:
                 try:
-                    device_data = self.read_device_data(device_uid, client, mode, time_range, last_n_points, include_unavailable, tag_filters)
+                    device_data = self.read_device_data(
+                        device_uid,
+                        client,
+                        mode,
+                        time_range,
+                        last_n_points,
+                        include_unavailable,
+                        tag_filters,
+                        fallback_on_empty
+                    )
                     result.update(device_data)
                 except ValueError as e:
                     self.logger.warning(f"  读取设备 {device_uid} 失败: {e}")
@@ -414,7 +486,15 @@ class DataCenterDataReader:
             if not specific_uids:
                 raise ValueError(f"配置键 '{config_key}' 使用 read_specific_uids 方法时，必须指定 specific_uids")
             self.logger.info(f"  读取 {len(specific_uids)} 个指定 UID 的数据")
-            result = self.read_specific_uids(specific_uids, client, mode, time_range, last_n_points, tag_filters)
+            result = self.read_specific_uids(
+                specific_uids,
+                client,
+                mode,
+                time_range,
+                last_n_points,
+                tag_filters,
+                fallback_on_empty
+            )
 
         self.logger.info(f"成功根据客户端 '{client_key}' 和配置键 '{config_key}' 读取 {len(result)} 个 UID 的数据")
         return result
@@ -454,7 +534,8 @@ class DataCenterDataReader:
             'time_range': self.default_time_range,
             'last_n_points': self.default_last_n_points,
             'include_unavailable': self.default_include_unavailable,
-            'tag_filters': self.default_tag_filters
+            'tag_filters': self.default_tag_filters,
+            'fallback_on_empty': self.default_fallback_on_empty
         }
 
         # 应用客户端级别的默认配置
@@ -515,6 +596,55 @@ class DataCenterDataReader:
             result = self._read_batch(uids, client, mode, time_range, last_n_points, tag_filters)
 
         return result
+
+    def _apply_fallback_on_empty(
+        self,
+        result: Dict[str, pd.DataFrame],
+        fallback_config: Optional[Dict[str, Any]],
+        uids: List[str],
+        client: InfluxDBClientWrapper,
+        mode: str,
+        time_range: Dict[str, Any],
+        last_n_points: Dict[str, Any],
+        tag_filters: Dict[str, Any]
+    ) -> Dict[str, pd.DataFrame]:
+        """
+        当主要读取结果为空时，根据配置自动触发兜底读取策略
+        """
+        if result:
+            return result
+
+        if not fallback_config or not fallback_config.get('enabled', False):
+            return result
+
+        fallback_mode = fallback_config.get('mode')
+        if not fallback_mode:
+            self.logger.warning("fallback_on_empty 已启用但未配置 mode，跳过兜底读取")
+            return result
+
+        fallback_time_range = fallback_config.get('time_range', time_range)
+        fallback_last_n_points = fallback_config.get('last_n_points', last_n_points)
+        fallback_tag_filters = fallback_config.get('tag_filters', tag_filters or {})
+
+        self.logger.warning(
+            f"{len(uids)} 个 uid 在读取模式 '{mode}' 下无数据，启动兜底模式 '{fallback_mode}'"
+        )
+
+        fallback_result = self._batch_read_data(
+            uids,
+            client,
+            fallback_mode,
+            fallback_time_range,
+            fallback_last_n_points,
+            fallback_tag_filters
+        )
+
+        if fallback_result:
+            self.logger.info(f"兜底模式 '{fallback_mode}' 获得 {len(fallback_result)} 个 uid 的数据")
+            return fallback_result
+
+        self.logger.warning(f"兜底模式 '{fallback_mode}' 仍未读取到数据")
+        return fallback_result
 
     def _query_single_uid(
         self,

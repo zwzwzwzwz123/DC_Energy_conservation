@@ -41,9 +41,11 @@ from utils.data_processing import build_aligned_matrix
 
 # ==================== 常量（与方案要求保持一致） ====================
 
-DEFAULT_FREQ = "1min"  # 推荐统一采样周期
-DEFAULT_MAX_MISSING_RATE = 0.05  # 总缺失率不超过 5%
-DEFAULT_MAX_CONSECUTIVE_MISSING = 5  # 连续缺失不超过 5 个采样点
+DEFAULT_FREQ = "1min"  # ????????
+DEFAULT_MAX_MISSING_RATE = 0.05  # ??????? 5%
+DEFAULT_MAX_CONSECUTIVE_MISSING = 5  # ??????? 5 ????
+DEFAULT_FEATURE_ROW_TOLERANCE = 0.3  # ????????
+DEFAULT_TARGET_ROW_TOLERANCE = 0.0  # ?????????
 
 
 # ==================== 配置与规格定义 ====================
@@ -91,34 +93,58 @@ def _create_estimator(
     key = (name or "random_forest").lower()
 
     if key in ("rf", "random_forest", "forest"):
-        defaults = dict(
+        base_defaults = dict(
             n_estimators=240,
             max_depth=None,
             min_samples_leaf=2,
             random_state=42,
             n_jobs=-1,
         )
-        defaults.update(safe_params)
-        return RandomForestRegressor(**defaults), False
+        defaults = {**base_defaults, **safe_params}
+        try:
+            return RandomForestRegressor(**defaults), False
+        except TypeError as exc:
+            logger.warning(f"RandomForestRegressor 无法使用自定义参数 {safe_params}：{exc}，已回退到默认配置")
+            return RandomForestRegressor(**base_defaults), False
 
     if key in ("mlp", "mlp_regressor", "nn"):
-        defaults = dict(
+        base_defaults = dict(
             hidden_layer_sizes=(128, 64),
             activation="relu",
             learning_rate_init=1e-3,
             max_iter=500,
             random_state=42,
         )
-        defaults.update(safe_params)
-        return MLPRegressor(**defaults), True
+        defaults = {**base_defaults, **safe_params}
+        try:
+            return MLPRegressor(**defaults), True
+        except TypeError as exc:
+            logger.warning(f"MLPRegressor 无法使用自定义参数 {safe_params}：{exc}，已回退到默认配置")
+            return MLPRegressor(**base_defaults), True
 
     if key in ("gbr", "gradient_boosting", "gbdt"):
-        defaults = dict(random_state=42, n_estimators=300, learning_rate=0.05, max_depth=3)
-        defaults.update(safe_params)
-        return GradientBoostingRegressor(**defaults), False
+        base_defaults = dict(random_state=42, n_estimators=300, learning_rate=0.05, max_depth=3)
+        defaults = {**base_defaults, **safe_params}
+        try:
+            return GradientBoostingRegressor(**defaults), False
+        except TypeError as exc:
+            logger.warning(f"GradientBoostingRegressor 无法使用自定义参数 {safe_params}：{exc}，已回退到默认配置")
+            return GradientBoostingRegressor(**base_defaults), False
 
     logger.warning(f"未知模型 {name}，回退到 RandomForestRegressor")
     return RandomForestRegressor(random_state=42, n_estimators=200), False
+
+
+
+
+def _metadata_float(metadata: Dict[str, object], key: str, default: float) -> float:
+    value = metadata.get(key) if metadata else None
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
 
 
 class TwinModel:
@@ -148,7 +174,18 @@ class TwinModel:
     def _prepare_xy(
         self, data_map: Dict[str, pd.DataFrame]
     ) -> Optional[Tuple[pd.DataFrame, pd.DataFrame]]:
-        """构建训练用特征矩阵 X 与目标矩阵 y。"""
+        """????????? X ????? y?"""
+        feature_row_tol = _metadata_float(
+            self.spec.metadata,
+            "feature_row_missing_tolerance",
+            DEFAULT_FEATURE_ROW_TOLERANCE,
+        )
+        target_row_tol = _metadata_float(
+            self.spec.metadata,
+            "target_row_missing_tolerance",
+            DEFAULT_TARGET_ROW_TOLERANCE,
+        )
+
         X, skipped_feat = build_aligned_matrix(
             data_map,
             self.spec.feature_map,
@@ -156,6 +193,7 @@ class TwinModel:
             self.spec.max_missing_rate,
             self.spec.max_consecutive_missing,
             self.logger,
+            row_missing_tolerance=feature_row_tol,
         )
         y, skipped_target = build_aligned_matrix(
             data_map,
@@ -164,33 +202,41 @@ class TwinModel:
             self.spec.max_missing_rate,
             self.spec.max_consecutive_missing,
             self.logger,
+            row_missing_tolerance=target_row_tol,
         )
 
         if skipped_feat:
-            self.logger.warning(f"{self.spec.name}: 特征跳过 {skipped_feat}")
+            self.logger.warning(f"{self.spec.name}: ???? {skipped_feat}")
         if skipped_target:
-            self.logger.warning(f"{self.spec.name}: 目标跳过 {skipped_target}")
+            self.logger.warning(f"{self.spec.name}: ???? {skipped_target}")
 
         if X is None or y is None:
             return None
 
-        # 对齐索引，保证 X 与 y 同步
         merged_index = X.index.intersection(y.index)
+        if merged_index.empty:
+            self.logger.error(f"{self.spec.name}: ??????????")
+            return None
         X = X.loc[merged_index]
         y = y.loc[merged_index]
 
-        # 再次清理
         X = X.replace([np.inf, -np.inf], np.nan)
         y = y.replace([np.inf, -np.inf], np.nan)
-        mask = ~(X.isna().any(axis=1) | y.isna().any(axis=1))
-        X = X.loc[mask]
-        y = y.loc[mask]
+
+        target_mask = ~y.isna().any(axis=1)
+        X = X.loc[target_mask]
+        y = y.loc[target_mask]
+
+        feature_mask = ~X.isna().all(axis=1)
+        X = X.loc[feature_mask]
+        y = y.loc[feature_mask]
 
         if X.empty or y.empty:
-            self.logger.error(f"{self.spec.name}: 经过对齐后无有效样本")
+            self.logger.error(f"{self.spec.name}: ??????????")
             return None
 
         return X, y
+
 
     # ------------------------------------------------------------------ #
     # 训练 / 推理
@@ -246,6 +292,12 @@ class TwinModel:
             self.logger.warning(f"{self.spec.name}: 未训练，跳过预测")
             return None
 
+        feature_row_tol = _metadata_float(
+            self.spec.metadata,
+            "feature_row_missing_tolerance",
+            DEFAULT_FEATURE_ROW_TOLERANCE,
+        )
+
         feature_matrix, skipped = build_aligned_matrix(
             data_map,
             self.spec.feature_map,
@@ -253,6 +305,7 @@ class TwinModel:
             self.spec.max_missing_rate,
             self.spec.max_consecutive_missing,
             self.logger,
+            row_missing_tolerance=feature_row_tol,
         )
         if skipped:
             self.logger.warning(f"{self.spec.name}: 推理特征跳过 {skipped}")
@@ -327,6 +380,14 @@ def _default_model_dir() -> Path:
     return Path(__file__).resolve().parent.parent / "checkpoints" / "prediction"
 
 
+def _project_root() -> Path:
+    return Path(__file__).resolve().parent.parent
+
+
+def _generated_specs_path() -> Path:
+    return _project_root() / "configs" / "prediction_specs_generated.json"
+
+
 def build_default_specs(estimator_config: Optional[Dict[str, object]] = None) -> List[TwinModelSpec]:
     """
     依据方案文档预置三类模型的特征/目标映射。
@@ -344,7 +405,12 @@ def build_default_specs(estimator_config: Optional[Dict[str, object]] = None) ->
     est_params: Dict[str, object] = {}
     if estimator_config:
         est_name = estimator_config.get("name", est_name)
-        est_params = estimator_config.get("params", {}) or {}
+        params_cfg = estimator_config.get("params", {})
+        if isinstance(params_cfg, dict):
+            raw_params = params_cfg.get(est_name) if est_name in params_cfg else params_cfg
+            est_params = raw_params or {}
+        else:
+            est_params = {}
 
     single_ac_spec = TwinModelSpec(
         name="single_air_conditioner",
@@ -419,6 +485,65 @@ def build_default_specs(estimator_config: Optional[Dict[str, object]] = None) ->
     return [single_ac_spec, room_spec, chiller_spec]
 
 
+def _load_specs_from_json(
+    json_path: Path,
+    estimator_config: Optional[Dict[str, object]] = None,
+) -> Optional[List[TwinModelSpec]]:
+    if not json_path.exists():
+        return None
+
+    try:
+        with json_path.open("r", encoding="utf-8") as f:
+            payload = json.load(f)
+    except Exception as exc:
+        logging.getLogger(__name__).warning(f"加载自定义预测规格失败: {exc}")
+        return None
+
+    specs_raw = payload.get("specs") if isinstance(payload, dict) else payload
+    if not isinstance(specs_raw, list):
+        logging.getLogger(__name__).warning("预测规格文件格式无效")
+        return None
+
+    est_name_override = None
+    est_params_override = None
+    if estimator_config:
+        est_name_override = estimator_config.get("name")
+        est_params_override = estimator_config.get("params")
+
+    specs: List[TwinModelSpec] = []
+    for entry in specs_raw:
+        if not isinstance(entry, dict):
+            continue
+        name = entry.get("name")
+        feature_map = entry.get("feature_map")
+        target_map = entry.get("target_map")
+        if not name or not feature_map or not target_map:
+            continue
+
+        est_name = est_name_override or entry.get("estimator_name", "random_forest")
+        est_params = est_params_override or entry.get("estimator_params", {}) or {}
+        model_dir = entry.get("model_dir")
+        if model_dir:
+            model_dir = Path(model_dir)
+
+        specs.append(
+            TwinModelSpec(
+                name=name,
+                feature_map=feature_map,
+                target_map=target_map,
+                freq=entry.get("freq", DEFAULT_FREQ),
+                max_missing_rate=entry.get("max_missing_rate", DEFAULT_MAX_MISSING_RATE),
+                max_consecutive_missing=entry.get("max_consecutive_missing", DEFAULT_MAX_CONSECUTIVE_MISSING),
+                model_dir=model_dir,
+                estimator_name=est_name,
+                estimator_params=est_params,
+                metadata=entry.get("metadata", {}),
+            )
+        )
+
+    return specs or None
+
+
 def build_specs_from_prediction_config(prediction_config: Optional[Dict[str, object]]) -> List[TwinModelSpec]:
     """
     辅助函数：直接从 prediction_config 读取 estimator 配置，便于通过配置切换模型。
@@ -430,6 +555,21 @@ def build_specs_from_prediction_config(prediction_config: Optional[Dict[str, obj
     """
     pred_cfg = prediction_config.get("prediction_model", {}) if prediction_config else {}
     estimator_cfg = pred_cfg.get("estimator")
+
+    specs_file_cfg = pred_cfg.get("specs_file")
+    specs_path: Optional[Path] = None
+    if specs_file_cfg:
+        candidate = Path(specs_file_cfg)
+        if not candidate.is_absolute():
+            candidate = (_project_root() / specs_file_cfg).resolve()
+        specs_path = candidate
+    else:
+        specs_path = _generated_specs_path()
+
+    custom_specs = _load_specs_from_json(specs_path, estimator_cfg) if specs_path else None
+    if custom_specs:
+        return custom_specs
+
     return build_default_specs(estimator_cfg)
 
 

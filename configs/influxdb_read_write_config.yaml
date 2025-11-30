@@ -52,6 +52,13 @@ read:
       # 可选：是否包含不可用设备/机房的数据（默认 false）
       include_unavailable: false
 
+      # ???????????????????????
+      fallback_on_empty:
+        enabled: true
+        mode: "last_n_points"
+        last_n_points:
+          count: 500
+
     # 配置项 2: 读取关键设备数据
     critical_devices_data:
       read_method: "read_device_data"
