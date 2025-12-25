@@ -1,0 +1,1146 @@
+{
+  "specs": [
+    {
+      "name": "room_multi_target",
+      "feature_map": {
+        "chw_supply_temp": "N2_S0_E1_D30",
+        "avg_return_temp": "N2_S0_E1_A4",
+        "avg_fan_speed": "N2_S0_E1_A1"
+      },
+      "target_map": {},
+      "freq": "1min",
+      "max_missing_rate": 0.05,
+      "max_consecutive_missing": 5,
+      "model_dir": "C:\\Users\\zouwei\\Desktop\\DC\\DC_Energy_conservation\\checkpoints\\prediction",
+      "base_estimator": null,
+      "estimator_name": "mlp",
+      "estimator_params": {
+        "hidden_layer_sizes": [
+          128,
+          64
+        ],
+        "learning_rate_init": 0.001,
+        "max_iter": 500,
+        "random_state": 42
+      },
+      "metadata": {
+        "scenario": "room",
+        "description": "机房总功耗 + 温度统计",
+        "comment": "机房整体模型"
+      }
+    },
+    {
+      "name": "single_chiller",
+      "feature_map": {},
+      "target_map": {},
+      "freq": "1min",
+      "max_missing_rate": 0.05,
+      "max_consecutive_missing": 5,
+      "model_dir": "C:\\Users\\zouwei\\Desktop\\DC\\DC_Energy_conservation\\checkpoints\\prediction",
+      "base_estimator": null,
+      "estimator_name": "mlp",
+      "estimator_params": {
+        "hidden_layer_sizes": [
+          128,
+          64
+        ],
+        "learning_rate_init": 0.001,
+        "max_iter": 500,
+        "random_state": 42
+      },
+      "metadata": {
+        "scenario": "chiller",
+        "description": "单台冷机功率",
+        "comment": "冷水机组模型"
+      }
+    },
+    {
+      "name": "single_air_conditioner__N2_S0_E1",
+      "feature_map": {
+        "chw_supply_temp": "N2_S0_E1_D30",
+        "humidity_setpoint": "N2_S0_E1_A27",
+        "fan_speed_feedback": "N2_S0_E1_A1",
+        "water_valve_opening": "N2_S0_E1_A2"
+      },
+      "target_map": {
+        "ac_power": "ac_power",
+        "return_air_temp": "N2_S0_E1_A4",
+        "supply_air_temp": "N2_S0_E1_D27"
+      },
+      "freq": "1min",
+      "max_missing_rate": 0.05,
+      "max_consecutive_missing": 5,
+      "model_dir": "C:\\Users\\zouwei\\Desktop\\DC\\DC_Energy_conservation\\checkpoints\\prediction",
+      "base_estimator": null,
+      "estimator_name": "mlp",
+      "estimator_params": {
+        "hidden_layer_sizes": [
+          128,
+          64
+        ],
+        "learning_rate_init": 0.001,
+        "max_iter": 500,
+        "random_state": 42
+      },
+      "metadata": {
+        "scenario": "single_ac",
+        "description": "单台空调功率 + 回/送风温度",
+        "device_uid": "N2_S0_E1",
+        "device_name": "1F IDC机房1#空调",
+        "room_uid": "CR_103A",
+        "room_name": "103A信息化机房",
+        "system_uid": "WC_103A_001",
+        "system_name": "103A信息化机房水冷空调系统",
+        "comment": "103A信息化机房-1F IDC机房1#空调 空调模型"
+      }
+    },
+    {
+      "name": "single_air_conditioner__N2_S0_E2",
+      "feature_map": {
+        "chw_supply_temp": "N2_S0_E1_D30",
+        "humidity_setpoint": "N2_S0_E2_A27",
+        "fan_speed_feedback": "N2_S0_E2_A1",
+        "water_valve_opening": "N2_S0_E2_A2"
+      },
+      "target_map": {
+        "ac_power": "ac_power",
+        "return_air_temp": "N2_S0_E2_A4",
+        "supply_air_temp": "N2_S0_E2_D27"
+      },
+      "freq": "1min",
+      "max_missing_rate": 0.05,
+      "max_consecutive_missing": 5,
+      "model_dir": "C:\\Users\\zouwei\\Desktop\\DC\\DC_Energy_conservation\\checkpoints\\prediction",
+      "base_estimator": null,
+      "estimator_name": "mlp",
+      "estimator_params": {
+        "hidden_layer_sizes": [
+          128,
+          64
+        ],
+        "learning_rate_init": 0.001,
+        "max_iter": 500,
+        "random_state": 42
+      },
+      "metadata": {
+        "scenario": "single_ac",
+        "description": "单台空调功率 + 回/送风温度",
+        "device_uid": "N2_S0_E2",
+        "device_name": "1F IDC机房2#空调",
+        "room_uid": "CR_103A",
+        "room_name": "103A信息化机房",
+        "system_uid": "WC_103A_001",
+        "system_name": "103A信息化机房水冷空调系统",
+        "comment": "103A信息化机房-1F IDC机房2#空调 空调模型"
+      }
+    },
+    {
+      "name": "single_air_conditioner__N2_S0_E3",
+      "feature_map": {
+        "chw_supply_temp": "N2_S0_E1_D30",
+        "humidity_setpoint": "N2_S0_E3_A27",
+        "fan_speed_feedback": "N2_S0_E3_A1",
+        "water_valve_opening": "N2_S0_E3_A2"
+      },
+      "target_map": {
+        "ac_power": "ac_power",
+        "return_air_temp": "N2_S0_E3_A4",
+        "supply_air_temp": "N2_S0_E3_D27"
+      },
+      "freq": "1min",
+      "max_missing_rate": 0.05,
+      "max_consecutive_missing": 5,
+      "model_dir": "C:\\Users\\zouwei\\Desktop\\DC\\DC_Energy_conservation\\checkpoints\\prediction",
+      "base_estimator": null,
+      "estimator_name": "mlp",
+      "estimator_params": {
+        "hidden_layer_sizes": [
+          128,
+          64
+        ],
+        "learning_rate_init": 0.001,
+        "max_iter": 500,
+        "random_state": 42
+      },
+      "metadata": {
+        "scenario": "single_ac",
+        "description": "单台空调功率 + 回/送风温度",
+        "device_uid": "N2_S0_E3",
+        "device_name": "1F IDC机房3#空调",
+        "room_uid": "CR_103A",
+        "room_name": "103A信息化机房",
+        "system_uid": "WC_103A_001",
+        "system_name": "103A信息化机房水冷空调系统",
+        "comment": "103A信息化机房-1F IDC机房3#空调 空调模型"
+      }
+    },
+    {
+      "name": "single_air_conditioner__N2_S0_E4",
+      "feature_map": {
+        "chw_supply_temp": "N2_S0_E1_D30",
+        "humidity_setpoint": "N2_S0_E4_A27",
+        "fan_speed_feedback": "N2_S0_E4_A1",
+        "water_valve_opening": "N2_S0_E4_A2"
+      },
+      "target_map": {
+        "ac_power": "ac_power",
+        "return_air_temp": "N2_S0_E4_A4",
+        "supply_air_temp": "N2_S0_E4_D27"
+      },
+      "freq": "1min",
+      "max_missing_rate": 0.05,
+      "max_consecutive_missing": 5,
+      "model_dir": "C:\\Users\\zouwei\\Desktop\\DC\\DC_Energy_conservation\\checkpoints\\prediction",
+      "base_estimator": null,
+      "estimator_name": "mlp",
+      "estimator_params": {
+        "hidden_layer_sizes": [
+          128,
+          64
+        ],
+        "learning_rate_init": 0.001,
+        "max_iter": 500,
+        "random_state": 42
+      },
+      "metadata": {
+        "scenario": "single_ac",
+        "description": "单台空调功率 + 回/送风温度",
+        "device_uid": "N2_S0_E4",
+        "device_name": "1F IDC机房4#空调",
+        "room_uid": "CR_103A",
+        "room_name": "103A信息化机房",
+        "system_uid": "WC_103A_001",
+        "system_name": "103A信息化机房水冷空调系统",
+        "comment": "103A信息化机房-1F IDC机房4#空调 空调模型"
+      }
+    },
+    {
+      "name": "single_air_conditioner__N2_S0_E5",
+      "feature_map": {
+        "chw_supply_temp": "N2_S0_E1_D30",
+        "humidity_setpoint": "N2_S0_E5_A27",
+        "fan_speed_feedback": "N2_S0_E5_A1",
+        "water_valve_opening": "N2_S0_E5_A2"
+      },
+      "target_map": {
+        "ac_power": "ac_power",
+        "return_air_temp": "N2_S0_E5_A4",
+        "supply_air_temp": "N2_S0_E5_D27"
+      },
+      "freq": "1min",
+      "max_missing_rate": 0.05,
+      "max_consecutive_missing": 5,
+      "model_dir": "C:\\Users\\zouwei\\Desktop\\DC\\DC_Energy_conservation\\checkpoints\\prediction",
+      "base_estimator": null,
+      "estimator_name": "mlp",
+      "estimator_params": {
+        "hidden_layer_sizes": [
+          128,
+          64
+        ],
+        "learning_rate_init": 0.001,
+        "max_iter": 500,
+        "random_state": 42
+      },
+      "metadata": {
+        "scenario": "single_ac",
+        "description": "单台空调功率 + 回/送风温度",
+        "device_uid": "N2_S0_E5",
+        "device_name": "1F IDC机房5#空调",
+        "room_uid": "CR_103A",
+        "room_name": "103A信息化机房",
+        "system_uid": "WC_103A_001",
+        "system_name": "103A信息化机房水冷空调系统",
+        "comment": "103A信息化机房-1F IDC机房5#空调 空调模型"
+      }
+    },
+    {
+      "name": "single_air_conditioner__N2_S0_E6",
+      "feature_map": {
+        "chw_supply_temp": "N2_S0_E1_D30",
+        "humidity_setpoint": "N2_S0_E6_A27",
+        "fan_speed_feedback": "N2_S0_E6_A1",
+        "water_valve_opening": "N2_S0_E6_A2"
+      },
+      "target_map": {
+        "ac_power": "ac_power",
+        "return_air_temp": "N2_S0_E6_A4",
+        "supply_air_temp": "N2_S0_E6_D27"
+      },
+      "freq": "1min",
+      "max_missing_rate": 0.05,
+      "max_consecutive_missing": 5,
+      "model_dir": "C:\\Users\\zouwei\\Desktop\\DC\\DC_Energy_conservation\\checkpoints\\prediction",
+      "base_estimator": null,
+      "estimator_name": "mlp",
+      "estimator_params": {
+        "hidden_layer_sizes": [
+          128,
+          64
+        ],
+        "learning_rate_init": 0.001,
+        "max_iter": 500,
+        "random_state": 42
+      },
+      "metadata": {
+        "scenario": "single_ac",
+        "description": "单台空调功率 + 回/送风温度",
+        "device_uid": "N2_S0_E6",
+        "device_name": "1F IDC机房6#空调",
+        "room_uid": "CR_103A",
+        "room_name": "103A信息化机房",
+        "system_uid": "WC_103A_001",
+        "system_name": "103A信息化机房水冷空调系统",
+        "comment": "103A信息化机房-1F IDC机房6#空调 空调模型"
+      }
+    },
+    {
+      "name": "single_air_conditioner__N2_S0_E7",
+      "feature_map": {
+        "chw_supply_temp": "N2_S0_E1_D30",
+        "humidity_setpoint": "N2_S0_E7_A27",
+        "fan_speed_feedback": "N2_S0_E7_A1",
+        "water_valve_opening": "N2_S0_E7_A2"
+      },
+      "target_map": {
+        "ac_power": "ac_power",
+        "return_air_temp": "N2_S0_E7_A4",
+        "supply_air_temp": "N2_S0_E7_D27"
+      },
+      "freq": "1min",
+      "max_missing_rate": 0.05,
+      "max_consecutive_missing": 5,
+      "model_dir": "C:\\Users\\zouwei\\Desktop\\DC\\DC_Energy_conservation\\checkpoints\\prediction",
+      "base_estimator": null,
+      "estimator_name": "mlp",
+      "estimator_params": {
+        "hidden_layer_sizes": [
+          128,
+          64
+        ],
+        "learning_rate_init": 0.001,
+        "max_iter": 500,
+        "random_state": 42
+      },
+      "metadata": {
+        "scenario": "single_ac",
+        "description": "单台空调功率 + 回/送风温度",
+        "device_uid": "N2_S0_E7",
+        "device_name": "1F IDC机房7#空调",
+        "room_uid": "CR_103A",
+        "room_name": "103A信息化机房",
+        "system_uid": "WC_103A_001",
+        "system_name": "103A信息化机房水冷空调系统",
+        "comment": "103A信息化机房-1F IDC机房7#空调 空调模型"
+      }
+    },
+    {
+      "name": "single_air_conditioner__N2_S0_E8",
+      "feature_map": {
+        "chw_supply_temp": "N2_S0_E1_D30",
+        "humidity_setpoint": "N2_S0_E8_A27",
+        "fan_speed_feedback": "N2_S0_E8_A1",
+        "water_valve_opening": "N2_S0_E8_A2"
+      },
+      "target_map": {
+        "ac_power": "ac_power",
+        "return_air_temp": "N2_S0_E8_A4",
+        "supply_air_temp": "N2_S0_E8_D27"
+      },
+      "freq": "1min",
+      "max_missing_rate": 0.05,
+      "max_consecutive_missing": 5,
+      "model_dir": "C:\\Users\\zouwei\\Desktop\\DC\\DC_Energy_conservation\\checkpoints\\prediction",
+      "base_estimator": null,
+      "estimator_name": "mlp",
+      "estimator_params": {
+        "hidden_layer_sizes": [
+          128,
+          64
+        ],
+        "learning_rate_init": 0.001,
+        "max_iter": 500,
+        "random_state": 42
+      },
+      "metadata": {
+        "scenario": "single_ac",
+        "description": "单台空调功率 + 回/送风温度",
+        "device_uid": "N2_S0_E8",
+        "device_name": "1F IDC机房8#空调",
+        "room_uid": "CR_103A",
+        "room_name": "103A信息化机房",
+        "system_uid": "WC_103A_001",
+        "system_name": "103A信息化机房水冷空调系统",
+        "comment": "103A信息化机房-1F IDC机房8#空调 空调模型"
+      }
+    },
+    {
+      "name": "single_air_conditioner__N2_S0_E9",
+      "feature_map": {
+        "chw_supply_temp": "N2_S0_E1_D30",
+        "humidity_setpoint": "N2_S0_E9_A27",
+        "fan_speed_feedback": "N2_S0_E9_A1",
+        "water_valve_opening": "N2_S0_E9_A2"
+      },
+      "target_map": {
+        "ac_power": "ac_power",
+        "return_air_temp": "N2_S0_E9_A4",
+        "supply_air_temp": "N2_S0_E9_D27"
+      },
+      "freq": "1min",
+      "max_missing_rate": 0.05,
+      "max_consecutive_missing": 5,
+      "model_dir": "C:\\Users\\zouwei\\Desktop\\DC\\DC_Energy_conservation\\checkpoints\\prediction",
+      "base_estimator": null,
+      "estimator_name": "mlp",
+      "estimator_params": {
+        "hidden_layer_sizes": [
+          128,
+          64
+        ],
+        "learning_rate_init": 0.001,
+        "max_iter": 500,
+        "random_state": 42
+      },
+      "metadata": {
+        "scenario": "single_ac",
+        "description": "单台空调功率 + 回/送风温度",
+        "device_uid": "N2_S0_E9",
+        "device_name": "1F IDC机房9#空调",
+        "room_uid": "CR_103A",
+        "room_name": "103A信息化机房",
+        "system_uid": "WC_103A_001",
+        "system_name": "103A信息化机房水冷空调系统",
+        "comment": "103A信息化机房-1F IDC机房9#空调 空调模型"
+      }
+    }
+  ],
+  "matches": {
+    "room_multi_target:total_it_load": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "room_multi_target:chw_supply_temp": {
+      "uid": "N2_S0_E1_D30",
+      "name": "出水温度传感器故障报警状态",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房1#空调",
+      "score": 2
+    },
+    "room_multi_target:header_pressure": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "room_multi_target:avg_return_temp": {
+      "uid": "N2_S0_E1_A4",
+      "name": "回风温度测量值（℃）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房1#空调",
+      "score": 2
+    },
+    "room_multi_target:avg_fan_speed": {
+      "uid": "N2_S0_E1_A1",
+      "name": "风机转速（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房1#空调",
+      "score": 2
+    },
+    "room_multi_target:avg_valve_opening": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "room_multi_target:room_total_ac_power": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "room_multi_target:room_mean_temp": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "room_multi_target:room_max_temp": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_chiller:chw_supply_temp_setpoint": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_chiller:chw_return_temp_avg": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_chiller:chw_return_temp_1": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_chiller:chw_return_temp_2": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_chiller:cws_in_temp_1": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_chiller:cws_in_temp_2": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_chiller:cws_in_temp_3": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_chiller:cws_in_temp_4": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_chiller:chw_flow_1": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_chiller:chw_flow_2": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_chiller:cws_flow_1": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_chiller:cws_flow_2": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_chiller:chiller_power": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E1:chw_supply_temp_setpoint": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E1:chw_supply_temp": {
+      "uid": "N2_S0_E1_D30",
+      "name": "出水温度传感器故障报警状态",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房1#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E1:pump_or_flow_feedback": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E1:supply_temp_setpoint": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E1:humidity_setpoint": {
+      "uid": "N2_S0_E1_A27",
+      "name": "回风湿度设定点（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房1#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E1:fan_speed_feedback": {
+      "uid": "N2_S0_E1_A1",
+      "name": "风机转速（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房1#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E1:water_valve_opening": {
+      "uid": "N2_S0_E1_A2",
+      "name": "水阀开度（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房1#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E1:it_load_power": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E1:ac_power": {
+      "uid": "ac_power",
+      "name": "未匹配，保留原值",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E1:return_air_temp": {
+      "uid": "N2_S0_E1_A4",
+      "name": "回风温度测量值（℃）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房1#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E1:supply_air_temp": {
+      "uid": "N2_S0_E1_D27",
+      "name": "送风温度传感器故障报警状态",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房1#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E2:chw_supply_temp_setpoint": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E2:chw_supply_temp": {
+      "uid": "N2_S0_E1_D30",
+      "name": "出水温度传感器故障报警状态",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房1#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E2:pump_or_flow_feedback": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E2:supply_temp_setpoint": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E2:humidity_setpoint": {
+      "uid": "N2_S0_E2_A27",
+      "name": "回风湿度设定点（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房2#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E2:fan_speed_feedback": {
+      "uid": "N2_S0_E2_A1",
+      "name": "风机转速（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房2#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E2:water_valve_opening": {
+      "uid": "N2_S0_E2_A2",
+      "name": "水阀开度（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房2#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E2:it_load_power": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E2:ac_power": {
+      "uid": "ac_power",
+      "name": "未匹配，保留原值",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E2:return_air_temp": {
+      "uid": "N2_S0_E2_A4",
+      "name": "回风温度测量值（℃）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房2#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E2:supply_air_temp": {
+      "uid": "N2_S0_E2_D27",
+      "name": "送风温度传感器故障报警状态",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房2#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E3:chw_supply_temp_setpoint": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E3:chw_supply_temp": {
+      "uid": "N2_S0_E1_D30",
+      "name": "出水温度传感器故障报警状态",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房1#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E3:pump_or_flow_feedback": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E3:supply_temp_setpoint": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E3:humidity_setpoint": {
+      "uid": "N2_S0_E3_A27",
+      "name": "回风湿度设定点（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房3#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E3:fan_speed_feedback": {
+      "uid": "N2_S0_E3_A1",
+      "name": "风机转速（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房3#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E3:water_valve_opening": {
+      "uid": "N2_S0_E3_A2",
+      "name": "水阀开度（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房3#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E3:it_load_power": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E3:ac_power": {
+      "uid": "ac_power",
+      "name": "未匹配，保留原值",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E3:return_air_temp": {
+      "uid": "N2_S0_E3_A4",
+      "name": "回风温度测量值（℃）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房3#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E3:supply_air_temp": {
+      "uid": "N2_S0_E3_D27",
+      "name": "送风温度传感器故障报警状态",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房3#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E4:chw_supply_temp_setpoint": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E4:chw_supply_temp": {
+      "uid": "N2_S0_E1_D30",
+      "name": "出水温度传感器故障报警状态",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房1#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E4:pump_or_flow_feedback": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E4:supply_temp_setpoint": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E4:humidity_setpoint": {
+      "uid": "N2_S0_E4_A27",
+      "name": "回风湿度设定点（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房4#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E4:fan_speed_feedback": {
+      "uid": "N2_S0_E4_A1",
+      "name": "风机转速（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房4#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E4:water_valve_opening": {
+      "uid": "N2_S0_E4_A2",
+      "name": "水阀开度（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房4#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E4:it_load_power": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E4:ac_power": {
+      "uid": "ac_power",
+      "name": "未匹配，保留原值",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E4:return_air_temp": {
+      "uid": "N2_S0_E4_A4",
+      "name": "回风温度测量值（℃）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房4#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E4:supply_air_temp": {
+      "uid": "N2_S0_E4_D27",
+      "name": "送风温度传感器故障报警状态",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房4#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E5:chw_supply_temp_setpoint": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E5:chw_supply_temp": {
+      "uid": "N2_S0_E1_D30",
+      "name": "出水温度传感器故障报警状态",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房1#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E5:pump_or_flow_feedback": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E5:supply_temp_setpoint": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E5:humidity_setpoint": {
+      "uid": "N2_S0_E5_A27",
+      "name": "回风湿度设定点（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房5#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E5:fan_speed_feedback": {
+      "uid": "N2_S0_E5_A1",
+      "name": "风机转速（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房5#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E5:water_valve_opening": {
+      "uid": "N2_S0_E5_A2",
+      "name": "水阀开度（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房5#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E5:it_load_power": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E5:ac_power": {
+      "uid": "ac_power",
+      "name": "未匹配，保留原值",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E5:return_air_temp": {
+      "uid": "N2_S0_E5_A4",
+      "name": "回风温度测量值（℃）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房5#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E5:supply_air_temp": {
+      "uid": "N2_S0_E5_D27",
+      "name": "送风温度传感器故障报警状态",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房5#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E6:chw_supply_temp_setpoint": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E6:chw_supply_temp": {
+      "uid": "N2_S0_E1_D30",
+      "name": "出水温度传感器故障报警状态",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房1#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E6:pump_or_flow_feedback": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E6:supply_temp_setpoint": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E6:humidity_setpoint": {
+      "uid": "N2_S0_E6_A27",
+      "name": "回风湿度设定点（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房6#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E6:fan_speed_feedback": {
+      "uid": "N2_S0_E6_A1",
+      "name": "风机转速（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房6#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E6:water_valve_opening": {
+      "uid": "N2_S0_E6_A2",
+      "name": "水阀开度（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房6#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E6:it_load_power": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E6:ac_power": {
+      "uid": "ac_power",
+      "name": "未匹配，保留原值",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E6:return_air_temp": {
+      "uid": "N2_S0_E6_A4",
+      "name": "回风温度测量值（℃）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房6#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E6:supply_air_temp": {
+      "uid": "N2_S0_E6_D27",
+      "name": "送风温度传感器故障报警状态",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房6#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E7:chw_supply_temp_setpoint": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E7:chw_supply_temp": {
+      "uid": "N2_S0_E1_D30",
+      "name": "出水温度传感器故障报警状态",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房1#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E7:pump_or_flow_feedback": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E7:supply_temp_setpoint": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E7:humidity_setpoint": {
+      "uid": "N2_S0_E7_A27",
+      "name": "回风湿度设定点（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房7#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E7:fan_speed_feedback": {
+      "uid": "N2_S0_E7_A1",
+      "name": "风机转速（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房7#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E7:water_valve_opening": {
+      "uid": "N2_S0_E7_A2",
+      "name": "水阀开度（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房7#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E7:it_load_power": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E7:ac_power": {
+      "uid": "ac_power",
+      "name": "未匹配，保留原值",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E7:return_air_temp": {
+      "uid": "N2_S0_E7_A4",
+      "name": "回风温度测量值（℃）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房7#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E7:supply_air_temp": {
+      "uid": "N2_S0_E7_D27",
+      "name": "送风温度传感器故障报警状态",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房7#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E8:chw_supply_temp_setpoint": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E8:chw_supply_temp": {
+      "uid": "N2_S0_E1_D30",
+      "name": "出水温度传感器故障报警状态",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房1#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E8:pump_or_flow_feedback": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E8:supply_temp_setpoint": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E8:humidity_setpoint": {
+      "uid": "N2_S0_E8_A27",
+      "name": "回风湿度设定点（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房8#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E8:fan_speed_feedback": {
+      "uid": "N2_S0_E8_A1",
+      "name": "风机转速（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房8#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E8:water_valve_opening": {
+      "uid": "N2_S0_E8_A2",
+      "name": "水阀开度（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房8#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E8:it_load_power": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E8:ac_power": {
+      "uid": "ac_power",
+      "name": "未匹配，保留原值",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E8:return_air_temp": {
+      "uid": "N2_S0_E8_A4",
+      "name": "回风温度测量值（℃）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房8#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E8:supply_air_temp": {
+      "uid": "N2_S0_E8_D27",
+      "name": "送风温度传感器故障报警状态",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房8#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E9:chw_supply_temp_setpoint": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E9:chw_supply_temp": {
+      "uid": "N2_S0_E1_D30",
+      "name": "出水温度传感器故障报警状态",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房1#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E9:pump_or_flow_feedback": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E9:supply_temp_setpoint": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E9:humidity_setpoint": {
+      "uid": "N2_S0_E9_A27",
+      "name": "回风湿度设定点（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房9#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E9:fan_speed_feedback": {
+      "uid": "N2_S0_E9_A1",
+      "name": "风机转速（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房9#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E9:water_valve_opening": {
+      "uid": "N2_S0_E9_A2",
+      "name": "水阀开度（%）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房9#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E9:it_load_power": {
+      "uid": null,
+      "name": "未匹配，已移除",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E9:ac_power": {
+      "uid": "ac_power",
+      "name": "未匹配，保留原值",
+      "source": "",
+      "score": 0
+    },
+    "single_air_conditioner__N2_S0_E9:return_air_temp": {
+      "uid": "N2_S0_E9_A4",
+      "name": "回风温度测量值（℃）",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房9#空调",
+      "score": 2
+    },
+    "single_air_conditioner__N2_S0_E9:supply_air_temp": {
+      "uid": "N2_S0_E9_D27",
+      "name": "送风温度传感器故障报警状态",
+      "source": "Room:103A信息化机房/System:103A信息化机房水冷空调系统/Device:1F IDC机房9#空调",
+      "score": 2
+    }
+  }
+}

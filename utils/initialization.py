@@ -14,67 +14,45 @@ from typing import Dict, Tuple
 
 def load_configs() -> Tuple[Dict, Dict, Dict, Dict, Dict, Dict, Dict]:
     """
-    加载所有配置文件
+    Load all config files.
 
-    返回:
-        Tuple[Dict, Dict, Dict, Dict, Dict, Dict, Dict]:
-            (main_config, models_config, modules_config, security_boundary_config,
-             uid_config, utils_config, influxdb_read_write_config)
-            - main_config: main.py 配置（从 main_config.yaml 加载）
-            - models_config: 模型配置（从 models_config.yaml 加载）
-            - modules_config: 模块配置（从 modules_config.yaml 加载）
-            - security_boundary_config: 安全边界配置（从 security_boundary_config.yaml 加载）
-            - uid_config: UID 配置（从 uid_config.yaml 加载）
-            - utils_config: 工具配置，包含 InfluxDB 和日志配置（从 utils_config.yaml 加载）
-            - influxdb_read_write_config: InfluxDB 读写配置（从 influxdb_read_write_config.yaml 加载）
-
-    异常:
-        FileNotFoundError: 配置文件未找到
-        yaml.YAMLError: 配置文件格式错误
-        Exception: 其他加载错误
+    Returns:
+        (main_config, prediction_config, optimization_config, security_boundary_config,
+         uid_config, utils_config, influxdb_read_write_config)
     """
-    # 获取项目根目录（utils 的父目录）
     project_root = Path(__file__).parent.parent
     config_dir = project_root / "configs"
 
-    try:
-        # 加载 main_config.yaml
-        with open(config_dir / "main_config.yaml", "r", encoding="utf-8") as f:
-            main_config = yaml.safe_load(f) or {}
+    with open(config_dir / "main_config.yaml", "r", encoding="utf-8") as f:
+        main_config = yaml.safe_load(f) or {}
 
-        # 加载 models_config.yaml
-        with open(config_dir / "models_config.yaml", "r", encoding="utf-8") as f:
-            models_config = yaml.safe_load(f) or {}
+    with open(config_dir / "prediction_config.yaml", "r", encoding="utf-8") as f:
+        prediction_config = yaml.safe_load(f) or {}
 
-        # 加载 modules_config.yaml
-        with open(config_dir / "modules_config.yaml", "r", encoding="utf-8") as f:
-            modules_config = yaml.safe_load(f) or {}
+    with open(config_dir / "optimization_config.yaml", "r", encoding="utf-8") as f:
+        optimization_config = yaml.safe_load(f) or {}
 
-        # 加载 security_boundary_config.yaml
-        with open(config_dir / "security_boundary_config.yaml", "r", encoding="utf-8") as f:
-            security_boundary_config = yaml.safe_load(f) or {}
+    with open(config_dir / "security_boundary_config.yaml", "r", encoding="utf-8") as f:
+        security_boundary_config = yaml.safe_load(f) or {}
 
-        # 加载 uid_config.yaml
-        with open(config_dir / "uid_config.yaml", "r", encoding="utf-8") as f:
-            uid_config = yaml.safe_load(f) or {}
+    with open(config_dir / "uid_config.yaml", "r", encoding="utf-8") as f:
+        uid_config = yaml.safe_load(f) or {}
 
-        # 加载 utils_config.yaml（包含 InfluxDB 和日志配置）
-        with open(config_dir / "utils_config.yaml", "r", encoding="utf-8") as f:
-            utils_config = yaml.safe_load(f) or {}
+    with open(config_dir / "utils_config.yaml", "r", encoding="utf-8") as f:
+        utils_config = yaml.safe_load(f) or {}
 
-        # 加载 influxdb_read_write_config.yaml（InfluxDB 读写配置）
-        with open(config_dir / "influxdb_read_write_config.yaml", "r", encoding="utf-8") as f:
-            influxdb_read_write_config = yaml.safe_load(f) or {}
+    with open(config_dir / "influxdb_read_write_config.yaml", "r", encoding="utf-8") as f:
+        influxdb_read_write_config = yaml.safe_load(f) or {}
 
-        return main_config, models_config, modules_config, security_boundary_config, uid_config, utils_config, influxdb_read_write_config
-
-    except FileNotFoundError as e:
-        raise FileNotFoundError(f"配置文件未找到: {e}")
-    except yaml.YAMLError as e:
-        raise yaml.YAMLError(f"配置文件格式错误: {e}")
-    except Exception as e:
-        raise Exception(f"加载配置文件失败: {e}")
-
+    return (
+        main_config,
+        prediction_config,
+        optimization_config,
+        security_boundary_config,
+        uid_config,
+        utils_config,
+        influxdb_read_write_config,
+    )
 
 def init_multi_level_loggers(log_config: Dict) -> Dict[str, logging.Logger]:
     """

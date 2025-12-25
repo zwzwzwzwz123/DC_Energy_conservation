@@ -4,7 +4,7 @@
 InfluxDB:
   # 公共配置（使用锚点定义，可被其他配置引用）
   _common: &common_config
-    host: "121.237.18.5"        # InfluxDB 服务器地址
+    host: "yulab.zicp.vip"        # InfluxDB 服务器地址
     port: 8086              # InfluxDB 默认端口
     username: "admin"       # 用户名
     password: "admin123"   # 密码
