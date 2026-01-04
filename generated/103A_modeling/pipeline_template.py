@@ -10,6 +10,7 @@ pipeline_template
 import argparse
 import json
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List
 
@@ -25,7 +26,8 @@ from influxdb import InfluxDBClient
 MAPPING_PATH = Path(__file__).with_name('uid_mapping.json')
 ARTIFACT_DIR = Path(__file__).with_name('artifacts')
 ARTIFACT_DIR.mkdir(exist_ok=True)
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+# project root is two levels up from this file (generated/103A_modeling)
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 UTILS_CONFIG_PATH = PROJECT_ROOT / 'configs' / 'utils_config.yaml'
 
 
@@ -163,8 +165,8 @@ def save_artifacts(model_bundle, metrics: Dict, predictions: pd.DataFrame):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--start', required=True, help='ISO8601，如 2024-12-01T00:00:00Z')
-    parser.add_argument('--stop', required=True, help='ISO8601')
+    parser.add_argument('--start', help='ISO8601，如 2024-12-01T00:00:00Z；缺省则取最近7天')
+    parser.add_argument('--stop', help='ISO8601；缺省则取当前时间')
     parser.add_argument('--every', default='5m', help='聚合窗口，例如 5m/15m/1h')
     parser.add_argument('--model', choices=['linear', 'lstsq'], default='linear')
     parser.add_argument('--lags', type=int, default=3, help='设定点滞后阶数')
@@ -174,6 +176,11 @@ def main():
     parser.add_argument('--client-key', default='influxdb_dc_status_data',
                         help='使用 utils_config.yaml 中的客户端键名，默认 influxdb_dc_status_data')
     args = parser.parse_args()
+
+    # 默认时间范围：stop=当前UTC，start=最近7天
+    now_utc = datetime.now(timezone.utc).replace(microsecond=0)
+    stop = args.stop or now_utc.isoformat().replace('+00:00', 'Z')
+    start = args.start or (now_utc - timedelta(days=7)).isoformat().replace('+00:00', 'Z')
 
     mapping = load_mapping(MAPPING_PATH)
     sensor_uids = [r['uid'] for r in mapping.get('sensors', [])]
@@ -185,11 +192,11 @@ def main():
     if not sensor_uids or not ac_tags:
         raise RuntimeError('映射中缺少传感器或空调设定点，请检查 uid_mapping.json')
 
-    print(f'拉取空调设定点 {len(ac_tags)} 个，传感器 {len(sensor_uids)} 个')
-    ac_df = fetch_timeseries(ac_tags, args.start, args.stop, args.every,
+    print(f'拉取空调设定点 {len(ac_tags)} 个，传感器 {len(sensor_uids)} 个，时间范围 {start} ~ {stop}')
+    ac_df = fetch_timeseries(ac_tags, start, stop, args.every,
                              field=args.field, measurement_template=args.measurement_template,
                              client_key=args.client_key)
-    sensor_df = fetch_timeseries(sensor_uids, args.start, args.stop, args.every,
+    sensor_df = fetch_timeseries(sensor_uids, start, stop, args.every,
                                  field=args.field, measurement_template=args.measurement_template,
                                  client_key=args.client_key)
 

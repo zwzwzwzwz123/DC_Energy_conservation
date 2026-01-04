@@ -1,0 +1,1025 @@
+{
+  "raw_records": [
+    {
+      "name": "1F IDC机房热通道33#温湿度",
+      "uid": "4f133ebb-4d48-4509-9115-fd007f6bf901",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道32#温湿度",
+      "uid": "05a5e35e-a1ad-4736-b733-403f64c11099",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道31#温湿度",
+      "uid": "674fffca-7b8e-4342-a4d4-5159ab87519b",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道30#温湿度",
+      "uid": "f4a698e8-1222-4f5c-b4af-bf7d750e2040",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道29#温湿度",
+      "uid": "d57c1e45-e292-4fd7-b01d-670088cd3e17",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道28#温湿度",
+      "uid": "a51b87eb-529b-42f1-b988-2869353c2cef",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道27#温湿度",
+      "uid": "45b591fe-d54c-4fec-b608-ce5b9932dcc6",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道26#温湿度",
+      "uid": "34dc121a-aa9a-4c7b-a59a-57915ddf8c3c",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道25#温湿度",
+      "uid": "1dcae536-3d1b-4f49-a81a-cb39cbc44bfb",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道24#温湿度",
+      "uid": "62875abb-b261-4fa2-af42-49413b25f637",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道23#温湿度",
+      "uid": "d95f6576-ad3e-4eca-bab8-10fb28738764",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "103A机房J列头柜B路",
+      "uid": "N2_S0_E190",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房J列头柜A路",
+      "uid": "N2_S0_E189",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房I列头柜B路",
+      "uid": "N2_S0_E188",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房I列头柜A路",
+      "uid": "N2_S0_E187",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房H列头柜B路",
+      "uid": "N2_S0_E186",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房H列头柜A路",
+      "uid": "N2_S0_E185",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房G列头柜B路",
+      "uid": "N2_S0_E184",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房G列头柜A路",
+      "uid": "N2_S0_E183",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房F列头柜B路",
+      "uid": "N2_S0_E182",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房E列头柜A路",
+      "uid": "N2_S0_E181",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "1F IDC机房热通道22#温湿度",
+      "uid": "N2_S0_E102",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道21#温湿度",
+      "uid": "N2_S0_E101",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道20#温湿度",
+      "uid": "N2_S0_E100",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道19#温湿度",
+      "uid": "N2_S0_E99",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道18#温湿度",
+      "uid": "N2_S0_E98",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道17#温湿度",
+      "uid": "N2_S0_E97",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道16#温湿度",
+      "uid": "N2_S0_E96",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道15#温湿度",
+      "uid": "N2_S0_E95",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道14#温湿度",
+      "uid": "N2_S0_E94",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道13#温湿度",
+      "uid": "N2_S0_E93",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道12#温湿度",
+      "uid": "N2_S0_E92",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道11#温湿度",
+      "uid": "N2_S0_E91",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道10#温湿度",
+      "uid": "N2_S0_E90",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道9#温湿度",
+      "uid": "N2_S0_E89",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道8#温湿度",
+      "uid": "N2_S0_E88",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道7#温湿度",
+      "uid": "N2_S0_E87",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道6#温湿度",
+      "uid": "N2_S0_E86",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道5#温湿度",
+      "uid": "N2_S0_E85",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道4#温湿度",
+      "uid": "N2_S0_E84",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道3#温湿度",
+      "uid": "N2_S0_E83",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道2#温湿度",
+      "uid": "N2_S0_E82",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道1#温湿度",
+      "uid": "N2_S0_E81",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "103A机房E列头柜B路",
+      "uid": "N2_S0_E40",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房F列头柜A路",
+      "uid": "N2_S0_E39",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房D列头柜B路",
+      "uid": "N2_S0_E38",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房D列头柜A路",
+      "uid": "N2_S0_E37",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房C列头柜B路",
+      "uid": "N2_S0_E36",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房C列头柜A路",
+      "uid": "N2_S0_E35",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房B列头柜B路",
+      "uid": "N2_S0_E34",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房B列头柜A路",
+      "uid": "N2_S0_E33",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房A列头柜B路",
+      "uid": "N2_S0_E32",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房A列头柜A路",
+      "uid": "N2_S0_E31",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "1F IDC机房1#空调",
+      "uid": "回风湿度设定点（%）",
+      "tag": "N2_S0_E1_A27",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房1#空调",
+      "uid": "回风温度设定点（℃）",
+      "tag": "N2_S0_E1_A28",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房1#空调",
+      "uid": "远程平均温度设定点（℃）",
+      "tag": "N2_S0_E1_A30",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房1#空调",
+      "uid": "远程最高温度设定点（℃）",
+      "tag": "N2_S0_E1_A31",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房2#空调",
+      "uid": "回风湿度设定点（%）",
+      "tag": "N2_S0_E2_A27",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房2#空调",
+      "uid": "回风温度设定点（℃）",
+      "tag": "N2_S0_E2_A28",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房2#空调",
+      "uid": "远程平均温度设定点（℃）",
+      "tag": "N2_S0_E2_A30",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房2#空调",
+      "uid": "远程最高温度设定点（℃）",
+      "tag": "N2_S0_E2_A31",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房3#空调",
+      "uid": "回风湿度设定点（%）",
+      "tag": "N2_S0_E3_A27",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房3#空调",
+      "uid": "回风温度设定点（℃）",
+      "tag": "N2_S0_E3_A28",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房3#空调",
+      "uid": "远程平均温度设定点（℃）",
+      "tag": "N2_S0_E3_A30",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房3#空调",
+      "uid": "远程最高温度设定点（℃）",
+      "tag": "N2_S0_E3_A31",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房4#空调",
+      "uid": "回风湿度设定点（%）",
+      "tag": "N2_S0_E4_A27",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房4#空调",
+      "uid": "回风温度设定点（℃）",
+      "tag": "N2_S0_E4_A28",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房4#空调",
+      "uid": "远程平均温度设定点（℃）",
+      "tag": "N2_S0_E4_A30",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房4#空调",
+      "uid": "远程最高温度设定点（℃）",
+      "tag": "N2_S0_E4_A31",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房5#空调",
+      "uid": "回风湿度设定点（%）",
+      "tag": "N2_S0_E5_A27",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房5#空调",
+      "uid": "回风温度设定点（℃）",
+      "tag": "N2_S0_E5_A28",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房5#空调",
+      "uid": "远程平均温度设定点（℃）",
+      "tag": "N2_S0_E5_A30",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房5#空调",
+      "uid": "远程最高温度设定点（℃）",
+      "tag": "N2_S0_E5_A31",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房6#空调",
+      "uid": "回风湿度设定点（%）",
+      "tag": "N2_S0_E6_A27",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房6#空调",
+      "uid": "回风温度设定点（℃）",
+      "tag": "N2_S0_E6_A28",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房6#空调",
+      "uid": "远程平均温度设定点（℃）",
+      "tag": "N2_S0_E6_A30",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房6#空调",
+      "uid": "远程最高温度设定点（℃）",
+      "tag": "N2_S0_E6_A31",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房7#空调",
+      "uid": "回风湿度设定点（%）",
+      "tag": "N2_S0_E7_A27",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房7#空调",
+      "uid": "回风温度设定点（℃）",
+      "tag": "N2_S0_E7_A28",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房7#空调",
+      "uid": "远程平均温度设定点（℃）",
+      "tag": "N2_S0_E7_A30",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房7#空调",
+      "uid": "远程最高温度设定点（℃）",
+      "tag": "N2_S0_E7_A31",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房8#空调",
+      "uid": "回风湿度设定点（%）",
+      "tag": "N2_S0_E8_A27",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房8#空调",
+      "uid": "回风温度设定点（℃）",
+      "tag": "N2_S0_E8_A28",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房8#空调",
+      "uid": "远程平均温度设定点（℃）",
+      "tag": "N2_S0_E8_A30",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房8#空调",
+      "uid": "远程最高温度设定点（℃）",
+      "tag": "N2_S0_E8_A31",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房9#空调",
+      "uid": "回风湿度设定点（%）",
+      "tag": "N2_S0_E9_A27",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房9#空调",
+      "uid": "回风温度设定点（℃）",
+      "tag": "N2_S0_E9_A28",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房9#空调",
+      "uid": "远程平均温度设定点（℃）",
+      "tag": "N2_S0_E9_A30",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房9#空调",
+      "uid": "远程最高温度设定点（℃）",
+      "tag": "N2_S0_E9_A31",
+      "category": "ac_setpoint"
+    }
+  ],
+  "air_conditioners": {
+    "1": [
+      {
+        "param": "回风湿度设定点（%）",
+        "tag": "N2_S0_E1_A27"
+      },
+      {
+        "param": "回风温度设定点（℃）",
+        "tag": "N2_S0_E1_A28"
+      },
+      {
+        "param": "远程平均温度设定点（℃）",
+        "tag": "N2_S0_E1_A30"
+      },
+      {
+        "param": "远程最高温度设定点（℃）",
+        "tag": "N2_S0_E1_A31"
+      }
+    ],
+    "2": [
+      {
+        "param": "回风湿度设定点（%）",
+        "tag": "N2_S0_E2_A27"
+      },
+      {
+        "param": "回风温度设定点（℃）",
+        "tag": "N2_S0_E2_A28"
+      },
+      {
+        "param": "远程平均温度设定点（℃）",
+        "tag": "N2_S0_E2_A30"
+      },
+      {
+        "param": "远程最高温度设定点（℃）",
+        "tag": "N2_S0_E2_A31"
+      }
+    ],
+    "3": [
+      {
+        "param": "回风湿度设定点（%）",
+        "tag": "N2_S0_E3_A27"
+      },
+      {
+        "param": "回风温度设定点（℃）",
+        "tag": "N2_S0_E3_A28"
+      },
+      {
+        "param": "远程平均温度设定点（℃）",
+        "tag": "N2_S0_E3_A30"
+      },
+      {
+        "param": "远程最高温度设定点（℃）",
+        "tag": "N2_S0_E3_A31"
+      }
+    ],
+    "4": [
+      {
+        "param": "回风湿度设定点（%）",
+        "tag": "N2_S0_E4_A27"
+      },
+      {
+        "param": "回风温度设定点（℃）",
+        "tag": "N2_S0_E4_A28"
+      },
+      {
+        "param": "远程平均温度设定点（℃）",
+        "tag": "N2_S0_E4_A30"
+      },
+      {
+        "param": "远程最高温度设定点（℃）",
+        "tag": "N2_S0_E4_A31"
+      }
+    ],
+    "5": [
+      {
+        "param": "回风湿度设定点（%）",
+        "tag": "N2_S0_E5_A27"
+      },
+      {
+        "param": "回风温度设定点（℃）",
+        "tag": "N2_S0_E5_A28"
+      },
+      {
+        "param": "远程平均温度设定点（℃）",
+        "tag": "N2_S0_E5_A30"
+      },
+      {
+        "param": "远程最高温度设定点（℃）",
+        "tag": "N2_S0_E5_A31"
+      }
+    ],
+    "6": [
+      {
+        "param": "回风湿度设定点（%）",
+        "tag": "N2_S0_E6_A27"
+      },
+      {
+        "param": "回风温度设定点（℃）",
+        "tag": "N2_S0_E6_A28"
+      },
+      {
+        "param": "远程平均温度设定点（℃）",
+        "tag": "N2_S0_E6_A30"
+      },
+      {
+        "param": "远程最高温度设定点（℃）",
+        "tag": "N2_S0_E6_A31"
+      }
+    ],
+    "7": [
+      {
+        "param": "回风湿度设定点（%）",
+        "tag": "N2_S0_E7_A27"
+      },
+      {
+        "param": "回风温度设定点（℃）",
+        "tag": "N2_S0_E7_A28"
+      },
+      {
+        "param": "远程平均温度设定点（℃）",
+        "tag": "N2_S0_E7_A30"
+      },
+      {
+        "param": "远程最高温度设定点（℃）",
+        "tag": "N2_S0_E7_A31"
+      }
+    ],
+    "8": [
+      {
+        "param": "回风湿度设定点（%）",
+        "tag": "N2_S0_E8_A27"
+      },
+      {
+        "param": "回风温度设定点（℃）",
+        "tag": "N2_S0_E8_A28"
+      },
+      {
+        "param": "远程平均温度设定点（℃）",
+        "tag": "N2_S0_E8_A30"
+      },
+      {
+        "param": "远程最高温度设定点（℃）",
+        "tag": "N2_S0_E8_A31"
+      }
+    ],
+    "9": [
+      {
+        "param": "回风湿度设定点（%）",
+        "tag": "N2_S0_E9_A27"
+      },
+      {
+        "param": "回风温度设定点（℃）",
+        "tag": "N2_S0_E9_A28"
+      },
+      {
+        "param": "远程平均温度设定点（℃）",
+        "tag": "N2_S0_E9_A30"
+      },
+      {
+        "param": "远程最高温度设定点（℃）",
+        "tag": "N2_S0_E9_A31"
+      }
+    ]
+  },
+  "sensors": [
+    {
+      "name": "1F IDC机房热通道33#温湿度",
+      "uid": "4f133ebb-4d48-4509-9115-fd007f6bf901",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道32#温湿度",
+      "uid": "05a5e35e-a1ad-4736-b733-403f64c11099",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道31#温湿度",
+      "uid": "674fffca-7b8e-4342-a4d4-5159ab87519b",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道30#温湿度",
+      "uid": "f4a698e8-1222-4f5c-b4af-bf7d750e2040",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道29#温湿度",
+      "uid": "d57c1e45-e292-4fd7-b01d-670088cd3e17",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道28#温湿度",
+      "uid": "a51b87eb-529b-42f1-b988-2869353c2cef",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道27#温湿度",
+      "uid": "45b591fe-d54c-4fec-b608-ce5b9932dcc6",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道26#温湿度",
+      "uid": "34dc121a-aa9a-4c7b-a59a-57915ddf8c3c",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道25#温湿度",
+      "uid": "1dcae536-3d1b-4f49-a81a-cb39cbc44bfb",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道24#温湿度",
+      "uid": "62875abb-b261-4fa2-af42-49413b25f637",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道23#温湿度",
+      "uid": "d95f6576-ad3e-4eca-bab8-10fb28738764",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道22#温湿度",
+      "uid": "N2_S0_E102",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道21#温湿度",
+      "uid": "N2_S0_E101",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道20#温湿度",
+      "uid": "N2_S0_E100",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道19#温湿度",
+      "uid": "N2_S0_E99",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道18#温湿度",
+      "uid": "N2_S0_E98",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道17#温湿度",
+      "uid": "N2_S0_E97",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道16#温湿度",
+      "uid": "N2_S0_E96",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道15#温湿度",
+      "uid": "N2_S0_E95",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道14#温湿度",
+      "uid": "N2_S0_E94",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道13#温湿度",
+      "uid": "N2_S0_E93",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道12#温湿度",
+      "uid": "N2_S0_E92",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道11#温湿度",
+      "uid": "N2_S0_E91",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道10#温湿度",
+      "uid": "N2_S0_E90",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道9#温湿度",
+      "uid": "N2_S0_E89",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道8#温湿度",
+      "uid": "N2_S0_E88",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道7#温湿度",
+      "uid": "N2_S0_E87",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道6#温湿度",
+      "uid": "N2_S0_E86",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道5#温湿度",
+      "uid": "N2_S0_E85",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道4#温湿度",
+      "uid": "N2_S0_E84",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房冷通道3#温湿度",
+      "uid": "N2_S0_E83",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道2#温湿度",
+      "uid": "N2_S0_E82",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房热通道1#温湿度",
+      "uid": "N2_S0_E81",
+      "tag": null,
+      "category": "temp_humidity_sensor"
+    }
+  ],
+  "cabinets": [
+    {
+      "name": "103A机房J列头柜B路",
+      "uid": "N2_S0_E190",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房J列头柜A路",
+      "uid": "N2_S0_E189",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房I列头柜B路",
+      "uid": "N2_S0_E188",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房I列头柜A路",
+      "uid": "N2_S0_E187",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房H列头柜B路",
+      "uid": "N2_S0_E186",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房H列头柜A路",
+      "uid": "N2_S0_E185",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房G列头柜B路",
+      "uid": "N2_S0_E184",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房G列头柜A路",
+      "uid": "N2_S0_E183",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房F列头柜B路",
+      "uid": "N2_S0_E182",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房E列头柜A路",
+      "uid": "N2_S0_E181",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房E列头柜B路",
+      "uid": "N2_S0_E40",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房F列头柜A路",
+      "uid": "N2_S0_E39",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房D列头柜B路",
+      "uid": "N2_S0_E38",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房D列头柜A路",
+      "uid": "N2_S0_E37",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房C列头柜B路",
+      "uid": "N2_S0_E36",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房C列头柜A路",
+      "uid": "N2_S0_E35",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房B列头柜B路",
+      "uid": "N2_S0_E34",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房B列头柜A路",
+      "uid": "N2_S0_E33",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房A列头柜B路",
+      "uid": "N2_S0_E32",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A机房A列头柜A路",
+      "uid": "N2_S0_E31",
+      "tag": null,
+      "category": "cabinet_feed"
+    }
+  ],
+  "others": []
+}
