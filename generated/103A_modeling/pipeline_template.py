@@ -104,6 +104,22 @@ def fetch_timeseries(uids: List[str], start: str, stop: str, every: str,
     return merged
 
 
+def fill_timeseries(df: pd.DataFrame) -> pd.DataFrame:
+    """Fill missing values per column to avoid losing全部样本."""
+    if df.empty:
+        return df
+    filled = df.sort_values('time').reset_index(drop=True).copy()
+    for col in filled.columns:
+        if col == 'time':
+            continue
+        series = filled[col]
+        if series.notna().sum() == 0:
+            # 保留全空列，由后续检查统一处理
+            continue
+        filled[col] = series.ffill().bfill()
+    return filled
+
+
 def build_feature_matrix(ac_df: pd.DataFrame, lags: int = 3) -> pd.DataFrame:
     feat = ac_df.copy().sort_values('time').reset_index(drop=True)
     for col in feat.columns:
@@ -135,12 +151,15 @@ def predict_linear(model_bundle, X: np.ndarray) -> np.ndarray:
 
 
 def train_lstsq(X: np.ndarray, Y: np.ndarray):
-    coef, _, _, _ = np.linalg.lstsq(X, Y, rcond=None)
+    # 添加截距项，避免强制过原点
+    Xb = np.hstack([np.ones((X.shape[0], 1)), X])
+    coef, _, _, _ = np.linalg.lstsq(Xb, Y, rcond=None)
     return {'type': 'lstsq', 'coef': coef}
 
 
 def predict_lstsq(model_bundle, X: np.ndarray) -> np.ndarray:
-    return X @ model_bundle['coef']
+    Xb = np.hstack([np.ones((X.shape[0], 1)), X])
+    return Xb @ model_bundle['coef']
 
 
 def evaluate(y_true: np.ndarray, y_pred: np.ndarray) -> Dict:
@@ -151,6 +170,18 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray) -> Dict:
         'mae_mean': float(np.mean(mae)),
     }
     return {'per_target_mse': mse, 'per_target_mae': mae, 'overall': overall}
+
+
+def split_train_test(dataset: pd.DataFrame, test_ratio: float = 0.2):
+    """Chronological split to avoid泄漏."""
+    n = len(dataset)
+    test_size = max(1, int(n * test_ratio))
+    train_size = n - test_size
+    if train_size <= 0:
+        raise RuntimeError('样本过少，无法划分训练/验证集')
+    train = dataset.iloc[:train_size].reset_index(drop=True)
+    test = dataset.iloc[train_size:].reset_index(drop=True)
+    return train, test
 
 
 def save_artifacts(model_bundle, metrics: Dict, predictions: pd.DataFrame):
@@ -165,7 +196,7 @@ def save_artifacts(model_bundle, metrics: Dict, predictions: pd.DataFrame):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--start', help='ISO8601，如 2024-12-01T00:00:00Z；缺省则取最近7天')
+    parser.add_argument('--start', help='ISO8601，如 2024-12-01T00:00:00Z；缺省取当前时间往前一年')
     parser.add_argument('--stop', help='ISO8601；缺省则取当前时间')
     parser.add_argument('--every', default='5m', help='聚合窗口，例如 5m/15m/1h')
     parser.add_argument('--model', choices=['linear', 'lstsq'], default='linear')
@@ -177,10 +208,10 @@ def main():
                         help='使用 utils_config.yaml 中的客户端键名，默认 influxdb_dc_status_data')
     args = parser.parse_args()
 
-    # 默认时间范围：stop=当前UTC，start=最近7天
+    # 默认时间范围：stop=当前UTC，start=往前一年
     now_utc = datetime.now(timezone.utc).replace(microsecond=0)
     stop = args.stop or now_utc.isoformat().replace('+00:00', 'Z')
-    start = args.start or (now_utc - timedelta(days=7)).isoformat().replace('+00:00', 'Z')
+    start = args.start or (now_utc - timedelta(days=365)).isoformat().replace('+00:00', 'Z')
 
     mapping = load_mapping(MAPPING_PATH)
     sensor_uids = [r['uid'] for r in mapping.get('sensors', [])]
@@ -200,6 +231,10 @@ def main():
                                  field=args.field, measurement_template=args.measurement_template,
                                  client_key=args.client_key)
 
+    # 填补缺失，避免内连接后样本过少
+    ac_df = fill_timeseries(ac_df)
+    sensor_df = fill_timeseries(sensor_df)
+
     if ac_df.empty or sensor_df.empty:
         raise RuntimeError('Influx 数据为空，请检查 measurement/field 或时间范围/客户端配置')
 
@@ -211,19 +246,28 @@ def main():
     feature_cols = [c for c in ac_feat.columns if c != 'time']
     target_cols = [c for c in sensor_df.columns if c != 'time']
 
-    X = dataset[feature_cols].to_numpy()
-    Y = dataset[target_cols].to_numpy()
+    # 检查传感器/设定点是否全空
+    for col in feature_cols + target_cols:
+        if dataset[col].notna().sum() == 0:
+            raise RuntimeError(f'列 {col} 全为空，无法训练，请检查 Influx 配置或时间范围')
+
+    train_df, test_df = split_train_test(dataset, test_ratio=0.2)
+
+    X_train = train_df[feature_cols].to_numpy()
+    Y_train = train_df[target_cols].to_numpy()
+    X_test = test_df[feature_cols].to_numpy()
+    Y_test = test_df[target_cols].to_numpy()
 
     if args.model == 'linear':
-        model_bundle = train_linear(X, Y)
-        preds = predict_linear(model_bundle, X)
+        model_bundle = train_linear(X_train, Y_train)
+        preds = predict_linear(model_bundle, X_test)
     else:
-        model_bundle = train_lstsq(X, Y)
-        preds = predict_lstsq(model_bundle, X)
+        model_bundle = train_lstsq(X_train, Y_train)
+        preds = predict_lstsq(model_bundle, X_test)
 
-    metrics = evaluate(Y, preds)
+    metrics = evaluate(Y_test, preds)
     pred_df = pd.DataFrame(preds, columns=target_cols)
-    pred_df.insert(0, 'time', dataset['time'].to_numpy())
+    pred_df.insert(0, 'time', test_df['time'].to_numpy())
 
     save_artifacts(model_bundle, metrics, pred_df)
     print('训练完成，指标：', metrics['overall'])
