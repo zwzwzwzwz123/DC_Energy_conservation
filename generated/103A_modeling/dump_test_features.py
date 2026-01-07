@@ -10,7 +10,19 @@ from pathlib import Path
 
 import pandas as pd
 
-import generated_103A_modeling.pipeline_template as p
+import importlib.util
+import sys
+
+
+# 动态加载同目录下的 pipeline_template.py
+THIS_DIR = Path(__file__).resolve().parent
+pt_path = THIS_DIR / "pipeline_template.py"
+spec = importlib.util.spec_from_file_location("pipeline_template", pt_path)
+if spec is None or spec.loader is None:
+    raise ImportError(f"无法加载 {pt_path}")
+p = importlib.util.module_from_spec(spec)
+sys.modules["pipeline_template"] = p
+spec.loader.exec_module(p)
 
 
 def build_ac_requests(mapping):
