@@ -25,6 +25,12 @@ p = importlib.util.module_from_spec(spec)
 sys.modules["pipeline_template"] = p
 spec.loader.exec_module(p)
 
+# 兼容旧版本 pipeline_template 未定义 drop_constant_features 的情况
+if not hasattr(p, "drop_constant_features"):
+    def drop_constant_features(df, kind: str):
+        return df
+    p.drop_constant_features = drop_constant_features
+
 
 def build_ac_requests(mapping):
     ac_requests = []
