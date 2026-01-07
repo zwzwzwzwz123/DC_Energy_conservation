@@ -6,6 +6,7 @@ dump_test_features
 便于检查特征是否恒定导致预测值相同。
 """
 import argparse
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -52,6 +53,11 @@ def main():
     )
     args = parser.parse_args()
 
+    # 与 pipeline 同步的默认时间窗口：stop=当前 UTC，start=前 365 天
+    now_utc = datetime.now(timezone.utc).replace(microsecond=0)
+    stop = args.stop or now_utc.isoformat().replace("+00:00", "Z")
+    start = args.start or (now_utc - timedelta(days=365)).isoformat().replace("+00:00", "Z")
+
     mapping = p.load_mapping(p.MAPPING_PATH)
     sensor_uids = [r["uid"] for r in mapping.get("sensors", [])]
     ac_requests = build_ac_requests(mapping)
@@ -63,8 +69,8 @@ def main():
 
     ac_df = p.fetch_timeseries(
         ac_uids,
-        args.start,
-        args.stop,
+        start,
+        stop,
         args.every,
         field=args.field,
         measurement_template=args.measurement_template,
@@ -72,8 +78,8 @@ def main():
     )
     sensor_df = p.fetch_timeseries(
         sensor_uids,
-        args.start,
-        args.stop,
+        start,
+        stop,
         args.every,
         field=args.field,
         measurement_template=args.measurement_template,
