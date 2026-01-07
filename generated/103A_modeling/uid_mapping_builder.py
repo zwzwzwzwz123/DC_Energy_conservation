@@ -1,8 +1,9 @@
+# -*- coding: utf-8 -*-
 """
 uid_mapping_builder
 
-从 `uid/103A机房建模信息整理xlsx.xlsx` 读取点位，生成便于建模的映射。
-输出：generated/103A_modeling/uid_mapping.json 与 uid_mapping.csv
+读取 `uid/103A机房建模信息整理xlsx.xlsx`，生成建模所需的 UID 映射。
+输出：generated/103A_modeling/uid_mapping.json 和 uid_mapping.csv
 """
 import json
 import re
@@ -47,15 +48,29 @@ def normalize(df: pd.DataFrame) -> Dict:
     records = []
     for _, row in df.iterrows():
         name = row[COL_NAME]
-        uid = row[COL_UID]
-        tag = row.get(COL_TAG)
         category = classify_row(name)
-        if pd.isna(uid):
-            continue
+
+        if category in ("temp_humidity_sensor", "ac_setpoint"):
+            # 温湿度 & 空调参数：第三列为真实采集点 ID，第二列为描述
+            uid_cell = row.get(COL_TAG)
+            tag_cell = row.get(COL_UID)
+            if pd.isna(uid_cell):
+                continue
+            uid = str(uid_cell)
+            tag = None if pd.isna(tag_cell) else str(tag_cell)
+        else:
+            # 列头柜等：第二列直接为采集点 ID
+            uid_cell = row.get(COL_UID)
+            tag_cell = row.get(COL_TAG)
+            if pd.isna(uid_cell):
+                continue
+            uid = str(uid_cell)
+            tag = None if pd.isna(tag_cell) else str(tag_cell)
+
         rec = {
             "name": str(name),
-            "uid": str(uid),
-            "tag": None if pd.isna(tag) else str(tag),
+            "uid": uid,
+            "tag": tag,
             "category": category,
         }
         records.append(rec)
@@ -107,7 +122,7 @@ def main():
     write_outputs(mapping)
     print(f"完成：{OUT_JSON} 和 {OUT_CSV}")
     print(
-        f"AC 台数：{len(mapping['air_conditioners'])}，传感器：{len(mapping['sensors'])}，列头柜：{len(mapping['cabinets'])}，其他：{len(mapping['others'])}"
+        f"AC参数: {len(mapping['air_conditioners'])}，传感器: {len(mapping['sensors'])}，列头柜: {len(mapping['cabinets'])}，其他: {len(mapping['others'])}"
     )
 
 
