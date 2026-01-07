@@ -215,16 +215,24 @@ def main():
 
     mapping = load_mapping(MAPPING_PATH)
     sensor_uids = [r['uid'] for r in mapping.get('sensors', [])]
-    ac_tags = []
-    for items in mapping.get('air_conditioners', {}).values():
+    ac_requests = []
+    for ac_no, items in mapping.get('air_conditioners', {}).items():
         for it in items:
-            if it.get('tag'):
-                ac_tags.append(it['tag'])
-    if not sensor_uids or not ac_tags:
+            param_uid = it.get('param')
+            if not param_uid:
+                continue
+            tag = it.get('tag')
+            col_name = f"ac{ac_no}_{tag}" if tag else f"ac{ac_no}_{param_uid}"
+            ac_requests.append((param_uid, col_name))
+
+    if not sensor_uids or not ac_requests:
         raise RuntimeError('映射中缺少传感器或空调设定点，请检查 uid_mapping.json')
 
-    print(f'拉取空调设定点 {len(ac_tags)} 个，传感器 {len(sensor_uids)} 个，时间范围 {start} ~ {stop}')
-    ac_df = fetch_timeseries(ac_tags, start, stop, args.every,
+    ac_uids = [u for u, _ in ac_requests]
+    ac_col_rename = {u: col for u, col in ac_requests}
+
+    print(f'拉取空调设定点 {len(ac_uids)} 个，传感器 {len(sensor_uids)} 个，时间范围 {start} ~ {stop}')
+    ac_df = fetch_timeseries(ac_uids, start, stop, args.every,
                              field=args.field, measurement_template=args.measurement_template,
                              client_key=args.client_key)
     sensor_df = fetch_timeseries(sensor_uids, start, stop, args.every,
@@ -234,6 +242,10 @@ def main():
     # 填补缺失，避免内连接后样本过少
     ac_df = fill_timeseries(ac_df)
     sensor_df = fill_timeseries(sensor_df)
+
+    # 将空调列名重命名为带 ac 编号的唯一名称，避免 merge 时列冲突
+    if not ac_df.empty:
+        ac_df = ac_df.rename(columns=ac_col_rename)
 
     if ac_df.empty or sensor_df.empty:
         raise RuntimeError('Influx 数据为空，请检查 measurement/field 或时间范围/客户端配置')
