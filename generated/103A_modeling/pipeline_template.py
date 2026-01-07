@@ -191,7 +191,7 @@ def save_artifacts(model_bundle, metrics: Dict, predictions: pd.DataFrame):
     else:
         np.savez(ARTIFACT_DIR / 'model_lstsq.npz', **model_bundle)
     (ARTIFACT_DIR / 'metrics.json').write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding='utf-8')
-    predictions.to_parquet(ARTIFACT_DIR / 'predictions.parquet', index=False)
+    predictions.to_csv(ARTIFACT_DIR / 'predictions.csv', index=False, encoding='utf-8')
 
 
 def main():
