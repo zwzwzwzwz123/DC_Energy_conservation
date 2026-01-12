@@ -1,0 +1,107 @@
+# -*- coding: utf-8 -*-
+"""
+dump_raw_timeseries
+
+从 InfluxDB 拉取原始（未聚合）的空调设定点和温湿度传感器数据，方便检查源数据是否恒定。
+输出：generated/103A_modeling/artifacts/raw_timeseries.csv（长表：time, uid, value）
+"""
+import argparse
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from typing import List
+
+import pandas as pd
+from influxdb import InfluxDBClient
+import importlib.util
+import sys
+
+
+# 动态加载同目录下的 pipeline_template.py，以复用配置和映射逻辑
+THIS_DIR = Path(__file__).resolve().parent
+pt_path = THIS_DIR / "pipeline_template.py"
+spec = importlib.util.spec_from_file_location("pipeline_template", pt_path)
+if spec is None or spec.loader is None:
+    raise ImportError(f"无法加载 {pt_path}")
+p = importlib.util.module_from_spec(spec)
+sys.modules["pipeline_template"] = p
+spec.loader.exec_module(p)
+
+
+def build_uids(mapping):
+    sensor_uids = [r["uid"] for r in mapping.get("sensors", [])]
+    ac_uids: List[str] = []
+    for _, items in mapping.get("air_conditioners", {}).items():
+        for it in items:
+            param_uid = it.get("param")
+            if param_uid:
+                ac_uids.append(param_uid)
+    return sensor_uids, ac_uids
+
+
+def fetch_raw(uid: str, start: str, stop: str, field: str, measurement_template: str, client: InfluxDBClient) -> pd.DataFrame:
+    measurement = measurement_template.format(uid=uid)
+    q = (
+        f'SELECT "{field}" AS value '
+        f'FROM "{measurement}" '
+        f"WHERE time >= '{start}' AND time <= '{stop}' "
+        f'ORDER BY time ASC'
+    )
+    result = client.query(q)
+    points = list(result.get_points())
+    if not points:
+        return pd.DataFrame(columns=["time", "uid", "value"])
+    df = pd.DataFrame(points)
+    df["uid"] = uid
+    return df[["time", "uid", "value"]]
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--start", help="ISO8601，缺省取 stop 前 365 天")
+    parser.add_argument("--stop", help="ISO8601，缺省为当前 UTC")
+    parser.add_argument("--field", default="value", help="Influx 数值字段名，默认 value")
+    parser.add_argument("--measurement-template", default="{uid}", help="measurement 模板，默认与 uid 同名，可用 {uid} 占位")
+    parser.add_argument("--client-key", default="influxdb_dc_status_data", help="configs/utils_config.yaml 中的客户端配置键")
+    parser.add_argument("--output", default=Path(__file__).with_name("artifacts") / "raw_timeseries.csv")
+    args = parser.parse_args()
+
+    now_utc = datetime.now(timezone.utc).replace(microsecond=0)
+    stop = args.stop or now_utc.isoformat().replace("+00:00", "Z")
+    start = args.start or (now_utc - timedelta(days=365)).isoformat().replace("+00:00", "Z")
+
+    mapping = p.load_mapping(p.MAPPING_PATH)
+    sensor_uids, ac_uids = build_uids(mapping)
+    all_uids = sensor_uids + ac_uids
+    if not all_uids:
+        raise RuntimeError("映射中没有可用的 UID，检查 uid_mapping.json")
+
+    creds = p.load_influx_credentials(args.client_key)
+    client = InfluxDBClient(
+        host=creds["host"],
+        port=creds["port"],
+        username=creds["username"],
+        password=creds["password"],
+        database=creds["database"],
+        timeout=10,
+    )
+
+    dfs = []
+    for uid in all_uids:
+        df = fetch_raw(uid, start, stop, args.field, args.measurement_template, client)
+        if df.empty:
+            print(f"警告: {uid} 在时间窗内无数据")
+        dfs.append(df)
+    client.close()
+
+    if not dfs:
+        raise RuntimeError("无数据写出")
+
+    merged = pd.concat(dfs, ignore_index=True)
+    out_path = Path(args.output)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    merged.to_csv(out_path, index=False, encoding="utf-8")
+    print(f"完成，写出 {len(merged)} 行 -> {out_path}")
+
+
+if __name__ == "__main__":
+    main()
