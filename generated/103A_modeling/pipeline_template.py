@@ -227,19 +227,39 @@ def train_lstm(X: np.ndarray, Y: np.ndarray, epochs: int = 50, lr: float = 1e-3,
     return {
         'type': 'lstm',
         'scaler': scaler,
-        'model': model,
+        'state_dict': model.state_dict(),
         'hidden_size': hidden_size,
         'input_dim': input_dim,
         'output_dim': output_dim,
+        'device': str(device),
     }
 
 
 def predict_lstm(model_bundle, X: np.ndarray) -> np.ndarray:
     import torch
+    from torch import nn
 
     scaler = model_bundle['scaler']
-    model = model_bundle['model']
-    device = next(model.parameters()).device
+    input_dim = model_bundle['input_dim']
+    hidden_size = model_bundle['hidden_size']
+    output_dim = model_bundle['output_dim']
+    state_dict = model_bundle['state_dict']
+
+    class LSTMReg(nn.Module):
+        def __init__(self, input_dim, hidden_size, output_dim):
+            super().__init__()
+            self.lstm = nn.LSTM(input_size=input_dim, hidden_size=hidden_size, batch_first=True)
+            self.fc = nn.Linear(hidden_size, output_dim)
+
+        def forward(self, x):
+            out, _ = self.lstm(x)
+            out = out[:, -1, :]
+            return self.fc(out)
+
+    device = torch.device(model_bundle.get('device', 'cpu'))
+    model = LSTMReg(input_dim, hidden_size, output_dim).to(device)
+    model.load_state_dict(state_dict)
+
     Xs = scaler.transform(X)
     X_tensor = torch.tensor(Xs, dtype=torch.float32).unsqueeze(1).to(device)
     model.eval()
@@ -278,11 +298,8 @@ def save_artifacts(model_bundle, metrics: Dict, predictions: pd.DataFrame, model
     elif mtype == 'mlp':
         joblib.dump(model_bundle, ARTIFACT_DIR / 'model_mlp.pkl')
     elif mtype == 'lstm':
-        try:
-            import torch
-        except ImportError as exc:
-            raise ImportError("保存 lstm 模型需要 torch，请安装后重试") from exc
-        torch.save(model_bundle, ARTIFACT_DIR / 'model_lstm.pt')
+        # 保存 state_dict + scaler，避免本地类无法 pickle 的问题
+        joblib.dump(model_bundle, ARTIFACT_DIR / 'model_lstm.pkl')
     else:
         np.savez(ARTIFACT_DIR / 'model_lstsq.npz', **model_bundle)
     (ARTIFACT_DIR / f'metrics_{mtype}.json').write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding='utf-8')
