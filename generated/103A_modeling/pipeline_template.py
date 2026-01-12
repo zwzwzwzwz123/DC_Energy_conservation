@@ -4,7 +4,7 @@ pipeline_template
 - 读取 `uid_mapping.json`
 - 从 InfluxDB 1.8 拉取时序（设定点 + 温湿度传感器）
 - 特征构造（滞后）
-- 拟合多输出模型（linear 或 lstsq）
+- 拟合多输出模型（linear / lstsq / mlp / lstm）
 - 输出模型、评估指标、预测结果
 """
 import argparse
@@ -19,6 +19,7 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.multioutput import MultiOutputRegressor
+from sklearn.neural_network import MLPRegressor
 import joblib
 import yaml
 from influxdb import InfluxDBClient
@@ -162,6 +163,91 @@ def predict_lstsq(model_bundle, X: np.ndarray) -> np.ndarray:
     return Xb @ model_bundle['coef']
 
 
+def train_mlp(X: np.ndarray, Y: np.ndarray):
+    scaler = StandardScaler()
+    Xs = scaler.fit_transform(X)
+    model = MLPRegressor(hidden_layer_sizes=(128, 64), activation='relu', max_iter=500, random_state=42)
+    model.fit(Xs, Y)
+    return {'type': 'mlp', 'scaler': scaler, 'model': model}
+
+
+def predict_mlp(model_bundle, X: np.ndarray) -> np.ndarray:
+    Xs = model_bundle['scaler'].transform(X)
+    return model_bundle['model'].predict(Xs)
+
+
+def train_lstm(X: np.ndarray, Y: np.ndarray, epochs: int = 50, lr: float = 1e-3, hidden_size: int = 64):
+    try:
+        import torch
+        from torch import nn
+    except ImportError as exc:
+        raise ImportError("缺少依赖 torch，无法使用 lstm 模型；请安装 torch") from exc
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    scaler = StandardScaler()
+    Xs = scaler.fit_transform(X)
+
+    # 将特征视为单步序列（滞后信息已在特征中编码）
+    X_tensor = torch.tensor(Xs, dtype=torch.float32).unsqueeze(1).to(device)  # (batch, seq=1, feat)
+    Y_tensor = torch.tensor(Y, dtype=torch.float32).to(device)
+
+    input_dim = X.shape[1]
+    output_dim = Y.shape[1]
+
+    class LSTMReg(nn.Module):
+        def __init__(self, input_dim, hidden_size, output_dim):
+            super().__init__()
+            self.lstm = nn.LSTM(input_size=input_dim, hidden_size=hidden_size, batch_first=True)
+            self.fc = nn.Linear(hidden_size, output_dim)
+
+        def forward(self, x):
+            out, _ = self.lstm(x)
+            # 取最后时间步（这里只有 1 步）
+            out = out[:, -1, :]
+            return self.fc(out)
+
+    model = LSTMReg(input_dim, hidden_size, output_dim).to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    criterion = nn.MSELoss()
+
+    model.train()
+    batch_size = min(256, len(X_tensor))
+    for epoch in range(epochs):
+        perm = torch.randperm(len(X_tensor))
+        for i in range(0, len(X_tensor), batch_size):
+            idx = perm[i:i + batch_size]
+            xb = X_tensor[idx]
+            yb = Y_tensor[idx]
+            optimizer.zero_grad()
+            pred = model(xb)
+            loss = criterion(pred, yb)
+            loss.backward()
+            optimizer.step()
+
+    return {
+        'type': 'lstm',
+        'scaler': scaler,
+        'model': model,
+        'hidden_size': hidden_size,
+        'input_dim': input_dim,
+        'output_dim': output_dim,
+    }
+
+
+def predict_lstm(model_bundle, X: np.ndarray) -> np.ndarray:
+    import torch
+
+    scaler = model_bundle['scaler']
+    model = model_bundle['model']
+    device = next(model.parameters()).device
+    Xs = scaler.transform(X)
+    X_tensor = torch.tensor(Xs, dtype=torch.float32).unsqueeze(1).to(device)
+    model.eval()
+    with torch.no_grad():
+        preds = model(X_tensor).cpu().numpy()
+    return preds
+
+
 def evaluate(y_true: np.ndarray, y_pred: np.ndarray) -> Dict:
     mse = np.mean((y_true - y_pred) ** 2, axis=0).tolist()
     mae = np.mean(np.abs(y_true - y_pred), axis=0).tolist()
@@ -184,14 +270,23 @@ def split_train_test(dataset: pd.DataFrame, test_ratio: float = 0.2):
     return train, test
 
 
-def save_artifacts(model_bundle, metrics: Dict, predictions: pd.DataFrame):
+def save_artifacts(model_bundle, metrics: Dict, predictions: pd.DataFrame, model_name: str):
     ARTIFACT_DIR.mkdir(exist_ok=True)
-    if model_bundle['type'] == 'linear':
+    mtype = model_name or model_bundle.get('type', 'model')
+    if mtype == 'linear':
         joblib.dump(model_bundle, ARTIFACT_DIR / 'model_linear.pkl')
+    elif mtype == 'mlp':
+        joblib.dump(model_bundle, ARTIFACT_DIR / 'model_mlp.pkl')
+    elif mtype == 'lstm':
+        try:
+            import torch
+        except ImportError as exc:
+            raise ImportError("保存 lstm 模型需要 torch，请安装后重试") from exc
+        torch.save(model_bundle, ARTIFACT_DIR / 'model_lstm.pt')
     else:
         np.savez(ARTIFACT_DIR / 'model_lstsq.npz', **model_bundle)
-    (ARTIFACT_DIR / 'metrics.json').write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding='utf-8')
-    predictions.to_csv(ARTIFACT_DIR / 'predictions.csv', index=False, encoding='utf-8')
+    (ARTIFACT_DIR / f'metrics_{mtype}.json').write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding='utf-8')
+    predictions.to_csv(ARTIFACT_DIR / f'predictions_{mtype}.csv', index=False, encoding='utf-8')
 
 
 def main():
@@ -199,7 +294,7 @@ def main():
     parser.add_argument('--start', help='ISO8601，如 2024-12-01T00:00:00Z；缺省取当前时间往前一年')
     parser.add_argument('--stop', help='ISO8601；缺省则取当前时间')
     parser.add_argument('--every', default='5m', help='聚合窗口，例如 5m/15m/1h')
-    parser.add_argument('--model', choices=['linear', 'lstsq'], default='linear')
+    parser.add_argument('--model', choices=['linear', 'lstsq', 'mlp', 'lstm'], default='linear')
     parser.add_argument('--lags', type=int, default=3, help='设定点滞后阶数')
     parser.add_argument('--field', default='value', help='Influx 数值字段名，默认 value')
     parser.add_argument('--measurement-template', default='{uid}',
@@ -273,15 +368,21 @@ def main():
     if args.model == 'linear':
         model_bundle = train_linear(X_train, Y_train)
         preds = predict_linear(model_bundle, X_test)
-    else:
+    elif args.model == 'lstsq':
         model_bundle = train_lstsq(X_train, Y_train)
         preds = predict_lstsq(model_bundle, X_test)
+    elif args.model == 'mlp':
+        model_bundle = train_mlp(X_train, Y_train)
+        preds = predict_mlp(model_bundle, X_test)
+    else:  # lstm
+        model_bundle = train_lstm(X_train, Y_train)
+        preds = predict_lstm(model_bundle, X_test)
 
     metrics = evaluate(Y_test, preds)
     pred_df = pd.DataFrame(preds, columns=target_cols)
     pred_df.insert(0, 'time', test_df['time'].to_numpy())
 
-    save_artifacts(model_bundle, metrics, pred_df)
+    save_artifacts(model_bundle, metrics, pred_df, model_name=args.model)
     print('训练完成，指标：', metrics['overall'])
     print(f'输出目录：{ARTIFACT_DIR}')
 
