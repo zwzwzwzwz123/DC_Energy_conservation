@@ -17,6 +17,8 @@ from typing import Dict, List
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.neural_network import MLPRegressor
@@ -166,7 +168,14 @@ def predict_lstsq(model_bundle, X: np.ndarray) -> np.ndarray:
 def train_mlp(X: np.ndarray, Y: np.ndarray):
     scaler = StandardScaler()
     Xs = scaler.fit_transform(X)
-    model = MLPRegressor(hidden_layer_sizes=(128, 64), activation='relu', max_iter=500, random_state=42)
+    model = MLPRegressor(
+        hidden_layer_sizes=(256, 128),
+        activation='relu',
+        max_iter=800,
+        alpha=1e-4,
+        early_stopping=True,
+        random_state=42,
+    )
     model.fit(Xs, Y)
     return {'type': 'mlp', 'scaler': scaler, 'model': model}
 
@@ -176,7 +185,7 @@ def predict_mlp(model_bundle, X: np.ndarray) -> np.ndarray:
     return model_bundle['model'].predict(Xs)
 
 
-def train_lstm(X: np.ndarray, Y: np.ndarray, epochs: int = 50, lr: float = 1e-3, hidden_size: int = 64):
+def train_lstm(X: np.ndarray, Y: np.ndarray, epochs: int = 80, lr: float = 1e-3, hidden_size: int = 64):
     try:
         import torch
         from torch import nn
@@ -268,6 +277,119 @@ def predict_lstm(model_bundle, X: np.ndarray) -> np.ndarray:
     return preds
 
 
+def train_decision_tree(X: np.ndarray, Y: np.ndarray):
+    model = MultiOutputRegressor(
+        DecisionTreeRegressor(
+            random_state=42,
+            max_depth=12,
+            min_samples_leaf=2,
+        )
+    )
+    model.fit(X, Y)
+    return {'type': 'dt', 'model': model}
+
+
+def predict_decision_tree(model_bundle, X: np.ndarray) -> np.ndarray:
+    return model_bundle['model'].predict(X)
+
+
+def train_random_forest(X: np.ndarray, Y: np.ndarray):
+    model = MultiOutputRegressor(
+        RandomForestRegressor(
+            n_estimators=300,
+            max_depth=12,
+            min_samples_leaf=2,
+            max_features='sqrt',
+            random_state=42,
+            n_jobs=-1,
+        )
+    )
+    model.fit(X, Y)
+    return {'type': 'rf', 'model': model}
+
+
+def predict_random_forest(model_bundle, X: np.ndarray) -> np.ndarray:
+    return model_bundle['model'].predict(X)
+
+
+def train_xgb(X: np.ndarray, Y: np.ndarray):
+    try:
+        import xgboost as xgb
+    except ImportError as exc:
+        raise ImportError("缺少依赖 xgboost，无法使用 xgb 模型；请安装 xgboost") from exc
+
+    base = xgb.XGBRegressor(
+        n_estimators=500,
+        max_depth=6,
+        learning_rate=0.05,
+        subsample=0.9,
+        colsample_bytree=0.9,
+        min_child_weight=1.0,
+        reg_lambda=1.0,
+        reg_alpha=0.0,
+        random_state=42,
+        n_jobs=-1,
+        objective='reg:squarederror',
+    )
+    model = MultiOutputRegressor(base)
+    model.fit(X, Y)
+    return {'type': 'xgb', 'model': model}
+
+
+def predict_xgb(model_bundle, X: np.ndarray) -> np.ndarray:
+    return model_bundle['model'].predict(X)
+
+
+def train_lgbm(X: np.ndarray, Y: np.ndarray):
+    try:
+        import lightgbm as lgb
+    except ImportError as exc:
+        raise ImportError("缺少依赖 lightgbm，无法使用 lgbm 模型；请安装 lightgbm") from exc
+
+    base = lgb.LGBMRegressor(
+        n_estimators=500,
+        learning_rate=0.05,
+        num_leaves=63,
+        max_depth=-1,
+        subsample=0.9,
+        colsample_bytree=0.9,
+        bagging_freq=1,
+        reg_lambda=1.0,
+        random_state=42,
+    )
+    model = MultiOutputRegressor(base)
+    model.fit(X, Y)
+    return {'type': 'lgbm', 'model': model}
+
+
+def predict_lgbm(model_bundle, X: np.ndarray) -> np.ndarray:
+    return model_bundle['model'].predict(X)
+
+
+def train_catboost(X: np.ndarray, Y: np.ndarray):
+    try:
+        import catboost
+    except ImportError as exc:
+        raise ImportError("缺少依赖 catboost，无法使用 cat 模型；请安装 catboost") from exc
+
+    base = catboost.CatBoostRegressor(
+        iterations=600,
+        depth=7,
+        learning_rate=0.05,
+        loss_function='RMSE',
+        l2_leaf_reg=3.0,
+        random_seed=42,
+        verbose=False,
+    )
+    model = MultiOutputRegressor(base)
+    model.fit(X, Y)
+    return {'type': 'cat', 'model': model}
+
+
+def predict_catboost(model_bundle, X: np.ndarray) -> np.ndarray:
+    return model_bundle['model'].predict(X)
+
+
 def evaluate(y_true: np.ndarray, y_pred: np.ndarray) -> Dict:
     mse = np.mean((y_true - y_pred) ** 2, axis=0).tolist()
     mae = np.mean(np.abs(y_true - y_pred), axis=0).tolist()
@@ -300,6 +422,16 @@ def save_artifacts(model_bundle, metrics: Dict, predictions: pd.DataFrame, model
     elif mtype == 'lstm':
         # 保存 state_dict + scaler，避免本地类无法 pickle 的问题
         joblib.dump(model_bundle, ARTIFACT_DIR / 'model_lstm.pkl')
+    elif mtype == 'rf':
+        joblib.dump(model_bundle, ARTIFACT_DIR / 'model_rf.pkl')
+    elif mtype == 'dt':
+        joblib.dump(model_bundle, ARTIFACT_DIR / 'model_dt.pkl')
+    elif mtype == 'xgb':
+        joblib.dump(model_bundle, ARTIFACT_DIR / 'model_xgb.pkl')
+    elif mtype == 'lgbm':
+        joblib.dump(model_bundle, ARTIFACT_DIR / 'model_lgbm.pkl')
+    elif mtype == 'cat':
+        joblib.dump(model_bundle, ARTIFACT_DIR / 'model_cat.pkl')
     else:
         np.savez(ARTIFACT_DIR / 'model_lstsq.npz', **model_bundle)
     (ARTIFACT_DIR / f'metrics_{mtype}.json').write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding='utf-8')
@@ -311,7 +443,7 @@ def main():
     parser.add_argument('--start', help='ISO8601，如 2024-12-01T00:00:00Z；缺省取当前时间往前一年')
     parser.add_argument('--stop', help='ISO8601；缺省则取当前时间')
     parser.add_argument('--every', default='5m', help='聚合窗口，例如 5m/15m/1h')
-    parser.add_argument('--model', choices=['linear', 'lstsq', 'mlp', 'lstm'], default='linear')
+    parser.add_argument('--model', choices=['linear', 'lstsq', 'mlp', 'lstm', 'rf', 'dt', 'xgb', 'lgbm', 'cat'], default='linear')
     parser.add_argument('--lags', type=int, default=3, help='设定点滞后阶数')
     parser.add_argument('--field', default='value', help='Influx 数值字段名，默认 value')
     parser.add_argument('--measurement-template', default='{uid}',
@@ -391,9 +523,24 @@ def main():
     elif args.model == 'mlp':
         model_bundle = train_mlp(X_train, Y_train)
         preds = predict_mlp(model_bundle, X_test)
-    else:  # lstm
+    elif args.model == 'lstm':
         model_bundle = train_lstm(X_train, Y_train)
         preds = predict_lstm(model_bundle, X_test)
+    elif args.model == 'rf':
+        model_bundle = train_random_forest(X_train, Y_train)
+        preds = predict_random_forest(model_bundle, X_test)
+    elif args.model == 'dt':
+        model_bundle = train_decision_tree(X_train, Y_train)
+        preds = predict_decision_tree(model_bundle, X_test)
+    elif args.model == 'xgb':
+        model_bundle = train_xgb(X_train, Y_train)
+        preds = predict_xgb(model_bundle, X_test)
+    elif args.model == 'lgbm':
+        model_bundle = train_lgbm(X_train, Y_train)
+        preds = predict_lgbm(model_bundle, X_test)
+    else:  # cat
+        model_bundle = train_catboost(X_train, Y_train)
+        preds = predict_catboost(model_bundle, X_test)
 
     metrics = evaluate(Y_test, preds)
     pred_df = pd.DataFrame(preds, columns=target_cols)
