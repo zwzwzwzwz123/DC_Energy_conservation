@@ -1,124 +1,34 @@
 {
   "raw_records": [
     {
-      "name": "103A机房J列头柜B路",
-      "uid": "N2_S0_E190",
-      "tag": null,
-      "category": "cabinet_feed"
+      "name": "1F IDC机房1#空调",
+      "uid": "N2_S0_E1_A1",
+      "tag": "风机转速（%）",
+      "category": "ac_setpoint"
     },
     {
-      "name": "103A机房J列头柜A路",
-      "uid": "N2_S0_E189",
-      "tag": null,
-      "category": "cabinet_feed"
+      "name": "1F IDC机房1#空调",
+      "uid": "N2_S0_E1_A2",
+      "tag": "水阀开度（%）",
+      "category": "ac_setpoint"
     },
     {
-      "name": "103A机房I列头柜B路",
-      "uid": "N2_S0_E188",
-      "tag": null,
-      "category": "cabinet_feed"
+      "name": "1F IDC机房1#空调",
+      "uid": "N2_S0_E1_A3",
+      "tag": "回风湿度测量值（%）",
+      "category": "temp_humidity_sensor"
     },
     {
-      "name": "103A机房I列头柜A路",
-      "uid": "N2_S0_E187",
-      "tag": null,
-      "category": "cabinet_feed"
+      "name": "1F IDC机房1#空调",
+      "uid": "N2_S0_E1_A4",
+      "tag": "回风温度测量值（℃）",
+      "category": "temp_humidity_sensor"
     },
     {
-      "name": "103A机房H列头柜B路",
-      "uid": "N2_S0_E186",
-      "tag": null,
-      "category": "cabinet_feed"
-    },
-    {
-      "name": "103A机房H列头柜A路",
-      "uid": "N2_S0_E185",
-      "tag": null,
-      "category": "cabinet_feed"
-    },
-    {
-      "name": "103A机房G列头柜B路",
-      "uid": "N2_S0_E184",
-      "tag": null,
-      "category": "cabinet_feed"
-    },
-    {
-      "name": "103A机房G列头柜A路",
-      "uid": "N2_S0_E183",
-      "tag": null,
-      "category": "cabinet_feed"
-    },
-    {
-      "name": "103A机房F列头柜B路",
-      "uid": "N2_S0_E182",
-      "tag": null,
-      "category": "cabinet_feed"
-    },
-    {
-      "name": "103A机房E列头柜A路",
-      "uid": "N2_S0_E181",
-      "tag": null,
-      "category": "cabinet_feed"
-    },
-    {
-      "name": "103A机房E列头柜B路",
-      "uid": "N2_S0_E40",
-      "tag": null,
-      "category": "cabinet_feed"
-    },
-    {
-      "name": "103A机房F列头柜A路",
-      "uid": "N2_S0_E39",
-      "tag": null,
-      "category": "cabinet_feed"
-    },
-    {
-      "name": "103A机房D列头柜B路",
-      "uid": "N2_S0_E38",
-      "tag": null,
-      "category": "cabinet_feed"
-    },
-    {
-      "name": "103A机房D列头柜A路",
-      "uid": "N2_S0_E37",
-      "tag": null,
-      "category": "cabinet_feed"
-    },
-    {
-      "name": "103A机房C列头柜B路",
-      "uid": "N2_S0_E36",
-      "tag": null,
-      "category": "cabinet_feed"
-    },
-    {
-      "name": "103A机房C列头柜A路",
-      "uid": "N2_S0_E35",
-      "tag": null,
-      "category": "cabinet_feed"
-    },
-    {
-      "name": "103A机房B列头柜B路",
-      "uid": "N2_S0_E34",
-      "tag": null,
-      "category": "cabinet_feed"
-    },
-    {
-      "name": "103A机房B列头柜A路",
-      "uid": "N2_S0_E33",
-      "tag": null,
-      "category": "cabinet_feed"
-    },
-    {
-      "name": "103A机房A列头柜B路",
-      "uid": "N2_S0_E32",
-      "tag": null,
-      "category": "cabinet_feed"
-    },
-    {
-      "name": "103A机房A列头柜A路",
-      "uid": "N2_S0_E31",
-      "tag": null,
-      "category": "cabinet_feed"
+      "name": "1F IDC机房1#空调",
+      "uid": "N2_S0_E1_A26",
+      "tag": "风压设定点（Pa）",
+      "category": "ac_setpoint"
     },
     {
       "name": "1F IDC机房1#空调",
@@ -142,6 +52,36 @@
       "name": "1F IDC机房1#空调",
       "uid": "N2_S0_E1_A31",
       "tag": "远程最高温度设定点（℃）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房2#空调",
+      "uid": "N2_S0_E2_A1",
+      "tag": "风机转速（%）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房2#空调",
+      "uid": "N2_S0_E2_A2",
+      "tag": "水阀开度（%）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房2#空调",
+      "uid": "N2_S0_E2_A3",
+      "tag": "回风湿度测量值（%）",
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房2#空调",
+      "uid": "N2_S0_E2_A4",
+      "tag": "回风温度测量值（℃）",
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房2#空调",
+      "uid": "N2_S0_E2_A26",
+      "tag": "风压设定点（Pa）",
       "category": "ac_setpoint"
     },
     {
@@ -170,6 +110,36 @@
     },
     {
       "name": "1F IDC机房3#空调",
+      "uid": "N2_S0_E3_A1",
+      "tag": "风机转速（%）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房3#空调",
+      "uid": "N2_S0_E3_A2",
+      "tag": "水阀开度（%）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房3#空调",
+      "uid": "N2_S0_E3_A3",
+      "tag": "回风湿度测量值（%）",
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房3#空调",
+      "uid": "N2_S0_E3_A4",
+      "tag": "回风温度测量值（℃）",
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房3#空调",
+      "uid": "N2_S0_E3_A26",
+      "tag": "风压设定点（Pa）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房3#空调",
       "uid": "N2_S0_E3_A27",
       "tag": "回风湿度设定点（%）",
       "category": "ac_setpoint"
@@ -190,6 +160,36 @@
       "name": "1F IDC机房3#空调",
       "uid": "N2_S0_E3_A31",
       "tag": "远程最高温度设定点（℃）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房4#空调",
+      "uid": "N2_S0_E4_A1",
+      "tag": "风机转速（%）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房4#空调",
+      "uid": "N2_S0_E4_A2",
+      "tag": "水阀开度（%）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房4#空调",
+      "uid": "N2_S0_E4_A3",
+      "tag": "回风湿度测量值（%）",
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房4#空调",
+      "uid": "N2_S0_E4_A4",
+      "tag": "回风温度测量值（℃）",
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房4#空调",
+      "uid": "N2_S0_E4_A26",
+      "tag": "风压设定点（Pa）",
       "category": "ac_setpoint"
     },
     {
@@ -218,6 +218,36 @@
     },
     {
       "name": "1F IDC机房5#空调",
+      "uid": "N2_S0_E5_A1",
+      "tag": "风机转速（%）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房5#空调",
+      "uid": "N2_S0_E5_A2",
+      "tag": "水阀开度（%）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房5#空调",
+      "uid": "N2_S0_E5_A3",
+      "tag": "回风湿度测量值（%）",
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房5#空调",
+      "uid": "N2_S0_E5_A4",
+      "tag": "回风温度测量值（℃）",
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房5#空调",
+      "uid": "N2_S0_E5_A26",
+      "tag": "风压设定点（Pa）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房5#空调",
       "uid": "N2_S0_E5_A27",
       "tag": "回风湿度设定点（%）",
       "category": "ac_setpoint"
@@ -238,6 +268,36 @@
       "name": "1F IDC机房5#空调",
       "uid": "N2_S0_E5_A31",
       "tag": "远程最高温度设定点（℃）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房6#空调",
+      "uid": "N2_S0_E6_A1",
+      "tag": "风机转速（%）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房6#空调",
+      "uid": "N2_S0_E6_A2",
+      "tag": "水阀开度（%）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房6#空调",
+      "uid": "N2_S0_E6_A3",
+      "tag": "回风湿度测量值（%）",
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房6#空调",
+      "uid": "N2_S0_E6_A4",
+      "tag": "回风温度测量值（℃）",
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房6#空调",
+      "uid": "N2_S0_E6_A26",
+      "tag": "风压设定点（Pa）",
       "category": "ac_setpoint"
     },
     {
@@ -266,6 +326,36 @@
     },
     {
       "name": "1F IDC机房7#空调",
+      "uid": "N2_S0_E7_A1",
+      "tag": "风机转速（%）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房7#空调",
+      "uid": "N2_S0_E7_A2",
+      "tag": "水阀开度（%）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房7#空调",
+      "uid": "N2_S0_E7_A3",
+      "tag": "回风湿度测量值（%）",
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房7#空调",
+      "uid": "N2_S0_E7_A4",
+      "tag": "回风温度测量值（℃）",
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房7#空调",
+      "uid": "N2_S0_E7_A26",
+      "tag": "风压设定点（Pa）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房7#空调",
       "uid": "N2_S0_E7_A27",
       "tag": "回风湿度设定点（%）",
       "category": "ac_setpoint"
@@ -286,6 +376,36 @@
       "name": "1F IDC机房7#空调",
       "uid": "N2_S0_E7_A31",
       "tag": "远程最高温度设定点（℃）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房8#空调",
+      "uid": "N2_S0_E8_A1",
+      "tag": "风机转速（%）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房8#空调",
+      "uid": "N2_S0_E8_A2",
+      "tag": "水阀开度（%）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房8#空调",
+      "uid": "N2_S0_E8_A3",
+      "tag": "回风湿度测量值（%）",
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房8#空调",
+      "uid": "N2_S0_E8_A4",
+      "tag": "回风温度测量值（℃）",
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房8#空调",
+      "uid": "N2_S0_E8_A26",
+      "tag": "风压设定点（Pa）",
       "category": "ac_setpoint"
     },
     {
@@ -314,6 +434,36 @@
     },
     {
       "name": "1F IDC机房9#空调",
+      "uid": "N2_S0_E9_A1",
+      "tag": "风机转速（%）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房9#空调",
+      "uid": "N2_S0_E9_A2",
+      "tag": "水阀开度（%）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房9#空调",
+      "uid": "N2_S0_E9_A3",
+      "tag": "回风湿度测量值（%）",
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房9#空调",
+      "uid": "N2_S0_E9_A4",
+      "tag": "回风温度测量值（℃）",
+      "category": "temp_humidity_sensor"
+    },
+    {
+      "name": "1F IDC机房9#空调",
+      "uid": "N2_S0_E9_A26",
+      "tag": "风压设定点（Pa）",
+      "category": "ac_setpoint"
+    },
+    {
+      "name": "1F IDC机房9#空调",
       "uid": "N2_S0_E9_A27",
       "tag": "回风湿度设定点（%）",
       "category": "ac_setpoint"
@@ -337,404 +487,464 @@
       "category": "ac_setpoint"
     },
     {
-      "name": "1F IDC机房热通道33#温湿度",
-      "uid": "a7217828_ed16_4ffa_b789_04ada92a2e75",
-      "tag": "1#温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F E列头柜B路.主路2输入相电流 C（A）",
+      "uid": "N2_S0_E40_A63",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道33#温湿度",
-      "uid": "52664cb3_a254_46c0_9674_777ef3b68793",
-      "tag": "1#湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F E列头柜B路.主路2输入相电流 B（A）",
+      "uid": "N2_S0_E40_A62",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道32#温湿度",
-      "uid": "a38944a0_b951_45b2_a13c_13a6fa9223e4",
-      "tag": "1#温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F E列头柜B路.主路2输入相电流 A（A）",
+      "uid": "N2_S0_E40_A61",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道32#温湿度",
-      "uid": "600edf85_f3ec_46e5_a811_855f82ae07f4",
-      "tag": "1#湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F E列头柜A路.主路1输入相电流 C（A）",
+      "uid": "N2_S0_E39_A9",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道31#温湿度",
-      "uid": "4fe07996_cd59_4771_ab80_bab15210849b",
-      "tag": "1#温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F E列头柜A路.主路1输入相电流 B（A）",
+      "uid": "N2_S0_E39_A8",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道31#温湿度",
-      "uid": "b111676c_bfed_4fca_a23e_91774e9736fa",
-      "tag": "1#湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F E列头柜A路.主路1输入相电流 A（A）",
+      "uid": "N2_S0_E39_A7",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道30#温湿度",
-      "uid": "44686a4e_336a_471f_9f04_abfe29f12c8a",
-      "tag": "1#温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F D列头柜B路.主路2输入相电流 C（A）",
+      "uid": "N2_S0_E38_A63",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道30#温湿度",
-      "uid": "24e69074_556e_421e_88bc_d983f21e2a46",
-      "tag": "1#湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F D列头柜B路.主路2输入相电流 B（A）",
+      "uid": "N2_S0_E38_A62",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道29#温湿度",
-      "uid": "0ab54859_d564_4e3d_9810_2d74a26d007d",
-      "tag": "1#温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F D列头柜B路.主路2输入相电流 A（A）",
+      "uid": "N2_S0_E38_A61",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道29#温湿度",
-      "uid": "25c42ff2_2278_42ca_b97c_43f82cf29737",
-      "tag": "1#湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F D列头柜A路.主路1输入相电流 C（A）",
+      "uid": "N2_S0_E37_A9",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道28#温湿度",
-      "uid": "f50dd4c9_c782_4c40_81e6_14dcfd755436",
-      "tag": "1#温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F D列头柜A路.主路1输入相电流 B（A）",
+      "uid": "N2_S0_E37_A8",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道28#温湿度",
-      "uid": "dd6f7451_7a3d_4656_97ef_b350af38491a",
-      "tag": "1#湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F D列头柜A路.主路1输入相电流 A（A）",
+      "uid": "N2_S0_E37_A7",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道27#温湿度",
-      "uid": "bdb38c2a_f0c6_49c0_b62a_d4e0fc5fd0ea",
-      "tag": "1#温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F C列头柜B路.主路2输入相电流 C（A）",
+      "uid": "N2_S0_E36_A63",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道27#温湿度",
-      "uid": "b3582d8f_390a_4db6_8f42_68be2cad1339",
-      "tag": "1#湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F C列头柜B路.主路2输入相电流 B（A）",
+      "uid": "N2_S0_E36_A62",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道26#温湿度",
-      "uid": "a10310ed_ff3a_4bdf_b02e_0362f5808958",
-      "tag": "1#温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F C列头柜B路.主路2输入相电流 A（A）",
+      "uid": "N2_S0_E36_A61",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道26#温湿度",
-      "uid": "0dc718ed_ea4c_4d82_be43_6d94b9943fa7",
-      "tag": "1#湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F C列头柜A路.主路1输入相电流 C（A）",
+      "uid": "N2_S0_E35_A9",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道25#温湿度",
-      "uid": "07bb7d1d_b635_4ca9_909c_7bdaf3ceab10",
-      "tag": "1#温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F C列头柜A路.主路1输入相电流 B（A）",
+      "uid": "N2_S0_E35_A8",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道25#温湿度",
-      "uid": "e8700958_d7b7_4050_874d_294fbe149531",
-      "tag": "1#湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F C列头柜A路.主路1输入相电流 A（A）",
+      "uid": "N2_S0_E35_A7",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道24#温湿度",
-      "uid": "be578260_b5e1_4e29_888f_4ba9d2c1b138",
-      "tag": "1#温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F B列头柜B路.主路2输入相电流 C（A）",
+      "uid": "N2_S0_E34_A63",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道24#温湿度",
-      "uid": "8e318fc0_0003_43c3_8817_0920307d4e1a",
-      "tag": "1#湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F B列头柜B路.主路2输入相电流 B（A）",
+      "uid": "N2_S0_E34_A62",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道23#温湿度",
-      "uid": "ad0a96f7_8d56_4120_b0fd_666f6419da54",
-      "tag": "1#温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F B列头柜B路.主路2输入相电流 A（A）",
+      "uid": "N2_S0_E34_A61",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道23#温湿度",
-      "uid": "50811f02_536c_4bdb_88f7_1769d6110ea1",
-      "tag": "1#湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F B列头柜A路.主路1输入相电流 C（A）",
+      "uid": "N2_S0_E33_A9",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道22#温湿度",
-      "uid": "N2_S0_E102_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F B列头柜A路.主路1输入相电流 B（A）",
+      "uid": "N2_S0_E33_A8",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道22#温湿度",
-      "uid": "N2_S0_E102_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F B列头柜A路.主路1输入相电流 A（A）",
+      "uid": "N2_S0_E33_A7",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道21#温湿度",
-      "uid": "N2_S0_E101_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F A列头柜B路.主路2输入相电流 C（A）",
+      "uid": "N2_S0_E32_A63",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道21#温湿度",
-      "uid": "N2_S0_E101_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F A列头柜B路.主路2输入相电流 B（A）",
+      "uid": "N2_S0_E32_A62",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道20#温湿度",
-      "uid": "N2_S0_E100_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F A列头柜B路.主路2输入相电流 A（A）",
+      "uid": "N2_S0_E32_A61",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道20#温湿度",
-      "uid": "N2_S0_E100_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F A列头柜A路.主路1输入相电流 C（A）",
+      "uid": "N2_S0_E31_A9",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道19#温湿度",
-      "uid": "N2_S0_E99_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F A列头柜A路.主路1输入相电流 B（A）",
+      "uid": "N2_S0_E31_A8",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道19#温湿度",
-      "uid": "N2_S0_E99_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F A列头柜A路.主路1输入相电流 A（A）",
+      "uid": "N2_S0_E31_A7",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道18#温湿度",
-      "uid": "N2_S0_E98_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F J列头柜B路.主路2输入相电流 C（A）",
+      "uid": "N2_S0_E190_A63",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道18#温湿度",
-      "uid": "N2_S0_E98_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F J列头柜B路.主路2输入相电流 B（A）",
+      "uid": "N2_S0_E190_A62",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道17#温湿度",
-      "uid": "N2_S0_E97_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F J列头柜B路.主路2输入相电流 A（A）",
+      "uid": "N2_S0_E190_A61",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道17#温湿度",
-      "uid": "N2_S0_E97_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F J列头柜A路.主路1输入相电流 C（A）",
+      "uid": "N2_S0_E189_A9",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道16#温湿度",
-      "uid": "N2_S0_E96_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F J列头柜A路.主路1输入相电流 B（A）",
+      "uid": "N2_S0_E189_A8",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道16#温湿度",
-      "uid": "N2_S0_E96_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F J列头柜A路.主路1输入相电流 A（A）",
+      "uid": "N2_S0_E189_A7",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道15#温湿度",
-      "uid": "N2_S0_E95_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F I列头柜B路.主路2输入相电流 C（A）",
+      "uid": "N2_S0_E188_A63",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道15#温湿度",
-      "uid": "N2_S0_E95_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F I列头柜B路.主路2输入相电流 B（A）",
+      "uid": "N2_S0_E188_A62",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道14#温湿度",
-      "uid": "N2_S0_E94_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F I列头柜B路.主路2输入相电流 A（A）",
+      "uid": "N2_S0_E188_A61",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道14#温湿度",
-      "uid": "N2_S0_E94_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F I列头柜A路.主路1输入相电流 C（A）",
+      "uid": "N2_S0_E187_A9",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道13#温湿度",
-      "uid": "N2_S0_E93_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F I列头柜A路.主路1输入相电流 B（A）",
+      "uid": "N2_S0_E187_A8",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道13#温湿度",
-      "uid": "N2_S0_E93_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F I列头柜A路.主路1输入相电流 A（A）",
+      "uid": "N2_S0_E187_A7",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道12#温湿度",
-      "uid": "N2_S0_E92_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F H列头柜B路.主路2输入相电流 C（A）",
+      "uid": "N2_S0_E186_A63",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道12#温湿度",
-      "uid": "N2_S0_E92_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F H列头柜B路.主路2输入相电流 B（A）",
+      "uid": "N2_S0_E186_A62",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道11#温湿度",
-      "uid": "N2_S0_E91_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F H列头柜B路.主路2输入相电流 A（A）",
+      "uid": "N2_S0_E186_A61",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道11#温湿度",
-      "uid": "N2_S0_E91_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F H列头柜A路.主路1输入相电流 C（A）",
+      "uid": "N2_S0_E185_A9",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道10#温湿度",
-      "uid": "N2_S0_E90_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F H列头柜A路.主路1输入相电流 B（A）",
+      "uid": "N2_S0_E185_A8",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道10#温湿度",
-      "uid": "N2_S0_E90_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F H列头柜A路.主路1输入相电流 A（A）",
+      "uid": "N2_S0_E185_A7",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道9#温湿度",
-      "uid": "N2_S0_E89_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F G列头柜B路.主路2输入相电流 C（A）",
+      "uid": "N2_S0_E184_A63",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道9#温湿度",
-      "uid": "N2_S0_E89_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F G列头柜B路.主路2输入相电流 B（A）",
+      "uid": "N2_S0_E184_A62",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道8#温湿度",
-      "uid": "N2_S0_E88_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F G列头柜B路.主路2输入相电流 A（A）",
+      "uid": "N2_S0_E184_A61",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道8#温湿度",
-      "uid": "N2_S0_E88_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F G列头柜A路.主路1输入相电流 C（A）",
+      "uid": "N2_S0_E183_A9",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道7#温湿度",
-      "uid": "N2_S0_E87_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F G列头柜A路.主路1输入相电流 B（A）",
+      "uid": "N2_S0_E183_A8",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道7#温湿度",
-      "uid": "N2_S0_E87_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F G列头柜A路.主路1输入相电流 A（A）",
+      "uid": "N2_S0_E183_A7",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道6#温湿度",
-      "uid": "N2_S0_E86_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F F列头柜B路.主路2输入相电流 C（A）",
+      "uid": "N2_S0_E182_A63",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道6#温湿度",
-      "uid": "N2_S0_E86_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F F列头柜B路.主路2输入相电流 B（A）",
+      "uid": "N2_S0_E182_A62",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道5#温湿度",
-      "uid": "N2_S0_E85_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F F列头柜B路.主路2输入相电流 A（A）",
+      "uid": "N2_S0_E182_A61",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房热通道5#温湿度",
-      "uid": "N2_S0_E85_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F F列头柜A路.主路1输入相电流 C（A）",
+      "uid": "N2_S0_E181_A9",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道4#温湿度",
-      "uid": "N2_S0_E84_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F F列头柜A路.主路1输入相电流 B（A）",
+      "uid": "N2_S0_E181_A8",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道4#温湿度",
-      "uid": "N2_S0_E84_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "103A信息化机房/1F F列头柜A路.主路1输入相电流 A（A）",
+      "uid": "N2_S0_E181_A7",
+      "tag": null,
+      "category": "cabinet_feed"
     },
     {
-      "name": "1F IDC机房冷通道3#温湿度",
-      "uid": "N2_S0_E83_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "1#放冷泵运行状态码",
+      "uid": "58a917f3_ce9e_4005_bf7c_e15455f4ca9b",
+      "tag": null,
+      "category": "other"
     },
     {
-      "name": "1F IDC机房冷通道3#温湿度",
-      "uid": "N2_S0_E83_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "2#放冷泵运行状态码",
+      "uid": "15efbcdc_9f75_4061_b8c1_cbe1cbc6a430",
+      "tag": null,
+      "category": "other"
     },
     {
-      "name": "1F IDC机房热通道2#温湿度",
-      "uid": "N2_S0_E82_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "1#冷机冷冻出水温度",
+      "uid": "566185d4_6cac_4dcc_a52a_0b3bece9d920",
+      "tag": null,
+      "category": "other"
     },
     {
-      "name": "1F IDC机房热通道2#温湿度",
-      "uid": "N2_S0_E82_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "1#冷机冷冻进水温度",
+      "uid": "b1858cac_4abf_4789_8a62_6c1aec8615c6",
+      "tag": null,
+      "category": "other"
     },
     {
-      "name": "1F IDC机房热通道1#温湿度",
-      "uid": "N2_S0_E81_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
+      "name": "1#冷机冷冻水流开关",
+      "uid": "2976cfd2_6b50_4bf7_abfc_4d9806c81409",
+      "tag": null,
+      "category": "other"
     },
     {
-      "name": "1F IDC机房热通道1#温湿度",
-      "uid": "N2_S0_E81_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
+      "name": "2#冷机冷冻出水温度",
+      "uid": "650186e2_c232_4ad0_a13c_7c572ea1f883",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "2#冷机冷冻进水温度",
+      "uid": "7479ada1_b9b3_41b4_a3fa_05e3d4969d04",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "2#冷机冷冻水流开关",
+      "uid": "fc863933_4222_4aa8_a536_028a7edc187d",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "3#冷机冷冻出水温度",
+      "uid": "8ff4a8f3_0a2f_486e_b758_2219f1cfbb23",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "3#冷机冷冻进水温度",
+      "uid": "d8f07bad_c577_4b09_96f9_5a989212ddfb",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "3#冷机冷冻水流开关",
+      "uid": "663dd565_fe66_4139_a6af_6b594aab537b",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "4#冷机冷冻出水温度",
+      "uid": "abb8c9a3_d5de_437a_9fdc_8219bc851c73",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "4#冷机冷冻进水温度",
+      "uid": "0d4d1f7d_d7e0_46ff_9779_b92f59b1ab04",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "4#冷机冷冻水流开关",
+      "uid": "ff4bb6aa_86fe_41f7_bd68_8485cbbd14db",
+      "tag": null,
+      "category": "other"
     }
   ],
   "air_conditioners": {
     "1": [
+      {
+        "param": "N2_S0_E1_A1",
+        "tag": "风机转速（%）"
+      },
+      {
+        "param": "N2_S0_E1_A2",
+        "tag": "水阀开度（%）"
+      },
+      {
+        "param": "N2_S0_E1_A26",
+        "tag": "风压设定点（Pa）"
+      },
       {
         "param": "N2_S0_E1_A27",
         "tag": "回风湿度设定点（%）"
@@ -754,6 +964,18 @@
     ],
     "2": [
       {
+        "param": "N2_S0_E2_A1",
+        "tag": "风机转速（%）"
+      },
+      {
+        "param": "N2_S0_E2_A2",
+        "tag": "水阀开度（%）"
+      },
+      {
+        "param": "N2_S0_E2_A26",
+        "tag": "风压设定点（Pa）"
+      },
+      {
         "param": "N2_S0_E2_A27",
         "tag": "回风湿度设定点（%）"
       },
@@ -771,6 +993,18 @@
       }
     ],
     "3": [
+      {
+        "param": "N2_S0_E3_A1",
+        "tag": "风机转速（%）"
+      },
+      {
+        "param": "N2_S0_E3_A2",
+        "tag": "水阀开度（%）"
+      },
+      {
+        "param": "N2_S0_E3_A26",
+        "tag": "风压设定点（Pa）"
+      },
       {
         "param": "N2_S0_E3_A27",
         "tag": "回风湿度设定点（%）"
@@ -790,6 +1024,18 @@
     ],
     "4": [
       {
+        "param": "N2_S0_E4_A1",
+        "tag": "风机转速（%）"
+      },
+      {
+        "param": "N2_S0_E4_A2",
+        "tag": "水阀开度（%）"
+      },
+      {
+        "param": "N2_S0_E4_A26",
+        "tag": "风压设定点（Pa）"
+      },
+      {
         "param": "N2_S0_E4_A27",
         "tag": "回风湿度设定点（%）"
       },
@@ -807,6 +1053,18 @@
       }
     ],
     "5": [
+      {
+        "param": "N2_S0_E5_A1",
+        "tag": "风机转速（%）"
+      },
+      {
+        "param": "N2_S0_E5_A2",
+        "tag": "水阀开度（%）"
+      },
+      {
+        "param": "N2_S0_E5_A26",
+        "tag": "风压设定点（Pa）"
+      },
       {
         "param": "N2_S0_E5_A27",
         "tag": "回风湿度设定点（%）"
@@ -826,6 +1084,18 @@
     ],
     "6": [
       {
+        "param": "N2_S0_E6_A1",
+        "tag": "风机转速（%）"
+      },
+      {
+        "param": "N2_S0_E6_A2",
+        "tag": "水阀开度（%）"
+      },
+      {
+        "param": "N2_S0_E6_A26",
+        "tag": "风压设定点（Pa）"
+      },
+      {
         "param": "N2_S0_E6_A27",
         "tag": "回风湿度设定点（%）"
       },
@@ -843,6 +1113,18 @@
       }
     ],
     "7": [
+      {
+        "param": "N2_S0_E7_A1",
+        "tag": "风机转速（%）"
+      },
+      {
+        "param": "N2_S0_E7_A2",
+        "tag": "水阀开度（%）"
+      },
+      {
+        "param": "N2_S0_E7_A26",
+        "tag": "风压设定点（Pa）"
+      },
       {
         "param": "N2_S0_E7_A27",
         "tag": "回风湿度设定点（%）"
@@ -862,6 +1144,18 @@
     ],
     "8": [
       {
+        "param": "N2_S0_E8_A1",
+        "tag": "风机转速（%）"
+      },
+      {
+        "param": "N2_S0_E8_A2",
+        "tag": "水阀开度（%）"
+      },
+      {
+        "param": "N2_S0_E8_A26",
+        "tag": "风压设定点（Pa）"
+      },
+      {
         "param": "N2_S0_E8_A27",
         "tag": "回风湿度设定点（%）"
       },
@@ -879,6 +1173,18 @@
       }
     ],
     "9": [
+      {
+        "param": "N2_S0_E9_A1",
+        "tag": "风机转速（%）"
+      },
+      {
+        "param": "N2_S0_E9_A2",
+        "tag": "水阀开度（%）"
+      },
+      {
+        "param": "N2_S0_E9_A26",
+        "tag": "风压设定点（Pa）"
+      },
       {
         "param": "N2_S0_E9_A27",
         "tag": "回风湿度设定点（%）"
@@ -899,523 +1205,560 @@
   },
   "sensors": [
     {
-      "name": "1F IDC机房热通道33#温湿度",
-      "uid": "a7217828_ed16_4ffa_b789_04ada92a2e75",
-      "tag": "1#温度",
+      "name": "1F IDC机房1#空调",
+      "uid": "N2_S0_E1_A3",
+      "tag": "回风湿度测量值（%）",
       "category": "temp_humidity_sensor"
     },
     {
-      "name": "1F IDC机房热通道33#温湿度",
-      "uid": "52664cb3_a254_46c0_9674_777ef3b68793",
-      "tag": "1#湿度",
+      "name": "1F IDC机房1#空调",
+      "uid": "N2_S0_E1_A4",
+      "tag": "回风温度测量值（℃）",
       "category": "temp_humidity_sensor"
     },
     {
-      "name": "1F IDC机房冷通道32#温湿度",
-      "uid": "a38944a0_b951_45b2_a13c_13a6fa9223e4",
-      "tag": "1#温度",
+      "name": "1F IDC机房2#空调",
+      "uid": "N2_S0_E2_A3",
+      "tag": "回风湿度测量值（%）",
       "category": "temp_humidity_sensor"
     },
     {
-      "name": "1F IDC机房冷通道32#温湿度",
-      "uid": "600edf85_f3ec_46e5_a811_855f82ae07f4",
-      "tag": "1#湿度",
+      "name": "1F IDC机房2#空调",
+      "uid": "N2_S0_E2_A4",
+      "tag": "回风温度测量值（℃）",
       "category": "temp_humidity_sensor"
     },
     {
-      "name": "1F IDC机房热通道31#温湿度",
-      "uid": "4fe07996_cd59_4771_ab80_bab15210849b",
-      "tag": "1#温度",
+      "name": "1F IDC机房3#空调",
+      "uid": "N2_S0_E3_A3",
+      "tag": "回风湿度测量值（%）",
       "category": "temp_humidity_sensor"
     },
     {
-      "name": "1F IDC机房热通道31#温湿度",
-      "uid": "b111676c_bfed_4fca_a23e_91774e9736fa",
-      "tag": "1#湿度",
+      "name": "1F IDC机房3#空调",
+      "uid": "N2_S0_E3_A4",
+      "tag": "回风温度测量值（℃）",
       "category": "temp_humidity_sensor"
     },
     {
-      "name": "1F IDC机房冷通道30#温湿度",
-      "uid": "44686a4e_336a_471f_9f04_abfe29f12c8a",
-      "tag": "1#温度",
+      "name": "1F IDC机房4#空调",
+      "uid": "N2_S0_E4_A3",
+      "tag": "回风湿度测量值（%）",
       "category": "temp_humidity_sensor"
     },
     {
-      "name": "1F IDC机房冷通道30#温湿度",
-      "uid": "24e69074_556e_421e_88bc_d983f21e2a46",
-      "tag": "1#湿度",
+      "name": "1F IDC机房4#空调",
+      "uid": "N2_S0_E4_A4",
+      "tag": "回风温度测量值（℃）",
       "category": "temp_humidity_sensor"
     },
     {
-      "name": "1F IDC机房热通道29#温湿度",
-      "uid": "0ab54859_d564_4e3d_9810_2d74a26d007d",
-      "tag": "1#温度",
+      "name": "1F IDC机房5#空调",
+      "uid": "N2_S0_E5_A3",
+      "tag": "回风湿度测量值（%）",
       "category": "temp_humidity_sensor"
     },
     {
-      "name": "1F IDC机房热通道29#温湿度",
-      "uid": "25c42ff2_2278_42ca_b97c_43f82cf29737",
-      "tag": "1#湿度",
+      "name": "1F IDC机房5#空调",
+      "uid": "N2_S0_E5_A4",
+      "tag": "回风温度测量值（℃）",
       "category": "temp_humidity_sensor"
     },
     {
-      "name": "1F IDC机房冷通道28#温湿度",
-      "uid": "f50dd4c9_c782_4c40_81e6_14dcfd755436",
-      "tag": "1#温度",
+      "name": "1F IDC机房6#空调",
+      "uid": "N2_S0_E6_A3",
+      "tag": "回风湿度测量值（%）",
       "category": "temp_humidity_sensor"
     },
     {
-      "name": "1F IDC机房冷通道28#温湿度",
-      "uid": "dd6f7451_7a3d_4656_97ef_b350af38491a",
-      "tag": "1#湿度",
+      "name": "1F IDC机房6#空调",
+      "uid": "N2_S0_E6_A4",
+      "tag": "回风温度测量值（℃）",
       "category": "temp_humidity_sensor"
     },
     {
-      "name": "1F IDC机房热通道27#温湿度",
-      "uid": "bdb38c2a_f0c6_49c0_b62a_d4e0fc5fd0ea",
-      "tag": "1#温度",
+      "name": "1F IDC机房7#空调",
+      "uid": "N2_S0_E7_A3",
+      "tag": "回风湿度测量值（%）",
       "category": "temp_humidity_sensor"
     },
     {
-      "name": "1F IDC机房热通道27#温湿度",
-      "uid": "b3582d8f_390a_4db6_8f42_68be2cad1339",
-      "tag": "1#湿度",
+      "name": "1F IDC机房7#空调",
+      "uid": "N2_S0_E7_A4",
+      "tag": "回风温度测量值（℃）",
       "category": "temp_humidity_sensor"
     },
     {
-      "name": "1F IDC机房冷通道26#温湿度",
-      "uid": "a10310ed_ff3a_4bdf_b02e_0362f5808958",
-      "tag": "1#温度",
+      "name": "1F IDC机房8#空调",
+      "uid": "N2_S0_E8_A3",
+      "tag": "回风湿度测量值（%）",
       "category": "temp_humidity_sensor"
     },
     {
-      "name": "1F IDC机房冷通道26#温湿度",
-      "uid": "0dc718ed_ea4c_4d82_be43_6d94b9943fa7",
-      "tag": "1#湿度",
+      "name": "1F IDC机房8#空调",
+      "uid": "N2_S0_E8_A4",
+      "tag": "回风温度测量值（℃）",
       "category": "temp_humidity_sensor"
     },
     {
-      "name": "1F IDC机房热通道25#温湿度",
-      "uid": "07bb7d1d_b635_4ca9_909c_7bdaf3ceab10",
-      "tag": "1#温度",
+      "name": "1F IDC机房9#空调",
+      "uid": "N2_S0_E9_A3",
+      "tag": "回风湿度测量值（%）",
       "category": "temp_humidity_sensor"
     },
     {
-      "name": "1F IDC机房热通道25#温湿度",
-      "uid": "e8700958_d7b7_4050_874d_294fbe149531",
-      "tag": "1#湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道24#温湿度",
-      "uid": "be578260_b5e1_4e29_888f_4ba9d2c1b138",
-      "tag": "1#温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道24#温湿度",
-      "uid": "8e318fc0_0003_43c3_8817_0920307d4e1a",
-      "tag": "1#湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道23#温湿度",
-      "uid": "ad0a96f7_8d56_4120_b0fd_666f6419da54",
-      "tag": "1#温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道23#温湿度",
-      "uid": "50811f02_536c_4bdb_88f7_1769d6110ea1",
-      "tag": "1#湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道22#温湿度",
-      "uid": "N2_S0_E102_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道22#温湿度",
-      "uid": "N2_S0_E102_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道21#温湿度",
-      "uid": "N2_S0_E101_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道21#温湿度",
-      "uid": "N2_S0_E101_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道20#温湿度",
-      "uid": "N2_S0_E100_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道20#温湿度",
-      "uid": "N2_S0_E100_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道19#温湿度",
-      "uid": "N2_S0_E99_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道19#温湿度",
-      "uid": "N2_S0_E99_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道18#温湿度",
-      "uid": "N2_S0_E98_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道18#温湿度",
-      "uid": "N2_S0_E98_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道17#温湿度",
-      "uid": "N2_S0_E97_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道17#温湿度",
-      "uid": "N2_S0_E97_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道16#温湿度",
-      "uid": "N2_S0_E96_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道16#温湿度",
-      "uid": "N2_S0_E96_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道15#温湿度",
-      "uid": "N2_S0_E95_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道15#温湿度",
-      "uid": "N2_S0_E95_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道14#温湿度",
-      "uid": "N2_S0_E94_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道14#温湿度",
-      "uid": "N2_S0_E94_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道13#温湿度",
-      "uid": "N2_S0_E93_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道13#温湿度",
-      "uid": "N2_S0_E93_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道12#温湿度",
-      "uid": "N2_S0_E92_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道12#温湿度",
-      "uid": "N2_S0_E92_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道11#温湿度",
-      "uid": "N2_S0_E91_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道11#温湿度",
-      "uid": "N2_S0_E91_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道10#温湿度",
-      "uid": "N2_S0_E90_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道10#温湿度",
-      "uid": "N2_S0_E90_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道9#温湿度",
-      "uid": "N2_S0_E89_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道9#温湿度",
-      "uid": "N2_S0_E89_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道8#温湿度",
-      "uid": "N2_S0_E88_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道8#温湿度",
-      "uid": "N2_S0_E88_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道7#温湿度",
-      "uid": "N2_S0_E87_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道7#温湿度",
-      "uid": "N2_S0_E87_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道6#温湿度",
-      "uid": "N2_S0_E86_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道6#温湿度",
-      "uid": "N2_S0_E86_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道5#温湿度",
-      "uid": "N2_S0_E85_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道5#温湿度",
-      "uid": "N2_S0_E85_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道4#温湿度",
-      "uid": "N2_S0_E84_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道4#温湿度",
-      "uid": "N2_S0_E84_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道3#温湿度",
-      "uid": "N2_S0_E83_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房冷通道3#温湿度",
-      "uid": "N2_S0_E83_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道2#温湿度",
-      "uid": "N2_S0_E82_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道2#温湿度",
-      "uid": "N2_S0_E82_A2",
-      "tag": "湿度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道1#温湿度",
-      "uid": "N2_S0_E81_A1",
-      "tag": "温度",
-      "category": "temp_humidity_sensor"
-    },
-    {
-      "name": "1F IDC机房热通道1#温湿度",
-      "uid": "N2_S0_E81_A2",
-      "tag": "湿度",
+      "name": "1F IDC机房9#空调",
+      "uid": "N2_S0_E9_A4",
+      "tag": "回风温度测量值（℃）",
       "category": "temp_humidity_sensor"
     }
   ],
   "cabinets": [
     {
-      "name": "103A机房J列头柜B路",
-      "uid": "N2_S0_E190",
+      "name": "103A信息化机房/1F E列头柜B路.主路2输入相电流 C（A）",
+      "uid": "N2_S0_E40_A63",
       "tag": null,
       "category": "cabinet_feed"
     },
     {
-      "name": "103A机房J列头柜A路",
-      "uid": "N2_S0_E189",
+      "name": "103A信息化机房/1F E列头柜B路.主路2输入相电流 B（A）",
+      "uid": "N2_S0_E40_A62",
       "tag": null,
       "category": "cabinet_feed"
     },
     {
-      "name": "103A机房I列头柜B路",
-      "uid": "N2_S0_E188",
+      "name": "103A信息化机房/1F E列头柜B路.主路2输入相电流 A（A）",
+      "uid": "N2_S0_E40_A61",
       "tag": null,
       "category": "cabinet_feed"
     },
     {
-      "name": "103A机房I列头柜A路",
-      "uid": "N2_S0_E187",
+      "name": "103A信息化机房/1F E列头柜A路.主路1输入相电流 C（A）",
+      "uid": "N2_S0_E39_A9",
       "tag": null,
       "category": "cabinet_feed"
     },
     {
-      "name": "103A机房H列头柜B路",
-      "uid": "N2_S0_E186",
+      "name": "103A信息化机房/1F E列头柜A路.主路1输入相电流 B（A）",
+      "uid": "N2_S0_E39_A8",
       "tag": null,
       "category": "cabinet_feed"
     },
     {
-      "name": "103A机房H列头柜A路",
-      "uid": "N2_S0_E185",
+      "name": "103A信息化机房/1F E列头柜A路.主路1输入相电流 A（A）",
+      "uid": "N2_S0_E39_A7",
       "tag": null,
       "category": "cabinet_feed"
     },
     {
-      "name": "103A机房G列头柜B路",
-      "uid": "N2_S0_E184",
+      "name": "103A信息化机房/1F D列头柜B路.主路2输入相电流 C（A）",
+      "uid": "N2_S0_E38_A63",
       "tag": null,
       "category": "cabinet_feed"
     },
     {
-      "name": "103A机房G列头柜A路",
-      "uid": "N2_S0_E183",
+      "name": "103A信息化机房/1F D列头柜B路.主路2输入相电流 B（A）",
+      "uid": "N2_S0_E38_A62",
       "tag": null,
       "category": "cabinet_feed"
     },
     {
-      "name": "103A机房F列头柜B路",
-      "uid": "N2_S0_E182",
+      "name": "103A信息化机房/1F D列头柜B路.主路2输入相电流 A（A）",
+      "uid": "N2_S0_E38_A61",
       "tag": null,
       "category": "cabinet_feed"
     },
     {
-      "name": "103A机房E列头柜A路",
-      "uid": "N2_S0_E181",
+      "name": "103A信息化机房/1F D列头柜A路.主路1输入相电流 C（A）",
+      "uid": "N2_S0_E37_A9",
       "tag": null,
       "category": "cabinet_feed"
     },
     {
-      "name": "103A机房E列头柜B路",
-      "uid": "N2_S0_E40",
+      "name": "103A信息化机房/1F D列头柜A路.主路1输入相电流 B（A）",
+      "uid": "N2_S0_E37_A8",
       "tag": null,
       "category": "cabinet_feed"
     },
     {
-      "name": "103A机房F列头柜A路",
-      "uid": "N2_S0_E39",
+      "name": "103A信息化机房/1F D列头柜A路.主路1输入相电流 A（A）",
+      "uid": "N2_S0_E37_A7",
       "tag": null,
       "category": "cabinet_feed"
     },
     {
-      "name": "103A机房D列头柜B路",
-      "uid": "N2_S0_E38",
+      "name": "103A信息化机房/1F C列头柜B路.主路2输入相电流 C（A）",
+      "uid": "N2_S0_E36_A63",
       "tag": null,
       "category": "cabinet_feed"
     },
     {
-      "name": "103A机房D列头柜A路",
-      "uid": "N2_S0_E37",
+      "name": "103A信息化机房/1F C列头柜B路.主路2输入相电流 B（A）",
+      "uid": "N2_S0_E36_A62",
       "tag": null,
       "category": "cabinet_feed"
     },
     {
-      "name": "103A机房C列头柜B路",
-      "uid": "N2_S0_E36",
+      "name": "103A信息化机房/1F C列头柜B路.主路2输入相电流 A（A）",
+      "uid": "N2_S0_E36_A61",
       "tag": null,
       "category": "cabinet_feed"
     },
     {
-      "name": "103A机房C列头柜A路",
-      "uid": "N2_S0_E35",
+      "name": "103A信息化机房/1F C列头柜A路.主路1输入相电流 C（A）",
+      "uid": "N2_S0_E35_A9",
       "tag": null,
       "category": "cabinet_feed"
     },
     {
-      "name": "103A机房B列头柜B路",
-      "uid": "N2_S0_E34",
+      "name": "103A信息化机房/1F C列头柜A路.主路1输入相电流 B（A）",
+      "uid": "N2_S0_E35_A8",
       "tag": null,
       "category": "cabinet_feed"
     },
     {
-      "name": "103A机房B列头柜A路",
-      "uid": "N2_S0_E33",
+      "name": "103A信息化机房/1F C列头柜A路.主路1输入相电流 A（A）",
+      "uid": "N2_S0_E35_A7",
       "tag": null,
       "category": "cabinet_feed"
     },
     {
-      "name": "103A机房A列头柜B路",
-      "uid": "N2_S0_E32",
+      "name": "103A信息化机房/1F B列头柜B路.主路2输入相电流 C（A）",
+      "uid": "N2_S0_E34_A63",
       "tag": null,
       "category": "cabinet_feed"
     },
     {
-      "name": "103A机房A列头柜A路",
-      "uid": "N2_S0_E31",
+      "name": "103A信息化机房/1F B列头柜B路.主路2输入相电流 B（A）",
+      "uid": "N2_S0_E34_A62",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F B列头柜B路.主路2输入相电流 A（A）",
+      "uid": "N2_S0_E34_A61",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F B列头柜A路.主路1输入相电流 C（A）",
+      "uid": "N2_S0_E33_A9",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F B列头柜A路.主路1输入相电流 B（A）",
+      "uid": "N2_S0_E33_A8",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F B列头柜A路.主路1输入相电流 A（A）",
+      "uid": "N2_S0_E33_A7",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F A列头柜B路.主路2输入相电流 C（A）",
+      "uid": "N2_S0_E32_A63",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F A列头柜B路.主路2输入相电流 B（A）",
+      "uid": "N2_S0_E32_A62",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F A列头柜B路.主路2输入相电流 A（A）",
+      "uid": "N2_S0_E32_A61",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F A列头柜A路.主路1输入相电流 C（A）",
+      "uid": "N2_S0_E31_A9",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F A列头柜A路.主路1输入相电流 B（A）",
+      "uid": "N2_S0_E31_A8",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F A列头柜A路.主路1输入相电流 A（A）",
+      "uid": "N2_S0_E31_A7",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F J列头柜B路.主路2输入相电流 C（A）",
+      "uid": "N2_S0_E190_A63",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F J列头柜B路.主路2输入相电流 B（A）",
+      "uid": "N2_S0_E190_A62",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F J列头柜B路.主路2输入相电流 A（A）",
+      "uid": "N2_S0_E190_A61",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F J列头柜A路.主路1输入相电流 C（A）",
+      "uid": "N2_S0_E189_A9",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F J列头柜A路.主路1输入相电流 B（A）",
+      "uid": "N2_S0_E189_A8",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F J列头柜A路.主路1输入相电流 A（A）",
+      "uid": "N2_S0_E189_A7",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F I列头柜B路.主路2输入相电流 C（A）",
+      "uid": "N2_S0_E188_A63",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F I列头柜B路.主路2输入相电流 B（A）",
+      "uid": "N2_S0_E188_A62",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F I列头柜B路.主路2输入相电流 A（A）",
+      "uid": "N2_S0_E188_A61",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F I列头柜A路.主路1输入相电流 C（A）",
+      "uid": "N2_S0_E187_A9",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F I列头柜A路.主路1输入相电流 B（A）",
+      "uid": "N2_S0_E187_A8",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F I列头柜A路.主路1输入相电流 A（A）",
+      "uid": "N2_S0_E187_A7",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F H列头柜B路.主路2输入相电流 C（A）",
+      "uid": "N2_S0_E186_A63",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F H列头柜B路.主路2输入相电流 B（A）",
+      "uid": "N2_S0_E186_A62",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F H列头柜B路.主路2输入相电流 A（A）",
+      "uid": "N2_S0_E186_A61",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F H列头柜A路.主路1输入相电流 C（A）",
+      "uid": "N2_S0_E185_A9",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F H列头柜A路.主路1输入相电流 B（A）",
+      "uid": "N2_S0_E185_A8",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F H列头柜A路.主路1输入相电流 A（A）",
+      "uid": "N2_S0_E185_A7",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F G列头柜B路.主路2输入相电流 C（A）",
+      "uid": "N2_S0_E184_A63",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F G列头柜B路.主路2输入相电流 B（A）",
+      "uid": "N2_S0_E184_A62",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F G列头柜B路.主路2输入相电流 A（A）",
+      "uid": "N2_S0_E184_A61",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F G列头柜A路.主路1输入相电流 C（A）",
+      "uid": "N2_S0_E183_A9",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F G列头柜A路.主路1输入相电流 B（A）",
+      "uid": "N2_S0_E183_A8",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F G列头柜A路.主路1输入相电流 A（A）",
+      "uid": "N2_S0_E183_A7",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F F列头柜B路.主路2输入相电流 C（A）",
+      "uid": "N2_S0_E182_A63",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F F列头柜B路.主路2输入相电流 B（A）",
+      "uid": "N2_S0_E182_A62",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F F列头柜B路.主路2输入相电流 A（A）",
+      "uid": "N2_S0_E182_A61",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F F列头柜A路.主路1输入相电流 C（A）",
+      "uid": "N2_S0_E181_A9",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F F列头柜A路.主路1输入相电流 B（A）",
+      "uid": "N2_S0_E181_A8",
+      "tag": null,
+      "category": "cabinet_feed"
+    },
+    {
+      "name": "103A信息化机房/1F F列头柜A路.主路1输入相电流 A（A）",
+      "uid": "N2_S0_E181_A7",
       "tag": null,
       "category": "cabinet_feed"
     }
   ],
-  "others": []
+  "others": [
+    {
+      "name": "1#放冷泵运行状态码",
+      "uid": "58a917f3_ce9e_4005_bf7c_e15455f4ca9b",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "2#放冷泵运行状态码",
+      "uid": "15efbcdc_9f75_4061_b8c1_cbe1cbc6a430",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "1#冷机冷冻出水温度",
+      "uid": "566185d4_6cac_4dcc_a52a_0b3bece9d920",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "1#冷机冷冻进水温度",
+      "uid": "b1858cac_4abf_4789_8a62_6c1aec8615c6",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "1#冷机冷冻水流开关",
+      "uid": "2976cfd2_6b50_4bf7_abfc_4d9806c81409",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "2#冷机冷冻出水温度",
+      "uid": "650186e2_c232_4ad0_a13c_7c572ea1f883",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "2#冷机冷冻进水温度",
+      "uid": "7479ada1_b9b3_41b4_a3fa_05e3d4969d04",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "2#冷机冷冻水流开关",
+      "uid": "fc863933_4222_4aa8_a536_028a7edc187d",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "3#冷机冷冻出水温度",
+      "uid": "8ff4a8f3_0a2f_486e_b758_2219f1cfbb23",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "3#冷机冷冻进水温度",
+      "uid": "d8f07bad_c577_4b09_96f9_5a989212ddfb",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "3#冷机冷冻水流开关",
+      "uid": "663dd565_fe66_4139_a6af_6b594aab537b",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "4#冷机冷冻出水温度",
+      "uid": "abb8c9a3_d5de_437a_9fdc_8219bc851c73",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "4#冷机冷冻进水温度",
+      "uid": "0d4d1f7d_d7e0_46ff_9779_b92f59b1ab04",
+      "tag": null,
+      "category": "other"
+    },
+    {
+      "name": "4#冷机冷冻水流开关",
+      "uid": "ff4bb6aa_86fe_41f7_bd68_8485cbbd14db",
+      "tag": null,
+      "category": "other"
+    }
+  ]
 }
