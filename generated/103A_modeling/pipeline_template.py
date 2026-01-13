@@ -134,6 +134,24 @@ def build_feature_matrix(ac_df: pd.DataFrame, lags: int = 3) -> pd.DataFrame:
     return feat
 
 
+def build_lstm_sequences(df: pd.DataFrame, feature_cols: List[str], lags: int) -> np.ndarray:
+    """
+    根据 lag 特征重排为 (n_samples, seq_len, n_base_features) 的序列输入，序列顺序为从最远 lag 到当前值。
+    """
+    base_features = [c for c in feature_cols if '_lag' not in c]
+    seq_len = lags + 1
+    seq_mats = []
+    for f in base_features:
+        cols = [f"{f}_lag{k}" for k in range(lags, 0, -1)] + [f]
+        for c in cols:
+            if c not in df.columns:
+                raise RuntimeError(f"LSTM 序列缺失列 {c}，请检查 lags 或特征构造")
+        seq_mats.append(df[cols].to_numpy())
+    # stack to shape (n_samples, seq_len, n_base_features)
+    seq_arr = np.stack(seq_mats, axis=2)
+    return seq_arr
+
+
 def align_and_join(ac_feat: pd.DataFrame, sensor_df: pd.DataFrame) -> pd.DataFrame:
     df = ac_feat.merge(sensor_df, on='time', how='inner')
     df = df.dropna().reset_index(drop=True)
@@ -186,7 +204,7 @@ def predict_mlp(model_bundle, X: np.ndarray) -> np.ndarray:
     return model_bundle['model'].predict(Xs)
 
 
-def train_lstm(X: np.ndarray, Y: np.ndarray, epochs: int = 60, lr: float = 1e-3, hidden_size: int = 32):
+def train_lstm(X_seq: np.ndarray, Y: np.ndarray, epochs: int = 60, lr: float = 1e-3, hidden_size: int = 32):
     try:
         import torch
         from torch import nn
@@ -195,13 +213,15 @@ def train_lstm(X: np.ndarray, Y: np.ndarray, epochs: int = 60, lr: float = 1e-3,
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     scaler = StandardScaler()
-    Xs = scaler.fit_transform(X)
+    N, T, F = X_seq.shape
+    Xs_flat = scaler.fit_transform(X_seq.reshape(N, T * F))
+    Xs = Xs_flat.reshape(N, T, F)
 
-    # 将特征视为单步序列（滞后信息已在特征中编码）
-    X_tensor = torch.tensor(Xs, dtype=torch.float32).unsqueeze(1).to(device)  # (batch, seq=1, feat)
+    X_tensor = torch.tensor(Xs, dtype=torch.float32).to(device)  # (batch, seq, feat)
     Y_tensor = torch.tensor(Y, dtype=torch.float32).to(device)
 
-    input_dim = X.shape[1]
+    input_dim = F
+    seq_len = T
     output_dim = Y.shape[1]
 
     class LSTMReg(nn.Module):
@@ -212,7 +232,6 @@ def train_lstm(X: np.ndarray, Y: np.ndarray, epochs: int = 60, lr: float = 1e-3,
 
         def forward(self, x):
             out, _ = self.lstm(x)
-            # 取最后时间步（这里只有 1 步）
             out = out[:, -1, :]
             return self.fc(out)
 
@@ -241,11 +260,12 @@ def train_lstm(X: np.ndarray, Y: np.ndarray, epochs: int = 60, lr: float = 1e-3,
         'hidden_size': hidden_size,
         'input_dim': input_dim,
         'output_dim': output_dim,
+        'seq_len': seq_len,
         'device': str(device),
     }
 
 
-def predict_lstm(model_bundle, X: np.ndarray) -> np.ndarray:
+def predict_lstm(model_bundle, X_seq: np.ndarray) -> np.ndarray:
     import torch
     from torch import nn
 
@@ -253,6 +273,7 @@ def predict_lstm(model_bundle, X: np.ndarray) -> np.ndarray:
     input_dim = model_bundle['input_dim']
     hidden_size = model_bundle['hidden_size']
     output_dim = model_bundle['output_dim']
+    seq_len = model_bundle['seq_len']
     state_dict = model_bundle['state_dict']
 
     class LSTMReg(nn.Module):
@@ -270,8 +291,12 @@ def predict_lstm(model_bundle, X: np.ndarray) -> np.ndarray:
     model = LSTMReg(input_dim, hidden_size, output_dim).to(device)
     model.load_state_dict(state_dict)
 
-    Xs = scaler.transform(X)
-    X_tensor = torch.tensor(Xs, dtype=torch.float32).unsqueeze(1).to(device)
+    N, T, F = X_seq.shape
+    if T != seq_len or F != input_dim:
+        raise RuntimeError(f"LSTM 输入维度不符：期望 (.*, {seq_len}, {input_dim}), 实际 ({N}, {T}, {F})")
+    Xs_flat = scaler.transform(X_seq.reshape(N, T * F))
+    Xs = Xs_flat.reshape(N, T, F)
+    X_tensor = torch.tensor(Xs, dtype=torch.float32).to(device)
     model.eval()
     with torch.no_grad():
         preds = model(X_tensor).cpu().numpy()
@@ -525,8 +550,11 @@ def main():
         model_bundle = train_mlp(X_train, Y_train)
         preds = predict_mlp(model_bundle, X_test)
     elif args.model == 'lstm':
-        model_bundle = train_lstm(X_train, Y_train)
-        preds = predict_lstm(model_bundle, X_test)
+        # 针对 LSTM，将 lag 特征重排为序列输入
+        X_train_seq = build_lstm_sequences(train_df, feature_cols, lags=args.lags)
+        X_test_seq = build_lstm_sequences(test_df, feature_cols, lags=args.lags)
+        model_bundle = train_lstm(X_train_seq, Y_train)
+        preds = predict_lstm(model_bundle, X_test_seq)
     elif args.model == 'rf':
         model_bundle = train_random_forest(X_train, Y_train)
         preds = predict_random_forest(model_bundle, X_test)
