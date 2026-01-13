@@ -522,10 +522,10 @@ def main():
     extra_uids = [r['uid'] for r in extra_features]
     extra_col_rename = {}
     for idx, rec in enumerate(extra_features):
-        col = slugify(rec.get('name') or f"extra_{idx}")
-        if col in ac_col_rename.values() or col in extra_col_rename.values():
-            col = f"{col}_{idx}"
-        extra_col_rename[rec['uid']] = f"extra_{col}"
+        base = slugify(rec.get('name') or f"extra_{idx}")
+        # 强制唯一：加索引后缀
+        col = f"extra_{base}_{idx}"
+        extra_col_rename[rec['uid']] = col
 
     print(f'拉取空调设定点 {len(ac_uids)} 个，传感器 {len(sensor_uids)} 个，额外特征 {len(extra_uids)} 个，时间范围 {start} ~ {stop}')
     ac_df = fetch_timeseries(ac_uids, start, stop, args.every,
