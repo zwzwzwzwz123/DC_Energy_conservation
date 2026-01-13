@@ -4,7 +4,7 @@ pipeline_template
 - 读取 `uid_mapping.json`
 - 从 InfluxDB 1.8 拉取时序（设定点 + 温湿度传感器）
 - 特征构造（滞后）
-- 拟合多输出模型（linear / lstsq / mlp / lstm）
+- 拟合多输出模型（linear / lstsq / mlp / lstm / tree-based / boosting）
 - 输出模型、评估指标、预测结果
 """
 import argparse
@@ -37,7 +37,7 @@ UTILS_CONFIG_PATH = PROJECT_ROOT / 'configs' / 'utils_config.yaml'
 
 def load_mapping(path: Path) -> Dict:
     if not path.exists():
-        raise FileNotFoundError(f'缺少映射文件: {path}, 请先运行 uid_mapping_builder.py')
+        raise FileNotFoundError(f'缺少映射文件: {path}，请先运行 uid_mapping_builder.py')
     return json.loads(path.read_text(encoding='utf-8'))
 
 
@@ -79,7 +79,7 @@ def _query_one_uid(client: InfluxDBClient, uid: str, start: str, stop: str, ever
     df = pd.DataFrame(points)
     if df.empty:
         return pd.DataFrame(columns=['time', uid])
-    # Influx 返回列名为 'time' 和 'value'
+    # Influx returns columns 'time' and 'value'
     df = df.rename(columns={'value': uid})
     return df[['time', uid]]
 
@@ -108,8 +108,8 @@ def fetch_timeseries(uids: List[str], start: str, stop: str, every: str,
     return merged
 
 
-def fill_timeseries(df: pd.DataFrame) -> pd.DataFrame:
-    """Fill missing values per column to avoid losing全部样本."""
+def _fill_timeseries_base(df: pd.DataFrame) -> pd.DataFrame:
+    """Fill missing values per column to avoid losing samples."""
     if df.empty:
         return df
     filled = df.sort_values('time').reset_index(drop=True).copy()
@@ -122,6 +122,17 @@ def fill_timeseries(df: pd.DataFrame) -> pd.DataFrame:
             continue
         filled[col] = series.ffill().bfill()
     return filled
+
+
+def fill_timeseries(df: pd.DataFrame) -> pd.DataFrame:
+    """包装填充函数，先检查列名是否重复，避免重复列导致后续操作歧义。"""
+    if df.empty:
+        return df
+    cols = list(df.columns)
+    dupes = [c for c in cols if cols.count(c) > 1 and c != 'time']
+    if dupes:
+        raise RuntimeError(f'列名重复，无法填充：{sorted(set(dupes))}')
+    return _fill_timeseries_base(df)
 
 
 def build_feature_matrix(ac_df: pd.DataFrame, lags: int = 3) -> pd.DataFrame:
@@ -137,7 +148,7 @@ def build_feature_matrix(ac_df: pd.DataFrame, lags: int = 3) -> pd.DataFrame:
 
 def build_lstm_sequences(df: pd.DataFrame, feature_cols: List[str], lags: int) -> np.ndarray:
     """
-    根据 lag 特征重排为 (n_samples, seq_len, n_base_features) 的序列输入，序列顺序为从最远 lag 到当前值。
+    根据 lag 特征重排为 (n_samples, seq_len, n_base_features) 的序列输入，顺序为最远 lag 到当前值。
     """
     base_features = [c for c in feature_cols if '_lag' not in c]
     seq_len = lags + 1
@@ -300,7 +311,7 @@ def predict_lstm(model_bundle, X_seq: np.ndarray) -> np.ndarray:
 
     N, T, F = X_seq.shape
     if T != seq_len or F != input_dim:
-        raise RuntimeError(f"LSTM 输入维度不符：期望 (.*, {seq_len}, {input_dim}), 实际 ({N}, {T}, {F})")
+        raise RuntimeError(f"LSTM 输入维度不符：期望 (.*, {seq_len}, {input_dim})，实际 ({N}, {T}, {F})")
     Xs_flat = scaler.transform(X_seq.reshape(N, T * F))
     Xs = Xs_flat.reshape(N, T, F)
     X_tensor = torch.tensor(Xs, dtype=torch.float32).to(device)
@@ -434,7 +445,7 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray) -> Dict:
 
 
 def split_train_test(dataset: pd.DataFrame, test_ratio: float = 0.2):
-    """Chronological split to avoid泄漏."""
+    """???????????????"""
     n = len(dataset)
     test_size = max(1, int(n * test_ratio))
     train_size = n - test_size
