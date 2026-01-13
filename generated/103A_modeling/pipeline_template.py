@@ -504,6 +504,7 @@ def main():
     mapping = load_mapping(MAPPING_PATH)
     sensor_uids = [r['uid'] for r in mapping.get('sensors', [])]
     extra_features = mapping.get('extra_features', [])
+    cabinet_recs = mapping.get('cabinets', [])
     ac_requests = []
     for ac_no, items in mapping.get('air_conditioners', {}).items():
         for it in items:
@@ -527,7 +528,14 @@ def main():
         col = f"extra_{base}_{idx}"
         extra_col_rename[rec['uid']] = col
 
-    print(f'拉取空调设定点 {len(ac_uids)} 个，传感器 {len(sensor_uids)} 个，额外特征 {len(extra_uids)} 个，时间范围 {start} ~ {stop}')
+    cabinet_uids = [r['uid'] for r in cabinet_recs]
+    cabinet_col_rename = {}
+    for idx, rec in enumerate(cabinet_recs):
+        base = slugify(rec.get('name') or f"cab_{idx}")
+        col = f"cab_{base}_{idx}"
+        cabinet_col_rename[rec['uid']] = col
+
+    print(f'拉取空调设定点 {len(ac_uids)} 个，传感器 {len(sensor_uids)} 个，额外特征 {len(extra_uids)} 个，列头柜 {len(cabinet_uids)} 个，时间范围 {start} ~ {stop}')
     ac_df = fetch_timeseries(ac_uids, start, stop, args.every,
                              field=args.field, measurement_template=args.measurement_template,
                              client_key=args.client_key)
@@ -537,17 +545,23 @@ def main():
     extra_df = fetch_timeseries(extra_uids, start, stop, args.every,
                                  field=args.field, measurement_template=args.measurement_template,
                                  client_key=args.client_key) if extra_uids else pd.DataFrame()
+    cabinet_df = fetch_timeseries(cabinet_uids, start, stop, args.every,
+                                  field=args.field, measurement_template=args.measurement_template,
+                                  client_key=args.client_key) if cabinet_uids else pd.DataFrame()
 
     # 填补缺失，避免内连接后样本过少
     ac_df = fill_timeseries(ac_df)
     sensor_df = fill_timeseries(sensor_df)
     extra_df = fill_timeseries(extra_df)
+    cabinet_df = fill_timeseries(cabinet_df)
 
     # 将空调列名重命名为带 ac 编号的唯一名称，避免 merge 时列冲突
     if not ac_df.empty:
         ac_df = ac_df.rename(columns=ac_col_rename)
     if not extra_df.empty:
         extra_df = extra_df.rename(columns=extra_col_rename)
+    if not cabinet_df.empty:
+        cabinet_df = cabinet_df.rename(columns=cabinet_col_rename)
 
     if ac_df.empty or sensor_df.empty:
         raise RuntimeError('Influx 数据为空，请检查 measurement/field 或时间范围/客户端配置')
@@ -555,6 +569,9 @@ def main():
     feature_df = ac_df
     if not extra_df.empty:
         feature_df = feature_df.merge(extra_df, on='time', how='outer')
+        feature_df = fill_timeseries(feature_df)
+    if not cabinet_df.empty:
+        feature_df = feature_df.merge(cabinet_df, on='time', how='outer')
         feature_df = fill_timeseries(feature_df)
 
     ac_feat = build_feature_matrix(feature_df, lags=args.lags)
