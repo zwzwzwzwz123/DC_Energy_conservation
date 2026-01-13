@@ -169,11 +169,12 @@ def train_mlp(X: np.ndarray, Y: np.ndarray):
     scaler = StandardScaler()
     Xs = scaler.fit_transform(X)
     model = MLPRegressor(
-        hidden_layer_sizes=(256, 128),
+        hidden_layer_sizes=(128, 64),
         activation='relu',
-        max_iter=800,
-        alpha=1e-4,
+        max_iter=600,
+        alpha=5e-4,
         early_stopping=True,
+        validation_fraction=0.2,
         random_state=42,
     )
     model.fit(Xs, Y)
@@ -185,7 +186,7 @@ def predict_mlp(model_bundle, X: np.ndarray) -> np.ndarray:
     return model_bundle['model'].predict(Xs)
 
 
-def train_lstm(X: np.ndarray, Y: np.ndarray, epochs: int = 80, lr: float = 1e-3, hidden_size: int = 64):
+def train_lstm(X: np.ndarray, Y: np.ndarray, epochs: int = 60, lr: float = 1e-3, hidden_size: int = 32):
     try:
         import torch
         from torch import nn
@@ -281,8 +282,8 @@ def train_decision_tree(X: np.ndarray, Y: np.ndarray):
     model = MultiOutputRegressor(
         DecisionTreeRegressor(
             random_state=42,
-            max_depth=12,
-            min_samples_leaf=2,
+            max_depth=8,
+            min_samples_leaf=4,
         )
     )
     model.fit(X, Y)
@@ -296,9 +297,9 @@ def predict_decision_tree(model_bundle, X: np.ndarray) -> np.ndarray:
 def train_random_forest(X: np.ndarray, Y: np.ndarray):
     model = MultiOutputRegressor(
         RandomForestRegressor(
-            n_estimators=300,
-            max_depth=12,
-            min_samples_leaf=2,
+            n_estimators=250,
+            max_depth=10,
+            min_samples_leaf=4,
             max_features='sqrt',
             random_state=42,
             n_jobs=-1,
@@ -319,14 +320,14 @@ def train_xgb(X: np.ndarray, Y: np.ndarray):
         raise ImportError("缺少依赖 xgboost，无法使用 xgb 模型；请安装 xgboost") from exc
 
     base = xgb.XGBRegressor(
-        n_estimators=500,
-        max_depth=6,
+        n_estimators=400,
+        max_depth=4,
         learning_rate=0.05,
-        subsample=0.9,
-        colsample_bytree=0.9,
-        min_child_weight=1.0,
-        reg_lambda=1.0,
-        reg_alpha=0.0,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        min_child_weight=5.0,
+        reg_lambda=2.0,
+        reg_alpha=0.5,
         random_state=42,
         n_jobs=-1,
         objective='reg:squarederror',
@@ -347,14 +348,14 @@ def train_lgbm(X: np.ndarray, Y: np.ndarray):
         raise ImportError("缺少依赖 lightgbm，无法使用 lgbm 模型；请安装 lightgbm") from exc
 
     base = lgb.LGBMRegressor(
-        n_estimators=500,
+        n_estimators=400,
         learning_rate=0.05,
-        num_leaves=63,
-        max_depth=-1,
-        subsample=0.9,
-        colsample_bytree=0.9,
+        num_leaves=31,
+        max_depth=10,
+        subsample=0.8,
+        colsample_bytree=0.8,
         bagging_freq=1,
-        reg_lambda=1.0,
+        reg_lambda=2.0,
         random_state=42,
     )
     model = MultiOutputRegressor(base)
@@ -373,11 +374,11 @@ def train_catboost(X: np.ndarray, Y: np.ndarray):
         raise ImportError("缺少依赖 catboost，无法使用 cat 模型；请安装 catboost") from exc
 
     base = catboost.CatBoostRegressor(
-        iterations=600,
-        depth=7,
+        iterations=500,
+        depth=6,
         learning_rate=0.05,
         loss_function='RMSE',
-        l2_leaf_reg=3.0,
+        l2_leaf_reg=5.0,
         random_seed=42,
         verbose=False,
     )
