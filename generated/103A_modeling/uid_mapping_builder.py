@@ -23,6 +23,7 @@ OUT_CSV = Path(__file__).with_name("uid_mapping.csv")
 SHEET_AC = "末端空调"
 SHEET_CHW = "冷冻水"
 SHEET_CABINET = "列头柜"
+SHEET_THS = "温湿度计"
 
 COL_NAME_AC = "设备名称"
 COL_FEATURE_AC = "特征"
@@ -36,16 +37,21 @@ def load_sheets(path: Path) -> Dict[str, pd.DataFrame]:
     if not path.exists():
         raise FileNotFoundError(f"源文件不存在: {path}")
     xls = pd.ExcelFile(path)
-    return {name: xls.parse(name) for name in xls.sheet_names}
+    sheets = {}
+    for name in xls.sheet_names:
+        if name == SHEET_THS:
+            # 温湿度计 sheet 可能无表头，强制 header=None 保留首行数据
+            sheets[name] = xls.parse(name, header=None)
+        else:
+            sheets[name] = xls.parse(name)
+    return sheets
 
 
 def classify_feature(feature: str) -> str:
     text = str(feature)
     if "设定" in text or "设定点" in text:
         return "ac_setpoint"
-    if ("温" in text) or ("湿" in text):
-        return "temp_humidity_sensor"
-    return "ac_setpoint"
+    return "ac_feature"
 
 
 def normalize_ac(df: pd.DataFrame) -> List[Dict]:
@@ -85,7 +91,7 @@ def normalize_cabinet(df: pd.DataFrame) -> List[Dict]:
     return records
 
 
-def normalize_other(df: pd.DataFrame) -> List[Dict]:
+def normalize_chw(df: pd.DataFrame) -> List[Dict]:
     records = []
     for _, row in df.iterrows():
         name = row.get(COL_NAME_OTHER)
@@ -97,7 +103,27 @@ def normalize_other(df: pd.DataFrame) -> List[Dict]:
                 "name": str(name),
                 "uid": str(uid),
                 "tag": None,
-                "category": "other",
+                "category": "extra_feature",
+            }
+        )
+    return records
+
+
+def normalize_ths(df: pd.DataFrame) -> List[Dict]:
+    # 预期三列：名称、标签（如温/湿）、uid（无表头，header=None）
+    records = []
+    for _, row in df.iterrows():
+        if len(row) < 3:
+            continue
+        name, tag, uid = row.iloc[0], row.iloc[1], row.iloc[2]
+        if pd.isna(uid) or pd.isna(name):
+            continue
+        records.append(
+            {
+                "name": str(name),
+                "uid": str(uid),
+                "tag": None if pd.isna(tag) else str(tag),
+                "category": "temp_humidity_sensor",
             }
         )
     return records
@@ -105,12 +131,15 @@ def normalize_other(df: pd.DataFrame) -> List[Dict]:
 
 def normalize_all(sheets: Dict[str, pd.DataFrame]) -> Dict:
     records = []
+    extra_features = []
     if SHEET_AC in sheets:
         records.extend(normalize_ac(sheets[SHEET_AC]))
     if SHEET_CABINET in sheets:
         records.extend(normalize_cabinet(sheets[SHEET_CABINET]))
     if SHEET_CHW in sheets:
-        records.extend(normalize_other(sheets[SHEET_CHW]))
+        extra_features.extend(normalize_chw(sheets[SHEET_CHW]))
+    if SHEET_THS in sheets:
+        records.extend(normalize_ths(sheets[SHEET_THS]))
 
     ac = {}
     sensors = []
@@ -135,6 +164,7 @@ def normalize_all(sheets: Dict[str, pd.DataFrame]) -> Dict:
         "sensors": sensors,
         "cabinets": cabinets,
         "others": others,
+        "extra_features": extra_features,
     }
 
 

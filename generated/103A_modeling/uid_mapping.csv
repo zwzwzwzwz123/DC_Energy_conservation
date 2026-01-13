@@ -1,80 +1,80 @@
 name,uid,tag,category
-1F IDC机房1#空调,N2_S0_E1_A1,风机转速（%）,ac_setpoint
-1F IDC机房1#空调,N2_S0_E1_A2,水阀开度（%）,ac_setpoint
-1F IDC机房1#空调,N2_S0_E1_A3,回风湿度测量值（%）,temp_humidity_sensor
-1F IDC机房1#空调,N2_S0_E1_A4,回风温度测量值（℃）,temp_humidity_sensor
+1F IDC机房1#空调,N2_S0_E1_A1,风机转速（%）,ac_feature
+1F IDC机房1#空调,N2_S0_E1_A2,水阀开度（%）,ac_feature
+1F IDC机房1#空调,N2_S0_E1_A3,回风湿度测量值（%）,ac_feature
+1F IDC机房1#空调,N2_S0_E1_A4,回风温度测量值（℃）,ac_feature
 1F IDC机房1#空调,N2_S0_E1_A26,风压设定点（Pa）,ac_setpoint
 1F IDC机房1#空调,N2_S0_E1_A27,回风湿度设定点（%）,ac_setpoint
 1F IDC机房1#空调,N2_S0_E1_A28,回风温度设定点（℃）,ac_setpoint
 1F IDC机房1#空调,N2_S0_E1_A30,远程平均温度设定点（℃）,ac_setpoint
 1F IDC机房1#空调,N2_S0_E1_A31,远程最高温度设定点（℃）,ac_setpoint
-1F IDC机房2#空调,N2_S0_E2_A1,风机转速（%）,ac_setpoint
-1F IDC机房2#空调,N2_S0_E2_A2,水阀开度（%）,ac_setpoint
-1F IDC机房2#空调,N2_S0_E2_A3,回风湿度测量值（%）,temp_humidity_sensor
-1F IDC机房2#空调,N2_S0_E2_A4,回风温度测量值（℃）,temp_humidity_sensor
+1F IDC机房2#空调,N2_S0_E2_A1,风机转速（%）,ac_feature
+1F IDC机房2#空调,N2_S0_E2_A2,水阀开度（%）,ac_feature
+1F IDC机房2#空调,N2_S0_E2_A3,回风湿度测量值（%）,ac_feature
+1F IDC机房2#空调,N2_S0_E2_A4,回风温度测量值（℃）,ac_feature
 1F IDC机房2#空调,N2_S0_E2_A26,风压设定点（Pa）,ac_setpoint
 1F IDC机房2#空调,N2_S0_E2_A27,回风湿度设定点（%）,ac_setpoint
 1F IDC机房2#空调,N2_S0_E2_A28,回风温度设定点（℃）,ac_setpoint
 1F IDC机房2#空调,N2_S0_E2_A30,远程平均温度设定点（℃）,ac_setpoint
 1F IDC机房2#空调,N2_S0_E2_A31,远程最高温度设定点（℃）,ac_setpoint
-1F IDC机房3#空调,N2_S0_E3_A1,风机转速（%）,ac_setpoint
-1F IDC机房3#空调,N2_S0_E3_A2,水阀开度（%）,ac_setpoint
-1F IDC机房3#空调,N2_S0_E3_A3,回风湿度测量值（%）,temp_humidity_sensor
-1F IDC机房3#空调,N2_S0_E3_A4,回风温度测量值（℃）,temp_humidity_sensor
+1F IDC机房3#空调,N2_S0_E3_A1,风机转速（%）,ac_feature
+1F IDC机房3#空调,N2_S0_E3_A2,水阀开度（%）,ac_feature
+1F IDC机房3#空调,N2_S0_E3_A3,回风湿度测量值（%）,ac_feature
+1F IDC机房3#空调,N2_S0_E3_A4,回风温度测量值（℃）,ac_feature
 1F IDC机房3#空调,N2_S0_E3_A26,风压设定点（Pa）,ac_setpoint
 1F IDC机房3#空调,N2_S0_E3_A27,回风湿度设定点（%）,ac_setpoint
 1F IDC机房3#空调,N2_S0_E3_A28,回风温度设定点（℃）,ac_setpoint
 1F IDC机房3#空调,N2_S0_E3_A30,远程平均温度设定点（℃）,ac_setpoint
 1F IDC机房3#空调,N2_S0_E3_A31,远程最高温度设定点（℃）,ac_setpoint
-1F IDC机房4#空调,N2_S0_E4_A1,风机转速（%）,ac_setpoint
-1F IDC机房4#空调,N2_S0_E4_A2,水阀开度（%）,ac_setpoint
-1F IDC机房4#空调,N2_S0_E4_A3,回风湿度测量值（%）,temp_humidity_sensor
-1F IDC机房4#空调,N2_S0_E4_A4,回风温度测量值（℃）,temp_humidity_sensor
+1F IDC机房4#空调,N2_S0_E4_A1,风机转速（%）,ac_feature
+1F IDC机房4#空调,N2_S0_E4_A2,水阀开度（%）,ac_feature
+1F IDC机房4#空调,N2_S0_E4_A3,回风湿度测量值（%）,ac_feature
+1F IDC机房4#空调,N2_S0_E4_A4,回风温度测量值（℃）,ac_feature
 1F IDC机房4#空调,N2_S0_E4_A26,风压设定点（Pa）,ac_setpoint
 1F IDC机房4#空调,N2_S0_E4_A27,回风湿度设定点（%）,ac_setpoint
 1F IDC机房4#空调,N2_S0_E4_A28,回风温度设定点（℃）,ac_setpoint
 1F IDC机房4#空调,N2_S0_E4_A30,远程平均温度设定点（℃）,ac_setpoint
 1F IDC机房4#空调,N2_S0_E4_A31,远程最高温度设定点（℃）,ac_setpoint
-1F IDC机房5#空调,N2_S0_E5_A1,风机转速（%）,ac_setpoint
-1F IDC机房5#空调,N2_S0_E5_A2,水阀开度（%）,ac_setpoint
-1F IDC机房5#空调,N2_S0_E5_A3,回风湿度测量值（%）,temp_humidity_sensor
-1F IDC机房5#空调,N2_S0_E5_A4,回风温度测量值（℃）,temp_humidity_sensor
+1F IDC机房5#空调,N2_S0_E5_A1,风机转速（%）,ac_feature
+1F IDC机房5#空调,N2_S0_E5_A2,水阀开度（%）,ac_feature
+1F IDC机房5#空调,N2_S0_E5_A3,回风湿度测量值（%）,ac_feature
+1F IDC机房5#空调,N2_S0_E5_A4,回风温度测量值（℃）,ac_feature
 1F IDC机房5#空调,N2_S0_E5_A26,风压设定点（Pa）,ac_setpoint
 1F IDC机房5#空调,N2_S0_E5_A27,回风湿度设定点（%）,ac_setpoint
 1F IDC机房5#空调,N2_S0_E5_A28,回风温度设定点（℃）,ac_setpoint
 1F IDC机房5#空调,N2_S0_E5_A30,远程平均温度设定点（℃）,ac_setpoint
 1F IDC机房5#空调,N2_S0_E5_A31,远程最高温度设定点（℃）,ac_setpoint
-1F IDC机房6#空调,N2_S0_E6_A1,风机转速（%）,ac_setpoint
-1F IDC机房6#空调,N2_S0_E6_A2,水阀开度（%）,ac_setpoint
-1F IDC机房6#空调,N2_S0_E6_A3,回风湿度测量值（%）,temp_humidity_sensor
-1F IDC机房6#空调,N2_S0_E6_A4,回风温度测量值（℃）,temp_humidity_sensor
+1F IDC机房6#空调,N2_S0_E6_A1,风机转速（%）,ac_feature
+1F IDC机房6#空调,N2_S0_E6_A2,水阀开度（%）,ac_feature
+1F IDC机房6#空调,N2_S0_E6_A3,回风湿度测量值（%）,ac_feature
+1F IDC机房6#空调,N2_S0_E6_A4,回风温度测量值（℃）,ac_feature
 1F IDC机房6#空调,N2_S0_E6_A26,风压设定点（Pa）,ac_setpoint
 1F IDC机房6#空调,N2_S0_E6_A27,回风湿度设定点（%）,ac_setpoint
 1F IDC机房6#空调,N2_S0_E6_A28,回风温度设定点（℃）,ac_setpoint
 1F IDC机房6#空调,N2_S0_E6_A30,远程平均温度设定点（℃）,ac_setpoint
 1F IDC机房6#空调,N2_S0_E6_A31,远程最高温度设定点（℃）,ac_setpoint
-1F IDC机房7#空调,N2_S0_E7_A1,风机转速（%）,ac_setpoint
-1F IDC机房7#空调,N2_S0_E7_A2,水阀开度（%）,ac_setpoint
-1F IDC机房7#空调,N2_S0_E7_A3,回风湿度测量值（%）,temp_humidity_sensor
-1F IDC机房7#空调,N2_S0_E7_A4,回风温度测量值（℃）,temp_humidity_sensor
+1F IDC机房7#空调,N2_S0_E7_A1,风机转速（%）,ac_feature
+1F IDC机房7#空调,N2_S0_E7_A2,水阀开度（%）,ac_feature
+1F IDC机房7#空调,N2_S0_E7_A3,回风湿度测量值（%）,ac_feature
+1F IDC机房7#空调,N2_S0_E7_A4,回风温度测量值（℃）,ac_feature
 1F IDC机房7#空调,N2_S0_E7_A26,风压设定点（Pa）,ac_setpoint
 1F IDC机房7#空调,N2_S0_E7_A27,回风湿度设定点（%）,ac_setpoint
 1F IDC机房7#空调,N2_S0_E7_A28,回风温度设定点（℃）,ac_setpoint
 1F IDC机房7#空调,N2_S0_E7_A30,远程平均温度设定点（℃）,ac_setpoint
 1F IDC机房7#空调,N2_S0_E7_A31,远程最高温度设定点（℃）,ac_setpoint
-1F IDC机房8#空调,N2_S0_E8_A1,风机转速（%）,ac_setpoint
-1F IDC机房8#空调,N2_S0_E8_A2,水阀开度（%）,ac_setpoint
-1F IDC机房8#空调,N2_S0_E8_A3,回风湿度测量值（%）,temp_humidity_sensor
-1F IDC机房8#空调,N2_S0_E8_A4,回风温度测量值（℃）,temp_humidity_sensor
+1F IDC机房8#空调,N2_S0_E8_A1,风机转速（%）,ac_feature
+1F IDC机房8#空调,N2_S0_E8_A2,水阀开度（%）,ac_feature
+1F IDC机房8#空调,N2_S0_E8_A3,回风湿度测量值（%）,ac_feature
+1F IDC机房8#空调,N2_S0_E8_A4,回风温度测量值（℃）,ac_feature
 1F IDC机房8#空调,N2_S0_E8_A26,风压设定点（Pa）,ac_setpoint
 1F IDC机房8#空调,N2_S0_E8_A27,回风湿度设定点（%）,ac_setpoint
 1F IDC机房8#空调,N2_S0_E8_A28,回风温度设定点（℃）,ac_setpoint
 1F IDC机房8#空调,N2_S0_E8_A30,远程平均温度设定点（℃）,ac_setpoint
 1F IDC机房8#空调,N2_S0_E8_A31,远程最高温度设定点（℃）,ac_setpoint
-1F IDC机房9#空调,N2_S0_E9_A1,风机转速（%）,ac_setpoint
-1F IDC机房9#空调,N2_S0_E9_A2,水阀开度（%）,ac_setpoint
-1F IDC机房9#空调,N2_S0_E9_A3,回风湿度测量值（%）,temp_humidity_sensor
-1F IDC机房9#空调,N2_S0_E9_A4,回风温度测量值（℃）,temp_humidity_sensor
+1F IDC机房9#空调,N2_S0_E9_A1,风机转速（%）,ac_feature
+1F IDC机房9#空调,N2_S0_E9_A2,水阀开度（%）,ac_feature
+1F IDC机房9#空调,N2_S0_E9_A3,回风湿度测量值（%）,ac_feature
+1F IDC机房9#空调,N2_S0_E9_A4,回风温度测量值（℃）,ac_feature
 1F IDC机房9#空调,N2_S0_E9_A26,风压设定点（Pa）,ac_setpoint
 1F IDC机房9#空调,N2_S0_E9_A27,回风湿度设定点（%）,ac_setpoint
 1F IDC机房9#空调,N2_S0_E9_A28,回风温度设定点（℃）,ac_setpoint
@@ -140,17 +140,69 @@ name,uid,tag,category
 103A信息化机房/1F F列头柜A路.主路1输入相电流 C（A）,N2_S0_E181_A9,,cabinet_feed
 103A信息化机房/1F F列头柜A路.主路1输入相电流 B（A）,N2_S0_E181_A8,,cabinet_feed
 103A信息化机房/1F F列头柜A路.主路1输入相电流 A（A）,N2_S0_E181_A7,,cabinet_feed
-1#放冷泵运行状态码,58a917f3_ce9e_4005_bf7c_e15455f4ca9b,,other
-2#放冷泵运行状态码,15efbcdc_9f75_4061_b8c1_cbe1cbc6a430,,other
-1#冷机冷冻出水温度,566185d4_6cac_4dcc_a52a_0b3bece9d920,,other
-1#冷机冷冻进水温度,b1858cac_4abf_4789_8a62_6c1aec8615c6,,other
-1#冷机冷冻水流开关,2976cfd2_6b50_4bf7_abfc_4d9806c81409,,other
-2#冷机冷冻出水温度,650186e2_c232_4ad0_a13c_7c572ea1f883,,other
-2#冷机冷冻进水温度,7479ada1_b9b3_41b4_a3fa_05e3d4969d04,,other
-2#冷机冷冻水流开关,fc863933_4222_4aa8_a536_028a7edc187d,,other
-3#冷机冷冻出水温度,8ff4a8f3_0a2f_486e_b758_2219f1cfbb23,,other
-3#冷机冷冻进水温度,d8f07bad_c577_4b09_96f9_5a989212ddfb,,other
-3#冷机冷冻水流开关,663dd565_fe66_4139_a6af_6b594aab537b,,other
-4#冷机冷冻出水温度,abb8c9a3_d5de_437a_9fdc_8219bc851c73,,other
-4#冷机冷冻进水温度,0d4d1f7d_d7e0_46ff_9779_b92f59b1ab04,,other
-4#冷机冷冻水流开关,ff4bb6aa_86fe_41f7_bd68_8485cbbd14db,,other
+1F IDC机房热通道33#温湿度,a7217828_ed16_4ffa_b789_04ada92a2e75,1#温度,temp_humidity_sensor
+1F IDC机房热通道33#温湿度,52664cb3_a254_46c0_9674_777ef3b68793,1#湿度,temp_humidity_sensor
+1F IDC机房冷通道32#温湿度,a38944a0_b951_45b2_a13c_13a6fa9223e4,1#温度,temp_humidity_sensor
+1F IDC机房冷通道32#温湿度,600edf85_f3ec_46e5_a811_855f82ae07f4,1#湿度,temp_humidity_sensor
+1F IDC机房热通道31#温湿度,4fe07996_cd59_4771_ab80_bab15210849b,1#温度,temp_humidity_sensor
+1F IDC机房热通道31#温湿度,b111676c_bfed_4fca_a23e_91774e9736fa,1#湿度,temp_humidity_sensor
+1F IDC机房冷通道30#温湿度,44686a4e_336a_471f_9f04_abfe29f12c8a,1#温度,temp_humidity_sensor
+1F IDC机房冷通道30#温湿度,24e69074_556e_421e_88bc_d983f21e2a46,1#湿度,temp_humidity_sensor
+1F IDC机房热通道29#温湿度,0ab54859_d564_4e3d_9810_2d74a26d007d,1#温度,temp_humidity_sensor
+1F IDC机房热通道29#温湿度,25c42ff2_2278_42ca_b97c_43f82cf29737,1#湿度,temp_humidity_sensor
+1F IDC机房冷通道28#温湿度,f50dd4c9_c782_4c40_81e6_14dcfd755436,1#温度,temp_humidity_sensor
+1F IDC机房冷通道28#温湿度,dd6f7451_7a3d_4656_97ef_b350af38491a,1#湿度,temp_humidity_sensor
+1F IDC机房热通道27#温湿度,bdb38c2a_f0c6_49c0_b62a_d4e0fc5fd0ea,1#温度,temp_humidity_sensor
+1F IDC机房热通道27#温湿度,b3582d8f_390a_4db6_8f42_68be2cad1339,1#湿度,temp_humidity_sensor
+1F IDC机房冷通道26#温湿度,a10310ed_ff3a_4bdf_b02e_0362f5808958,1#温度,temp_humidity_sensor
+1F IDC机房冷通道26#温湿度,0dc718ed_ea4c_4d82_be43_6d94b9943fa7,1#湿度,temp_humidity_sensor
+1F IDC机房热通道25#温湿度,07bb7d1d_b635_4ca9_909c_7bdaf3ceab10,1#温度,temp_humidity_sensor
+1F IDC机房热通道25#温湿度,e8700958_d7b7_4050_874d_294fbe149531,1#湿度,temp_humidity_sensor
+1F IDC机房冷通道24#温湿度,be578260_b5e1_4e29_888f_4ba9d2c1b138,1#温度,temp_humidity_sensor
+1F IDC机房冷通道24#温湿度,8e318fc0_0003_43c3_8817_0920307d4e1a,1#湿度,temp_humidity_sensor
+1F IDC机房热通道23#温湿度,ad0a96f7_8d56_4120_b0fd_666f6419da54,1#温度,temp_humidity_sensor
+1F IDC机房热通道23#温湿度,50811f02_536c_4bdb_88f7_1769d6110ea1,1#湿度,temp_humidity_sensor
+1F IDC机房热通道22#温湿度,N2_S0_E102_A1,温度,temp_humidity_sensor
+1F IDC机房热通道22#温湿度,N2_S0_E102_A2,湿度,temp_humidity_sensor
+1F IDC机房热通道21#温湿度,N2_S0_E101_A1,温度,temp_humidity_sensor
+1F IDC机房热通道21#温湿度,N2_S0_E101_A2,湿度,temp_humidity_sensor
+1F IDC机房冷通道20#温湿度,N2_S0_E100_A1,温度,temp_humidity_sensor
+1F IDC机房冷通道20#温湿度,N2_S0_E100_A2,湿度,temp_humidity_sensor
+1F IDC机房冷通道19#温湿度,N2_S0_E99_A1,温度,temp_humidity_sensor
+1F IDC机房冷通道19#温湿度,N2_S0_E99_A2,湿度,temp_humidity_sensor
+1F IDC机房热通道18#温湿度,N2_S0_E98_A1,温度,temp_humidity_sensor
+1F IDC机房热通道18#温湿度,N2_S0_E98_A2,湿度,temp_humidity_sensor
+1F IDC机房热通道17#温湿度,N2_S0_E97_A1,温度,temp_humidity_sensor
+1F IDC机房热通道17#温湿度,N2_S0_E97_A2,湿度,temp_humidity_sensor
+1F IDC机房冷通道16#温湿度,N2_S0_E96_A1,温度,temp_humidity_sensor
+1F IDC机房冷通道16#温湿度,N2_S0_E96_A2,湿度,temp_humidity_sensor
+1F IDC机房冷通道15#温湿度,N2_S0_E95_A1,温度,temp_humidity_sensor
+1F IDC机房冷通道15#温湿度,N2_S0_E95_A2,湿度,temp_humidity_sensor
+1F IDC机房热通道14#温湿度,N2_S0_E94_A1,温度,temp_humidity_sensor
+1F IDC机房热通道14#温湿度,N2_S0_E94_A2,湿度,temp_humidity_sensor
+1F IDC机房热通道13#温湿度,N2_S0_E93_A1,温度,temp_humidity_sensor
+1F IDC机房热通道13#温湿度,N2_S0_E93_A2,湿度,temp_humidity_sensor
+1F IDC机房冷通道12#温湿度,N2_S0_E92_A1,温度,temp_humidity_sensor
+1F IDC机房冷通道12#温湿度,N2_S0_E92_A2,湿度,temp_humidity_sensor
+1F IDC机房冷通道11#温湿度,N2_S0_E91_A1,温度,temp_humidity_sensor
+1F IDC机房冷通道11#温湿度,N2_S0_E91_A2,湿度,temp_humidity_sensor
+1F IDC机房热通道10#温湿度,N2_S0_E90_A1,温度,temp_humidity_sensor
+1F IDC机房热通道10#温湿度,N2_S0_E90_A2,湿度,temp_humidity_sensor
+1F IDC机房热通道9#温湿度,N2_S0_E89_A1,温度,temp_humidity_sensor
+1F IDC机房热通道9#温湿度,N2_S0_E89_A2,湿度,temp_humidity_sensor
+1F IDC机房冷通道8#温湿度,N2_S0_E88_A1,温度,temp_humidity_sensor
+1F IDC机房冷通道8#温湿度,N2_S0_E88_A2,湿度,temp_humidity_sensor
+1F IDC机房冷通道7#温湿度,N2_S0_E87_A1,温度,temp_humidity_sensor
+1F IDC机房冷通道7#温湿度,N2_S0_E87_A2,湿度,temp_humidity_sensor
+1F IDC机房热通道6#温湿度,N2_S0_E86_A1,温度,temp_humidity_sensor
+1F IDC机房热通道6#温湿度,N2_S0_E86_A2,湿度,temp_humidity_sensor
+1F IDC机房热通道5#温湿度,N2_S0_E85_A1,温度,temp_humidity_sensor
+1F IDC机房热通道5#温湿度,N2_S0_E85_A2,湿度,temp_humidity_sensor
+1F IDC机房冷通道4#温湿度,N2_S0_E84_A1,温度,temp_humidity_sensor
+1F IDC机房冷通道4#温湿度,N2_S0_E84_A2,湿度,temp_humidity_sensor
+1F IDC机房冷通道3#温湿度,N2_S0_E83_A1,温度,temp_humidity_sensor
+1F IDC机房冷通道3#温湿度,N2_S0_E83_A2,湿度,temp_humidity_sensor
+1F IDC机房热通道2#温湿度,N2_S0_E82_A1,温度,temp_humidity_sensor
+1F IDC机房热通道2#温湿度,N2_S0_E82_A2,湿度,temp_humidity_sensor
+1F IDC机房热通道1#温湿度,N2_S0_E81_A1,温度,temp_humidity_sensor
+1F IDC机房热通道1#温湿度,N2_S0_E81_A2,湿度,temp_humidity_sensor
