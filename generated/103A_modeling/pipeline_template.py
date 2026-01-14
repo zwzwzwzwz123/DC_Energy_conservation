@@ -434,14 +434,42 @@ def predict_catboost(model_bundle, X: np.ndarray) -> np.ndarray:
     return model_bundle['model'].predict(X)
 
 
-def evaluate(y_true: np.ndarray, y_pred: np.ndarray) -> Dict:
+def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], sensor_meta: Dict) -> Dict:
     mse = np.mean((y_true - y_pred) ** 2, axis=0).tolist()
     mae = np.mean(np.abs(y_true - y_pred), axis=0).tolist()
     overall = {
         'mse_mean': float(np.mean(mse)),
         'mae_mean': float(np.mean(mae)),
     }
-    return {'per_target_mse': mse, 'per_target_mae': mae, 'overall': overall}
+
+    groups = {'temperature': [], 'humidity': []}
+    for idx, col in enumerate(target_cols):
+        meta = sensor_meta.get(col, {})
+        text = f"{meta.get('name', '')} {meta.get('tag', '')}"
+        if '温' in text:
+            groups['temperature'].append(idx)
+        if '湿' in text:
+            groups['humidity'].append(idx)
+
+    def _group_stats(indices: List[int]):
+        if not indices:
+            return None
+        g_mse = float(np.mean((y_true[:, indices] - y_pred[:, indices]) ** 2))
+        g_mae = float(np.mean(np.abs(y_true[:, indices] - y_pred[:, indices])))
+        return {'mse_mean': g_mse, 'mae_mean': g_mae, 'count': len(indices)}
+
+    group_metrics = {}
+    for k, idxs in groups.items():
+        stats = _group_stats(idxs)
+        if stats:
+            group_metrics[k] = stats
+
+    return {
+        'per_target_mse': mse,
+        'per_target_mae': mae,
+        'overall': overall,
+        'groups': group_metrics,
+    }
 
 
 def split_train_test(dataset: pd.DataFrame, test_ratio: float = 0.2):
@@ -502,7 +530,9 @@ def main():
     start = args.start or (now_utc - timedelta(days=365)).isoformat().replace('+00:00', 'Z')
 
     mapping = load_mapping(MAPPING_PATH)
-    sensor_uids = [r['uid'] for r in mapping.get('sensors', [])]
+    sensor_recs = mapping.get('sensors', [])
+    sensor_uids = [r['uid'] for r in sensor_recs]
+    sensor_meta = {r['uid']: r for r in sensor_recs}
     extra_features = mapping.get('extra_features', [])
     cabinet_recs = mapping.get('cabinets', [])
     ac_requests = []
@@ -634,7 +664,7 @@ def main():
         model_bundle = train_catboost(X_train, Y_train)
         preds = predict_catboost(model_bundle, X_test)
 
-    metrics = evaluate(Y_test, preds)
+    metrics = evaluate(Y_test, preds, target_cols, sensor_meta)
     pred_df = pd.DataFrame(preds, columns=target_cols)
     pred_df.insert(0, 'time', test_df['time'].to_numpy())
 
