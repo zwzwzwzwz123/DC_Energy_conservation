@@ -442,14 +442,28 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], sen
         'mae_mean': float(np.mean(mae)),
     }
 
+    def classify(meta: Dict) -> str:
+        tag = str(meta.get('tag') or '')
+        name = str(meta.get('name') or '')
+        # 优先用 tag 做互斥判别
+        if ('温' in tag) and ('湿' not in tag):
+            return 'temperature'
+        if ('湿' in tag) and ('温' not in tag):
+            return 'humidity'
+        # 其次用 name
+        if ('温度' in name) and ('湿' not in name):
+            return 'temperature'
+        if ('湿度' in name) and ('温' not in name):
+            return 'humidity'
+        # 含“温湿度”等混合的，不分组
+        return 'other'
+
     groups = {'temperature': [], 'humidity': []}
     for idx, col in enumerate(target_cols):
         meta = sensor_meta.get(col, {})
-        text = f"{meta.get('name', '')} {meta.get('tag', '')}"
-        if '温' in text:
-            groups['temperature'].append(idx)
-        if '湿' in text:
-            groups['humidity'].append(idx)
+        g = classify(meta)
+        if g in groups:
+            groups[g].append(idx)
 
     def _group_stats(indices: List[int]):
         if not indices:
