@@ -2,7 +2,7 @@
 """
 dump_raw_timeseries
 
-从 InfluxDB 拉取原始（未聚合）的空调设定点和温湿度传感器数据，方便检查源数据是否恒定。
+从 InfluxDB 拉取原始（未聚合）的测点数据，便于检查源数据是否恒定。
 输出：generated/103A_modeling/artifacts/raw_timeseries.csv（长表：time, uid, value）
 """
 import argparse
@@ -28,14 +28,22 @@ spec.loader.exec_module(p)
 
 
 def build_uids(mapping):
-    sensor_uids = [r["uid"] for r in mapping.get("sensors", [])]
-    ac_uids: List[str] = []
+    uids: List[str] = []
+    # 传感器
+    uids.extend([r["uid"] for r in mapping.get("sensors", [])])
+    # 空调设定点
     for _, items in mapping.get("air_conditioners", {}).items():
         for it in items:
             param_uid = it.get("param")
             if param_uid:
-                ac_uids.append(param_uid)
-    return sensor_uids, ac_uids
+                uids.append(param_uid)
+    # 额外特征（冷冻水）
+    uids.extend([r["uid"] for r in mapping.get("extra_features", [])])
+    # 列头柜
+    uids.extend([r["uid"] for r in mapping.get("cabinets", [])])
+    # others
+    uids.extend([r["uid"] for r in mapping.get("others", [])])
+    return sorted(set(uids))
 
 
 def fetch_raw(uid: str, start: str, stop: str, field: str, measurement_template: str, client: InfluxDBClient) -> pd.DataFrame:
@@ -70,10 +78,9 @@ def main():
     start = args.start or (now_utc - timedelta(days=365)).isoformat().replace("+00:00", "Z")
 
     mapping = p.load_mapping(p.MAPPING_PATH)
-    sensor_uids, ac_uids = build_uids(mapping)
-    all_uids = sensor_uids + ac_uids
+    all_uids = build_uids(mapping)
     if not all_uids:
-        raise RuntimeError("映射中没有可用的 UID，检查 uid_mapping.json")
+        raise RuntimeError("映射中没有可用的 UID，请检查 uid_mapping.json")
 
     creds = p.load_influx_credentials(args.client_key)
     client = InfluxDBClient(
