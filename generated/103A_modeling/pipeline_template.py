@@ -669,7 +669,12 @@ def main():
     pred_df.insert(0, 'time', test_df['time'].to_numpy())
 
     save_artifacts(model_bundle, metrics, pred_df, model_name=args.model)
-    print('训练完成，指标：', metrics['overall'])
+    print('训练完成，整体指标：', metrics['overall'])
+    if metrics.get('groups'):
+        if 'temperature' in metrics['groups']:
+            print('温度指标：', metrics['groups']['temperature'])
+        if 'humidity' in metrics['groups']:
+            print('湿度指标：', metrics['groups']['humidity'])
     print(f'输出目录：{ARTIFACT_DIR}')
 
 
