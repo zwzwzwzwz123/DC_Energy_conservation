@@ -566,20 +566,27 @@ def main():
     if ac_df.empty or sensor_df.empty:
         raise RuntimeError('Influx 数据为空，请检查 measurement/field 或时间范围/客户端配置')
 
-    feature_df = ac_df
+    # 仅对空调设定点做滞后；额外特征/列头柜不滞后
+    base_ac_cols = [c for c in ac_df.columns if c != 'time']
+    nonlag_df = ac_df[['time']].copy()
     if not extra_df.empty:
-        feature_df = feature_df.merge(extra_df, on='time', how='outer')
-        feature_df = fill_timeseries(feature_df)
+        nonlag_df = nonlag_df.merge(extra_df, on='time', how='outer')
+        nonlag_df = fill_timeseries(nonlag_df)
     if not cabinet_df.empty:
-        feature_df = feature_df.merge(cabinet_df, on='time', how='outer')
-        feature_df = fill_timeseries(feature_df)
+        nonlag_df = nonlag_df.merge(cabinet_df, on='time', how='outer')
+        nonlag_df = fill_timeseries(nonlag_df)
 
-    ac_feat = build_feature_matrix(feature_df, lags=args.lags)
-    dataset = align_and_join(ac_feat, sensor_df)
+    ac_feat = build_feature_matrix(ac_df, lags=args.lags)
+    feature_df = ac_feat.merge(nonlag_df, on='time', how='left')
+
+    dataset = align_and_join(feature_df, sensor_df)
     if dataset.empty:
         raise RuntimeError('对齐后数据为空，可能是时间窗口或聚合粒度不匹配')
 
-    feature_cols = [c for c in ac_feat.columns if c != 'time']
+    # 为 LSTM 序列准备仅含空调滞后特征的表（按 dataset 顺序对齐）
+    seq_df = dataset[['time']].merge(ac_feat, on='time', how='left')
+
+    feature_cols = [c for c in feature_df.columns if c != 'time']
     target_cols = [c for c in sensor_df.columns if c != 'time']
 
     # 检查传感器/设定点是否全空
@@ -604,9 +611,11 @@ def main():
         model_bundle = train_mlp(X_train, Y_train)
         preds = predict_mlp(model_bundle, X_test)
     elif args.model == 'lstm':
-        # 针对 LSTM，将 lag 特征重排为序列输入
-        X_train_seq = build_lstm_sequences(train_df, feature_cols, lags=args.lags)
-        X_test_seq = build_lstm_sequences(test_df, feature_cols, lags=args.lags)
+        # 针对 LSTM，仅使用空调设定点滞后特征构造序列输入
+        seq_train_df = seq_df.iloc[:len(train_df)].reset_index(drop=True)
+        seq_test_df = seq_df.iloc[len(train_df):].reset_index(drop=True)
+        X_train_seq = build_lstm_sequences(seq_train_df, base_ac_cols, lags=args.lags)
+        X_test_seq = build_lstm_sequences(seq_test_df, base_ac_cols, lags=args.lags)
         model_bundle = train_lstm(X_train_seq, Y_train)
         preds = predict_lstm(model_bundle, X_test_seq)
     elif args.model == 'rf':
