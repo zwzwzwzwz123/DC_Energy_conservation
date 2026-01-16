@@ -135,6 +135,24 @@ def fill_timeseries(df: pd.DataFrame) -> pd.DataFrame:
     return _fill_timeseries_base(df)
 
 
+def ensure_datetime(df: pd.DataFrame) -> pd.DataFrame:
+    """确保 time 列为 datetime 类型。"""
+    if df.empty:
+        return df
+    out = df.copy()
+    out['time'] = pd.to_datetime(out['time'])
+    return out
+
+
+def shift_targets(target_df: pd.DataFrame, horizon: pd.Timedelta) -> pd.DataFrame:
+    """将目标时间前移 horizon，使特征时间 t 对应目标 t+Δ。"""
+    if target_df.empty:
+        return target_df
+    df = target_df.copy()
+    df['time'] = pd.to_datetime(df['time']) - horizon
+    return df
+
+
 def build_feature_matrix(ac_df: pd.DataFrame, lags: int = 3) -> pd.DataFrame:
     feat = ac_df.copy().sort_values('time').reset_index(drop=True)
     for col in feat.columns:
@@ -162,6 +180,22 @@ def build_lstm_sequences(df: pd.DataFrame, feature_cols: List[str], lags: int) -
     # stack to shape (n_samples, seq_len, n_base_features)
     seq_arr = np.stack(seq_mats, axis=2)
     return seq_arr
+
+
+def build_lstm_sequences_table(df: pd.DataFrame, feature_cols: List[str], seq_len: int):
+    """将表格数据转换为 LSTM 输入序列 (n_samples, seq_len, n_features)。"""
+    if seq_len <= 0:
+        seq_len = 1
+    df_sorted = df.sort_values('time').reset_index(drop=True)
+    if len(df_sorted) < seq_len:
+        raise RuntimeError(f"样本过少，无法构造序列：seq_len={seq_len}，样本={len(df_sorted)}")
+    arr = df_sorted[feature_cols].to_numpy()
+    seqs = []
+    for i in range(seq_len - 1, len(df_sorted)):
+        seqs.append(arr[i - seq_len + 1: i + 1])
+    seq_arr = np.stack(seqs, axis=0)
+    trimmed_df = df_sorted.iloc[seq_len - 1:].reset_index(drop=True)
+    return seq_arr, trimmed_df
 
 
 def slugify(name: str) -> str:
@@ -530,7 +564,9 @@ def main():
     parser.add_argument('--stop', help='ISO8601；缺省则取当前时间')
     parser.add_argument('--every', default='5m', help='聚合窗口，例如 5m/15m/1h')
     parser.add_argument('--model', choices=['linear', 'lstsq', 'mlp', 'lstm', 'rf', 'dt', 'xgb', 'lgbm', 'cat'], default='linear')
-    parser.add_argument('--lags', type=int, default=3, help='设定点滞后阶数')
+    parser.add_argument('--lags', type=int, default=3, help='输入滞后阶数；LSTM 时作为序列长度')
+    parser.add_argument('--target-lags', type=int, default=3, help='(LSTM) 输出自回归阶数，用于提供历史状态')
+    parser.add_argument('--horizon', default='5m', help='(LSTM) 预测步长 Δ，如 5m/15m/1h；特征时间 t 对应目标 t+Δ')
     parser.add_argument('--field', default='value', help='Influx 数值字段名，默认 value')
     parser.add_argument('--measurement-template', default='{uid}',
                         help='measurement 模板，默认与 uid 同名，可用 {uid} 占位')
@@ -542,6 +578,7 @@ def main():
     now_utc = datetime.now(timezone.utc).replace(microsecond=0)
     stop = args.stop or now_utc.isoformat().replace('+00:00', 'Z')
     start = args.start or (now_utc - timedelta(days=365)).isoformat().replace('+00:00', 'Z')
+    horizon_td = pd.to_timedelta(args.horizon)
 
     mapping = load_mapping(MAPPING_PATH)
     sensor_recs = mapping.get('sensors', [])
@@ -593,11 +630,11 @@ def main():
                                   field=args.field, measurement_template=args.measurement_template,
                                   client_key=args.client_key) if cabinet_uids else pd.DataFrame()
 
-    # 填补缺失，避免内连接后样本过少
-    ac_df = fill_timeseries(ac_df)
-    sensor_df = fill_timeseries(sensor_df)
-    extra_df = fill_timeseries(extra_df)
-    cabinet_df = fill_timeseries(cabinet_df)
+    # 填补缺失并标准化时间列
+    ac_df = ensure_datetime(fill_timeseries(ac_df))
+    sensor_df = ensure_datetime(fill_timeseries(sensor_df))
+    extra_df = ensure_datetime(fill_timeseries(extra_df))
+    cabinet_df = ensure_datetime(fill_timeseries(cabinet_df))
 
     # 将空调列名重命名为带 ac 编号的唯一名称，避免 merge 时列冲突
     if not ac_df.empty:
@@ -623,27 +660,65 @@ def main():
     ac_feat = build_feature_matrix(ac_df, lags=args.lags)
     feature_df = ac_feat.merge(nonlag_df, on='time', how='left')
 
-    dataset = align_and_join(feature_df, sensor_df)
-    if dataset.empty:
-        raise RuntimeError('对齐后数据为空，可能是时间窗口或聚合粒度不匹配')
+    horizon_td = pd.to_timedelta(args.horizon)
+    timeseries_mode = args.model == 'lstm'
 
-    # 为 LSTM 序列准备仅含空调滞后特征的表（按 dataset 顺序对齐）
-    seq_df = dataset[['time']].merge(ac_feat, on='time', how='left')
+    if timeseries_mode:
+        # LSTM：加入输出历史（自回归）并平移目标到 t+Δ
+        state_col_map = {uid: f"state_{uid}" for uid in sensor_uids}
+        sensor_state_df = sensor_df.rename(columns=state_col_map)
+        state_lag_df = build_feature_matrix(sensor_state_df, lags=max(args.target_lags, 0))
 
-    feature_cols = [c for c in feature_df.columns if c != 'time']
-    target_cols = [c for c in sensor_df.columns if c != 'time']
+        feature_ts = feature_df.merge(state_lag_df, on='time', how='left')
+        feature_ts = feature_ts.dropna().reset_index(drop=True)
 
-    # 检查传感器/设定点是否全空
-    for col in feature_cols + target_cols:
-        if dataset[col].notna().sum() == 0:
-            raise RuntimeError(f'列 {col} 全为空，无法训练，请检查 Influx 配置或时间范围')
+        shifted_targets = shift_targets(sensor_df, horizon=horizon_td)
+        dataset = align_and_join(feature_ts, shifted_targets)
+        if dataset.empty:
+            raise RuntimeError('对齐后数据为空，可能是时间窗口或聚合粒度不匹配')
 
-    train_df, test_df = split_train_test(dataset, test_ratio=0.2)
+        target_cols = [c for c in shifted_targets.columns if c != 'time']
+        feature_cols = [c for c in dataset.columns if c not in ['time'] + target_cols]
 
-    X_train = train_df[feature_cols].to_numpy()
-    Y_train = train_df[target_cols].to_numpy()
-    X_test = test_df[feature_cols].to_numpy()
-    Y_test = test_df[target_cols].to_numpy()
+        for col in feature_cols + target_cols:
+            if dataset[col].notna().sum() == 0:
+                raise RuntimeError(f'列 {col} 全为空，无法训练，请检查 Influx 配置或时间范围')
+
+        seq_len = max(1, args.lags)
+        X_seq, seq_df = build_lstm_sequences_table(dataset, feature_cols, seq_len=seq_len)
+        target_df = seq_df[target_cols]
+        time_series = seq_df['time']
+
+        n = len(seq_df)
+        test_size = max(1, int(n * 0.2))
+        train_size = n - test_size
+        if train_size <= 0:
+            raise RuntimeError('样本过少，无法划分训练/验证集')
+
+        X_train = X_seq[:train_size]
+        Y_train = target_df.iloc[:train_size].to_numpy()
+        X_test = X_seq[train_size:]
+        Y_test = target_df.iloc[train_size:].to_numpy()
+        test_time = time_series.iloc[train_size:].to_numpy()
+    else:
+        dataset = align_and_join(feature_df, sensor_df)
+        if dataset.empty:
+            raise RuntimeError('对齐后数据为空，可能是时间窗口或聚合粒度不匹配')
+
+        feature_cols = [c for c in feature_df.columns if c != 'time']
+        target_cols = [c for c in sensor_df.columns if c != 'time']
+
+        for col in feature_cols + target_cols:
+            if dataset[col].notna().sum() == 0:
+                raise RuntimeError(f'列 {col} 全为空，无法训练，请检查 Influx 配置或时间范围')
+
+        train_df, test_df = split_train_test(dataset, test_ratio=0.2)
+
+        X_train = train_df[feature_cols].to_numpy()
+        Y_train = train_df[target_cols].to_numpy()
+        X_test = test_df[feature_cols].to_numpy()
+        Y_test = test_df[target_cols].to_numpy()
+        test_time = test_df['time'].to_numpy()
 
     if args.model == 'linear':
         model_bundle = train_linear(X_train, Y_train)
@@ -655,13 +730,8 @@ def main():
         model_bundle = train_mlp(X_train, Y_train)
         preds = predict_mlp(model_bundle, X_test)
     elif args.model == 'lstm':
-        # 针对 LSTM，仅使用空调设定点滞后特征构造序列输入
-        seq_train_df = seq_df.iloc[:len(train_df)].reset_index(drop=True)
-        seq_test_df = seq_df.iloc[len(train_df):].reset_index(drop=True)
-        X_train_seq = build_lstm_sequences(seq_train_df, base_ac_cols, lags=args.lags)
-        X_test_seq = build_lstm_sequences(seq_test_df, base_ac_cols, lags=args.lags)
-        model_bundle = train_lstm(X_train_seq, Y_train)
-        preds = predict_lstm(model_bundle, X_test_seq)
+        model_bundle = train_lstm(X_train, Y_train)
+        preds = predict_lstm(model_bundle, X_test)
     elif args.model == 'rf':
         model_bundle = train_random_forest(X_train, Y_train)
         preds = predict_random_forest(model_bundle, X_test)
@@ -680,7 +750,7 @@ def main():
 
     metrics = evaluate(Y_test, preds, target_cols, sensor_meta)
     pred_df = pd.DataFrame(preds, columns=target_cols)
-    pred_df.insert(0, 'time', test_df['time'].to_numpy())
+    pred_df.insert(0, 'time', test_time)
 
     save_artifacts(model_bundle, metrics, pred_df, model_name=args.model)
     print('训练完成，整体指标：', metrics['overall'])

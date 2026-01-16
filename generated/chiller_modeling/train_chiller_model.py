@@ -1,9 +1,8 @@
 """
 Chiller modeling pipeline
 
-- Uses uid_mapping_chiller.json to determine inputs/outputs (sheet1/2 of 冷水机组BA系统信息.xlsx).
 - Pulls timeseries from InfluxDB (1.8) with configurable measurement template/field.
-- Builds lag features on inputs and trains selectable models (linear / lstsq / mlp / rf / xgb).
+- Builds lag features on inputs and trains selectable models (linear / lstsq / mlp / rf / xgb / lstm).
 - Writes artifacts to generated/chiller_modeling/artifacts_chiller.
 """
 import argparse
@@ -159,6 +158,25 @@ def build_feature_matrix_selective(df: pd.DataFrame, lag_uids: List[str], lags: 
     return feat
 
 
+def ensure_datetime(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
+    out = df.copy()
+    out["time"] = pd.to_datetime(out["time"])
+    return out
+
+
+def shift_targets(target_df: pd.DataFrame, horizon: pd.Timedelta) -> pd.DataFrame:
+    """
+    将目标时间向前平移 horizon，使特征时间 t 对应目标 t+horizon。
+    """
+    if target_df.empty:
+        return target_df
+    df = target_df.copy()
+    df["time"] = pd.to_datetime(df["time"]) - horizon
+    return df
+
+
 def align_dataset(feature_df: pd.DataFrame, target_df: pd.DataFrame) -> pd.DataFrame:
     merged = feature_df.merge(target_df, on="time", how="inner")
     merged = merged.dropna().reset_index(drop=True)
@@ -268,6 +286,119 @@ def predict_xgb(bundle, X: np.ndarray) -> np.ndarray:
     return bundle["model"].predict(X)
 
 
+def build_lstm_sequences_table(df: pd.DataFrame, feature_cols: List[str], seq_len: int):
+    """将表格数据转换为 LSTM 输入序列 (n_samples, seq_len, n_features)。"""
+    if seq_len <= 0:
+        seq_len = 1
+    df_sorted = df.sort_values("time").reset_index(drop=True)
+    if len(df_sorted) < seq_len:
+        raise RuntimeError(f"样本过少，无法构造序列：seq_len={seq_len}，样本={len(df_sorted)}")
+    arr = df_sorted[feature_cols].to_numpy()
+    seqs = []
+    for i in range(seq_len - 1, len(df_sorted)):
+        seqs.append(arr[i - seq_len + 1 : i + 1])
+    seq_arr = np.stack(seqs, axis=0)
+    trimmed_df = df_sorted.iloc[seq_len - 1 :].reset_index(drop=True)
+    return seq_arr, trimmed_df
+
+
+def train_lstm(X_seq: np.ndarray, Y: np.ndarray, epochs: int = 60, lr: float = 1e-3, hidden_size: int = 64):
+    try:
+        import torch
+        from torch import nn
+    except ImportError as exc:  # pragma: no cover - optional dependency
+        raise ImportError("缺少依赖 torch，无法使用 lstm 模型；请安装 torch") from exc
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    scaler = StandardScaler()
+    N, T, F = X_seq.shape
+    Xs_flat = scaler.fit_transform(X_seq.reshape(N, T * F))
+    Xs = Xs_flat.reshape(N, T, F)
+
+    X_tensor = torch.tensor(Xs, dtype=torch.float32).to(device)
+    Y_tensor = torch.tensor(Y, dtype=torch.float32).to(device)
+
+    output_dim = Y.shape[1]
+
+    class LSTMReg(nn.Module):
+        def __init__(self, input_dim, hidden_size, output_dim):
+            super().__init__()
+            self.lstm = nn.LSTM(input_size=input_dim, hidden_size=hidden_size, batch_first=True)
+            self.fc = nn.Linear(hidden_size, output_dim)
+
+        def forward(self, x):
+            out, _ = self.lstm(x)
+            out = out[:, -1, :]
+            return self.fc(out)
+
+    model = LSTMReg(F, hidden_size, output_dim).to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    criterion = nn.MSELoss()
+
+    model.train()
+    batch_size = min(256, len(X_tensor))
+    for epoch in range(epochs):
+        perm = torch.randperm(len(X_tensor))
+        for i in range(0, len(X_tensor), batch_size):
+            idx = perm[i : i + batch_size]
+            xb = X_tensor[idx]
+            yb = Y_tensor[idx]
+            optimizer.zero_grad()
+            pred = model(xb)
+            loss = criterion(pred, yb)
+            loss.backward()
+            optimizer.step()
+
+    return {
+        "type": "lstm",
+        "scaler": scaler,
+        "state_dict": model.state_dict(),
+        "hidden_size": hidden_size,
+        "input_dim": F,
+        "output_dim": output_dim,
+        "seq_len": T,
+        "device": str(device),
+    }
+
+
+def predict_lstm(bundle, X_seq: np.ndarray) -> np.ndarray:
+    import torch
+    from torch import nn
+
+    scaler = bundle["scaler"]
+    input_dim = bundle["input_dim"]
+    hidden_size = bundle["hidden_size"]
+    output_dim = bundle["output_dim"]
+    seq_len = bundle["seq_len"]
+    state_dict = bundle["state_dict"]
+
+    class LSTMReg(nn.Module):
+        def __init__(self, input_dim, hidden_size, output_dim):
+            super().__init__()
+            self.lstm = nn.LSTM(input_size=input_dim, hidden_size=hidden_size, batch_first=True)
+            self.fc = nn.Linear(hidden_size, output_dim)
+
+        def forward(self, x):
+            out, _ = self.lstm(x)
+            out = out[:, -1, :]
+            return self.fc(out)
+
+    device = torch.device(bundle.get("device", "cpu"))
+    model = LSTMReg(input_dim, hidden_size, output_dim).to(device)
+    model.load_state_dict(state_dict)
+
+    N, T, F = X_seq.shape
+    if T != seq_len or F != input_dim:
+        raise RuntimeError(f"LSTM 输入维度不符：期望 (*, {seq_len}, {input_dim})，实际 ({N}, {T}, {F})")
+    Xs_flat = scaler.transform(X_seq.reshape(N, T * F))
+    Xs = Xs_flat.reshape(N, T, F)
+    X_tensor = torch.tensor(Xs, dtype=torch.float32).to(device)
+    model.eval()
+    with torch.no_grad():
+        preds = model(X_tensor).cpu().numpy()
+    return preds
+
+
 def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], target_meta: Dict[str, Dict]) -> Dict:
     mse = np.mean((y_true - y_pred) ** 2, axis=0)
     mae = np.mean(np.abs(y_true - y_pred), axis=0)
@@ -292,6 +423,8 @@ def save_artifacts(model_bundle, metrics: Dict, predictions: pd.DataFrame, model
         joblib.dump(model_bundle, ARTIFACT_DIR / "model_linear.pkl")
     elif model_name == "mlp":
         joblib.dump(model_bundle, ARTIFACT_DIR / "model_mlp.pkl")
+    elif model_name == "lstm":
+        joblib.dump(model_bundle, ARTIFACT_DIR / "model_lstm.pkl")
     elif model_name == "rf":
         joblib.dump(model_bundle, ARTIFACT_DIR / "model_rf.pkl")
     elif model_name == "xgb":
@@ -309,9 +442,11 @@ def main():
     parser.add_argument("--start", help="ISO8601，默认 stop 往前 365 天")
     parser.add_argument("--stop", help="ISO8601，默认当前 UTC")
     parser.add_argument("--every", default="5m", help="聚合窗口，例如 5m/15m/1h")
-    parser.add_argument("--lags", type=int, default=3, help="输入特征时间滞后阶数，0 表示不加滞后")
+    parser.add_argument("--lags", type=int, default=3, help="输入特征滞后阶数或序列长度（LSTM 时）")
+    parser.add_argument("--target-lags", type=int, default=3, help="输出状态自回归滞后阶数（用于时序模型特征）")
+    parser.add_argument("--horizon", default="5m", help="预测步长 Δ，如 5m/15m/1h；特征时间 t 对应目标 t+Δ（LSTM 等时序模型使用）")
     parser.add_argument(
-        "--model", choices=["linear", "lstsq", "mlp", "rf", "xgb"], default="linear", help="训练模型类型"
+        "--model", choices=["linear", "lstsq", "mlp", "rf", "xgb", "lstm"], default="linear", help="训练模型类型"
     )
     parser.add_argument("--test-ratio", type=float, default=0.2, help="验证集比例")
     parser.add_argument("--field", default="value", help="Influx 数值字段名，默认 value")
@@ -323,6 +458,8 @@ def main():
     )
     parser.add_argument("--mapping", default=str(MAPPING_PATH), help="自定义映射路径，可覆盖默认路径")
     args = parser.parse_args()
+
+    horizon_td = pd.to_timedelta(args.horizon)
 
     now_utc = datetime.now(timezone.utc).replace(microsecond=0)
     stop = args.stop or now_utc.isoformat().replace("+00:00", "Z")
@@ -343,8 +480,8 @@ def main():
         output_uids, start, stop, args.every, field=args.field, measurement_template=args.measurement_template, client_key=args.client_key
     )
 
-    input_df = fill_timeseries(input_df)
-    output_df = fill_timeseries(output_df)
+    input_df = ensure_datetime(fill_timeseries(input_df))
+    output_df = ensure_datetime(fill_timeseries(output_df))
 
     if input_df.empty or output_df.empty:
         raise RuntimeError("Influx 数据为空，请检查 measurement/field 或时间范围")
@@ -356,12 +493,63 @@ def main():
     else:
         print("未识别到需要滞后的输入特征，特征仅使用当前值")
     feature_df = build_feature_matrix_selective(input_df, lag_uids=lag_uids, lags=max(args.lags, 0))
-    dataset = align_dataset(feature_df, output_df)
+
+    seq_models = {"lstm"}
+    timeseries_mode = args.model in seq_models
+
+    if timeseries_mode and args.model == "lstm":
+        # LSTM: 使用当前输入+状态，构造序列，预测未来 t+Δ 的输出
+        state_col_map = {uid: f"state_{uid}" for uid in output_uids}
+        base_feat_df = input_df.merge(output_df.rename(columns=state_col_map), on="time", how="left")
+        shifted_targets = shift_targets(output_df, horizon=horizon_td)
+        merged = base_feat_df.merge(shifted_targets, on="time", how="inner")
+        merged = merged.dropna().reset_index(drop=True)
+        if merged.empty:
+            raise RuntimeError("对齐后的数据为空，可能是时间粒度或窗口导致无交集")
+
+        target_cols = [c for c in shifted_targets.columns if c != "time"]
+        feature_cols = [c for c in merged.columns if c not in ["time"] + target_cols]
+
+        for col in feature_cols + target_cols:
+            if merged[col].notna().sum() == 0:
+                raise RuntimeError(f"列 {col} 全为空，无法训练")
+
+        seq_len = max(1, args.lags)
+        X_seq, seq_df = build_lstm_sequences_table(merged, feature_cols, seq_len=seq_len)
+        target_df = seq_df[target_cols]
+        time_series = seq_df["time"]
+
+        n = len(seq_df)
+        test_size = max(1, int(n * args.test_ratio))
+        train_size = n - test_size
+        if train_size <= 0:
+            raise RuntimeError("样本过少，无法划分训练/验证集")
+        X_train = X_seq[:train_size]
+        Y_train = target_df.iloc[:train_size].to_numpy()
+        X_test = X_seq[train_size:]
+        Y_test = target_df.iloc[train_size:].to_numpy()
+    else:
+        # 非时序模式：输入滞后 + 同步输出
+        dataset = align_dataset(feature_df, output_df)
+        if dataset.empty:
+            raise RuntimeError("对齐后的数据为空，可能是时间粒度或窗口导致无交集")
+        target_cols = [c for c in output_df.columns if c != "time"]
+        feature_cols = [c for c in dataset.columns if c != "time" and c not in target_cols]
+
+        for col in feature_cols + target_cols:
+            if dataset[col].notna().sum() == 0:
+                raise RuntimeError(f"列 {col} 全为空，无法训练")
+
+        train_df, test_df = split_train_test(dataset, test_ratio=args.test_ratio)
+        X_train = train_df[feature_cols].to_numpy()
+        Y_train = train_df[target_cols].to_numpy()
+        X_test = test_df[feature_cols].to_numpy()
+        Y_test = test_df[target_cols].to_numpy()
+
     if dataset.empty:
         raise RuntimeError("对齐后的数据为空，可能是时间粒度或窗口导致无交集")
 
-    feature_cols = [c for c in dataset.columns if c != "time" and c not in output_df.columns]
-    target_cols = [c for c in output_df.columns if c != "time"]
+    feature_cols = [c for c in dataset.columns if c != "time" and c not in target_cols]
 
     for col in feature_cols + target_cols:
         if dataset[col].notna().sum() == 0:
@@ -385,13 +573,19 @@ def main():
     elif args.model == "rf":
         model_bundle = train_random_forest(X_train, Y_train)
         preds = predict_random_forest(model_bundle, X_test)
-    else:  # xgb
+    elif args.model == "xgb":
         model_bundle = train_xgb(X_train, Y_train)
         preds = predict_xgb(model_bundle, X_test)
+    else:  # lstm
+        model_bundle = train_lstm(X_train, Y_train)
+        preds = predict_lstm(model_bundle, X_test)
 
     metrics = evaluate(Y_test, preds, target_cols, target_meta)
     pred_df = pd.DataFrame(preds, columns=target_cols)
-    pred_df.insert(0, "time", test_df["time"].to_numpy())
+    if timeseries_mode and args.model == "lstm":
+        pred_df.insert(0, "time", time_series.iloc[train_size:].to_numpy())
+    else:
+        pred_df.insert(0, "time", test_df["time"].to_numpy())
 
     save_artifacts(model_bundle, metrics, pred_df, model_name=args.model)
     print("训练完成，整体指标:", metrics["overall"])
