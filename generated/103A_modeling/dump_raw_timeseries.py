@@ -27,23 +27,23 @@ sys.modules["pipeline_template"] = p
 spec.loader.exec_module(p)
 
 
-def build_uids(mapping):
-    uids: List[str] = []
-    # 传感器
-    uids.extend([r["uid"] for r in mapping.get("sensors", [])])
-    # 空调设定点
+def build_uid_meta(mapping):
+    """返回 {uid: name}，用于导出时携带中文名称。"""
+    meta = {}
+    for r in mapping.get("sensors", []):
+        meta[r["uid"]] = r.get("name")
     for _, items in mapping.get("air_conditioners", {}).items():
         for it in items:
             param_uid = it.get("param")
             if param_uid:
-                uids.append(param_uid)
-    # 额外特征（冷冻水）
-    uids.extend([r["uid"] for r in mapping.get("extra_features", [])])
-    # 列头柜
-    uids.extend([r["uid"] for r in mapping.get("cabinets", [])])
-    # others
-    uids.extend([r["uid"] for r in mapping.get("others", [])])
-    return sorted(set(uids))
+                meta[param_uid] = it.get("tag") or it.get("param")
+    for r in mapping.get("extra_features", []):
+        meta[r["uid"]] = r.get("name")
+    for r in mapping.get("cabinets", []):
+        meta[r["uid"]] = r.get("name")
+    for r in mapping.get("others", []):
+        meta[r["uid"]] = r.get("name")
+    return meta
 
 
 def fetch_raw(uid: str, start: str, stop: str, field: str, measurement_template: str, client: InfluxDBClient) -> pd.DataFrame:
@@ -78,7 +78,8 @@ def main():
     start = args.start or (now_utc - timedelta(days=365)).isoformat().replace("+00:00", "Z")
 
     mapping = p.load_mapping(p.MAPPING_PATH)
-    all_uids = build_uids(mapping)
+    uid_meta = build_uid_meta(mapping)
+    all_uids = sorted(uid_meta.keys())
     if not all_uids:
         raise RuntimeError("映射中没有可用的 UID，请检查 uid_mapping.json")
 
@@ -97,6 +98,8 @@ def main():
         df = fetch_raw(uid, start, stop, args.field, args.measurement_template, client)
         if df.empty:
             print(f"警告: {uid} 在时间窗内无数据")
+        else:
+            df["name"] = uid_meta.get(uid)
         dfs.append(df)
     client.close()
 
