@@ -473,18 +473,53 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], tar
     mse = np.mean((y_true - y_pred) ** 2, axis=0)
     mae = np.mean(np.abs(y_true - y_pred), axis=0)
     per_target = []
+    groups = {"energy": [], "temperature": [], "flow": [], "other": []}
+
+    def classify(meta: Dict) -> str:
+        name = str(meta.get("name", ""))
+        lname = name.lower()
+        if is_cumulative(name):
+            return "energy"
+        if "温度" in name:
+            return "temperature"
+        if "流量" in name:
+            return "flow"
+        # 兜底
+        if "temp" in lname:
+            return "temperature"
+        if "flow" in lname:
+            return "flow"
+        return "other"
+
     for idx, col in enumerate(target_cols):
         meta = target_meta.get(col, {})
+        group = classify(meta)
         per_target.append(
             {
                 "uid": col,
                 "name": meta.get("name"),
                 "mse": float(mse[idx]),
                 "mae": float(mae[idx]),
+                "group": group,
             }
         )
+        groups[group].append(idx)
+
+    def group_stats(idxs: List[int]):
+        if not idxs:
+            return None
+        g_mse = float(np.mean((y_true[:, idxs] - y_pred[:, idxs]) ** 2))
+        g_mae = float(np.mean(np.abs(y_true[:, idxs] - y_pred[:, idxs])))
+        return {"mse_mean": g_mse, "mae_mean": g_mae, "count": len(idxs)}
+
+    group_metrics = {}
+    for g, idxs in groups.items():
+        stats = group_stats(idxs)
+        if stats:
+            group_metrics[g] = stats
+
     overall = {"mse_mean": float(np.mean(mse)), "mae_mean": float(np.mean(mae))}
-    return {"overall": overall, "per_target": per_target}
+    return {"overall": overall, "per_target": per_target, "groups": group_metrics}
 
 
 def save_artifacts(model_bundle, metrics: Dict, predictions: pd.DataFrame, model_name: str):
@@ -665,6 +700,9 @@ def main():
 
     save_artifacts(model_bundle, metrics, pred_df, model_name=args.model)
     print("训练完成，整体指标:", metrics["overall"])
+    if metrics.get("groups"):
+        for g, st in metrics["groups"].items():
+            print(f"{g} 指标:", st)
     print(f"输出目录: {ARTIFACT_DIR}")
 
 
