@@ -50,7 +50,7 @@ import logging
 # 使用延迟导入避免在模块加载时就导入优化器（优化器可能依赖外部库）
 # 只在类型检查时导入，运行时在需要时才导入
 if TYPE_CHECKING:
-    from .optimizers import OptimizerFactory, BaseOptimizer
+    from models.optimizers import OptimizerFactory, BaseOptimizer
 
 
 # ============================================================================
@@ -934,7 +934,7 @@ class DynamicOptimizer:
         self.algorithm = optimization_config.get("algorithm", "bayesian")
 
         # 延迟导入优化器工厂（运行时导入）
-        from .optimizers import OptimizerFactory
+        from models.optimizers import OptimizerFactory
 
         # 创建具体的优化器实例（带回退机制）
         self.optimizer = self._create_optimizer_with_fallback(
@@ -1254,7 +1254,7 @@ class DynamicOptimizer:
 
         # 3. 重新创建优化器（确保优化器内部状态完全清空）
         try:
-            from .optimizers import OptimizerFactory
+            from models.optimizers import OptimizerFactory
             self.optimizer = OptimizerFactory.create_optimizer(
                 algorithm=self.algorithm,
                 controller=self.controller,
