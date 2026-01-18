@@ -200,6 +200,53 @@ def shift_targets(target_df: pd.DataFrame, horizon: pd.Timedelta) -> pd.DataFram
     return df
 
 
+def drop_constant_columns(df: pd.DataFrame, exclude_cols: List[str], min_range: float = 1e-6) -> pd.DataFrame:
+    """移除恒定或近恒定列（范围<=min_range），time 列与 exclude_cols 不处理。"""
+    keep = ["time"]
+    for col in df.columns:
+        if col in exclude_cols or col == "time":
+            keep.append(col)
+            continue
+        series = df[col]
+        if series.notna().sum() == 0:
+            continue
+        rng = series.max() - series.min()
+        if pd.isna(rng) or rng <= min_range:
+            continue  # 丢弃恒值列
+        keep.append(col)
+    return df[keep]
+
+
+def drop_constant_with_meta(df: pd.DataFrame, uid_to_name: Dict[str, str], min_range: float = 1e-6,
+                            dominance: float = 0.995):
+    """
+    移除恒定/近恒定列并返回剔除列表（uid, name）。
+    - 恒定：非空唯一值为 1 个
+    - 近恒定：max-min <= min_range，或占比最高值 >= dominance 且范围 <= 1
+    """
+    if df.empty:
+        return df, []
+    keep_cols = ["time"]
+    removed = []
+    for col in df.columns:
+        if col == "time":
+            continue
+        series = df[col].dropna()
+        if series.empty:
+            removed.append(col)
+            continue
+        uniq = series.unique()
+        rng = series.max() - series.min()
+        dom = series.value_counts(normalize=True).iloc[0]
+        cond_const = len(uniq) == 1
+        cond_near_const = (rng <= min_range) or (dom >= dominance and rng <= 1)
+        if cond_const or cond_near_const:
+            removed.append(col)
+            continue
+        keep_cols.append(col)
+    return df[keep_cols], removed
+
+
 def align_dataset(feature_df: pd.DataFrame, target_df: pd.DataFrame) -> pd.DataFrame:
     merged = feature_df.merge(target_df, on="time", how="inner")
     merged = merged.dropna().reset_index(drop=True)
@@ -512,6 +559,15 @@ def main():
         print(f"检测到累积量输出 {len(cum_output_uids)} 个，将做差分")
         output_df = apply_cumulative_diff(output_df, cum_output_uids)
 
+    # 移除恒定/近恒定输入/输出列，记录剔除列表
+    uid_name_map = {r["uid"]: r.get("name") for r in input_recs + output_recs}
+    input_df, removed_inputs = drop_constant_with_meta(input_df, uid_name_map, min_range=1e-6, dominance=0.995)
+    output_df, removed_outputs = drop_constant_with_meta(output_df, uid_name_map, min_range=1e-6, dominance=0.995)
+    if removed_inputs:
+        print("剔除恒定/近恒定输入:", [f"{uid_name_map.get(u, u)}({u})" for u in removed_inputs])
+    if removed_outputs:
+        print("剔除恒定/近恒定输出:", [f"{uid_name_map.get(u, u)}({u})" for u in removed_outputs])
+
     if input_df.empty or output_df.empty:
         raise RuntimeError("Influx 数据为空，请检查 measurement/field 或时间范围")
 
@@ -534,7 +590,7 @@ def main():
         merged = base_feat_df.merge(shifted_targets, on="time", how="inner")
         merged = merged.dropna().reset_index(drop=True)
         if merged.empty:
-            raise RuntimeError("对齐后的数据为空，可能是时间粒度或窗口导致无交集")
+            raise RuntimeError("对齐后的数据为空，可能是时间粒度或聚合粒度不匹配")
 
         target_cols = [c for c in shifted_targets.columns if c != "time"]
         feature_cols = [c for c in merged.columns if c not in ["time"] + target_cols]
@@ -557,11 +613,12 @@ def main():
         Y_train = target_df.iloc[:train_size].to_numpy()
         X_test = X_seq[train_size:]
         Y_test = target_df.iloc[train_size:].to_numpy()
+        test_time = time_series.iloc[train_size:].to_numpy()
     else:
         # 非时序模式：输入滞后 + 同步输出
         dataset = align_dataset(feature_df, output_df)
         if dataset.empty:
-            raise RuntimeError("对齐后的数据为空，可能是时间粒度或窗口导致无交集")
+            raise RuntimeError("对齐后的数据为空，可能是时间窗口或聚合粒度不匹配")
         target_cols = [c for c in output_df.columns if c != "time"]
         feature_cols = [c for c in dataset.columns if c != "time" and c not in target_cols]
 
@@ -574,28 +631,18 @@ def main():
         Y_train = train_df[target_cols].to_numpy()
         X_test = test_df[feature_cols].to_numpy()
         Y_test = test_df[target_cols].to_numpy()
-
-    if dataset.empty:
-        raise RuntimeError("对齐后的数据为空，可能是时间粒度或窗口导致无交集")
-
-    feature_cols = [c for c in dataset.columns if c != "time" and c not in target_cols]
-
-    for col in feature_cols + target_cols:
-        if dataset[col].notna().sum() == 0:
-            raise RuntimeError(f"列 {col} 全为空，无法训练")
-
-    train_df, test_df = split_train_test(dataset, test_ratio=args.test_ratio)
-    X_train = train_df[feature_cols].to_numpy()
-    Y_train = train_df[target_cols].to_numpy()
-    X_test = test_df[feature_cols].to_numpy()
-    Y_test = test_df[target_cols].to_numpy()
+        test_time = test_df["time"].to_numpy()
 
     if args.model == "linear":
         model_bundle = train_linear(X_train, Y_train)
         preds = predict_linear(model_bundle, X_test)
     elif args.model == "lstsq":
-        model_bundle = train_lstsq(X_train, Y_train)
-        preds = predict_lstsq(model_bundle, X_test)
+        x_scaler = StandardScaler()
+        X_train_s = x_scaler.fit_transform(X_train)
+        X_test_s = x_scaler.transform(X_test)
+        model_bundle = train_lstsq(X_train_s, Y_train)
+        model_bundle["x_scaler"] = x_scaler
+        preds = predict_lstsq(model_bundle, X_test_s)
     elif args.model == "mlp":
         model_bundle = train_mlp(X_train, Y_train)
         preds = predict_mlp(model_bundle, X_test)
