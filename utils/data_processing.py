@@ -86,7 +86,7 @@ def clip_outliers(
         hard_bounds: 可选的硬性上下限字典，例如 {"lower": 0, "upper": 100}。
 
     返回:
-        剔除了异常值（以 NaN 代替）的序列。
+        处理后的序列（根据方法不同，异常值可能被截断至边界或替换为 NaN）。
     """
     if series.empty:
         return series
