@@ -141,6 +141,15 @@ def should_lag(name: str) -> bool:
     return any(k in text for k in include_keys)
 
 
+CUMULATIVE_KEYS = ["电能", "有功", "电量", "能耗", "累计", "总量", "meter", "energy"]
+
+
+def is_cumulative(name: str) -> bool:
+    """简单基于名称判断是否为累积量（电能/能耗类）。"""
+    text = str(name).lower()
+    return any(k in text for k in CUMULATIVE_KEYS)
+
+
 def build_feature_matrix_selective(df: pd.DataFrame, lag_uids: List[str], lags: int) -> pd.DataFrame:
     """
     对需要滞后的列添加滞后，其余只保留当前值。
@@ -163,6 +172,20 @@ def ensure_datetime(df: pd.DataFrame) -> pd.DataFrame:
         return df
     out = df.copy()
     out["time"] = pd.to_datetime(out["time"])
+    return out
+
+
+def apply_cumulative_diff(df: pd.DataFrame, cum_cols: List[str]) -> pd.DataFrame:
+    """对累积量做差分（遇到回绕/复位则置 NaN）。"""
+    if df.empty or not cum_cols:
+        return df
+    out = df.sort_values("time").reset_index(drop=True).copy()
+    for col in cum_cols:
+        if col not in out.columns:
+            continue
+        diffed = out[col].diff()
+        diffed = diffed.where(diffed >= 0)  # 回绕视为缺失
+        out[col] = diffed
     return out
 
 
@@ -482,6 +505,12 @@ def main():
 
     input_df = ensure_datetime(fill_timeseries(input_df))
     output_df = ensure_datetime(fill_timeseries(output_df))
+
+    # 对输出中的累积量（电能/能耗等）做差分，避免累积值主导误差
+    cum_output_uids = [r["uid"] for r in output_recs if is_cumulative(r.get("name", ""))]
+    if cum_output_uids:
+        print(f"检测到累积量输出 {len(cum_output_uids)} 个，将做差分")
+        output_df = apply_cumulative_diff(output_df, cum_output_uids)
 
     if input_df.empty or output_df.empty:
         raise RuntimeError("Influx 数据为空，请检查 measurement/field 或时间范围")
