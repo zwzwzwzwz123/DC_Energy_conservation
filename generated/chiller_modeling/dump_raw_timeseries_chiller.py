@@ -28,11 +28,14 @@ def load_template_module():
     return mod
 
 
-def build_uids(mapping) -> List[str]:
-    uids: List[str] = []
-    uids.extend([r["uid"] for r in mapping.get("inputs", [])])
-    uids.extend([r["uid"] for r in mapping.get("outputs", [])])
-    return sorted(set(uids))
+def build_uid_meta(mapping):
+    """返回 {uid: name}，便于导出时带上中文标签。"""
+    meta = {}
+    for rec in mapping.get("inputs", []):
+        meta[rec["uid"]] = rec.get("name")
+    for rec in mapping.get("outputs", []):
+        meta[rec["uid"]] = rec.get("name")
+    return meta
 
 
 def fetch_raw(uid: str, start: str, stop: str, field: str, measurement_template: str, client: InfluxDBClient) -> pd.DataFrame:
@@ -68,7 +71,8 @@ def main():
 
     mod = load_template_module()
     mapping = mod.load_mapping(MAPPING_PATH)
-    all_uids = build_uids(mapping)
+    uid_meta = build_uid_meta(mapping)
+    all_uids = sorted(uid_meta.keys())
     if not all_uids:
         raise RuntimeError("映射中没有可用的 UID，请检查 uid_mapping_chiller.json")
 
@@ -87,6 +91,8 @@ def main():
         df = fetch_raw(uid, start, stop, args.field, args.measurement_template, client)
         if df.empty:
             print(f"警告: {uid} 在时间窗内无数据")
+        else:
+            df["name"] = uid_meta.get(uid)
         dfs.append(df)
     client.close()
 
