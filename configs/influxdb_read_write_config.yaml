@@ -52,7 +52,7 @@ read:
       # 可选：是否包含不可用设备/机房的数据（默认 false）
       include_unavailable: false
 
-      # ???????????????????????
+      # 兜底策略：当主查询为空时，回退读取最近 N 条数据
       fallback_on_empty:
         enabled: true
         mode: "last_n_points"

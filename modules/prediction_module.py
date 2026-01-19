@@ -206,16 +206,16 @@ class TwinModel:
         )
 
         if skipped_feat:
-            self.logger.warning(f"{self.spec.name}: ???? {skipped_feat}")
+            self.logger.warning(f"{self.spec.name}: 特征测点跳过 {skipped_feat}")
         if skipped_target:
-            self.logger.warning(f"{self.spec.name}: ???? {skipped_target}")
+            self.logger.warning(f"{self.spec.name}: 目标测点跳过 {skipped_target}")
 
         if X is None or y is None:
             return None
 
         merged_index = X.index.intersection(y.index)
         if merged_index.empty:
-            self.logger.error(f"{self.spec.name}: ??????????")
+            self.logger.error(f"{self.spec.name}: 特征与目标时间索引无交集")
             return None
         X = X.loc[merged_index]
         y = y.loc[merged_index]
@@ -232,7 +232,7 @@ class TwinModel:
         y = y.loc[feature_mask]
 
         if X.empty or y.empty:
-            self.logger.error(f"{self.spec.name}: ??????????")
+            self.logger.error(f"{self.spec.name}: 清洗后无有效样本")
             return None
 
         return X, y
