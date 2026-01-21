@@ -469,11 +469,21 @@ def predict_catboost(model_bundle, X: np.ndarray) -> np.ndarray:
 
 
 def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], sensor_meta: Dict) -> Dict:
-    mse = np.mean((y_true - y_pred) ** 2, axis=0).tolist()
-    mae = np.mean(np.abs(y_true - y_pred), axis=0).tolist()
+    mse = np.mean((y_true - y_pred) ** 2, axis=0)
+    mae = np.mean(np.abs(y_true - y_pred), axis=0)
+
+    def error_pct(mae_val: float, mean_val: float) -> float:
+        if mean_val is None or np.isnan(mean_val):
+            return float("nan")
+        denom = abs(float(mean_val))
+        if denom <= 1e-12:
+            return float("nan")
+        return float(mae_val / denom * 100.0)
+
     overall = {
         'mse_mean': float(np.mean(mse)),
         'mae_mean': float(np.mean(mae)),
+        '误差百分比': error_pct(float(np.mean(mae)), float(np.mean(y_true))),
     }
 
     def classify(meta: Dict) -> str:
@@ -504,7 +514,13 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], sen
             return None
         g_mse = float(np.mean((y_true[:, indices] - y_pred[:, indices]) ** 2))
         g_mae = float(np.mean(np.abs(y_true[:, indices] - y_pred[:, indices])))
-        return {'mse_mean': g_mse, 'mae_mean': g_mae, 'count': len(indices)}
+        g_mean = float(np.mean(y_true[:, indices]))
+        return {
+            'mse_mean': g_mse,
+            'mae_mean': g_mae,
+            '误差百分比': error_pct(g_mae, g_mean),
+            'count': len(indices),
+        }
 
     group_metrics = {}
     for k, idxs in groups.items():
@@ -513,8 +529,8 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], sen
             group_metrics[k] = stats
 
     return {
-        'per_target_mse': mse,
-        'per_target_mae': mae,
+        'per_target_mse': mse.tolist(),
+        'per_target_mae': mae.tolist(),
         'overall': overall,
         'groups': group_metrics,
     }

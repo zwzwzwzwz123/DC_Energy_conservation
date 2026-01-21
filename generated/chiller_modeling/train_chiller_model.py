@@ -475,6 +475,14 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], tar
     per_target = []
     groups = {"energy": [], "temperature": [], "flow": [], "other": []}
 
+    def error_pct(mae_val: float, mean_val: float) -> float:
+        if mean_val is None or np.isnan(mean_val):
+            return float("nan")
+        denom = abs(float(mean_val))
+        if denom <= 1e-12:
+            return float("nan")
+        return float(mae_val / denom * 100.0)
+
     def classify(meta: Dict) -> str:
         name = str(meta.get("name", ""))
         lname = name.lower()
@@ -510,7 +518,13 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], tar
             return None
         g_mse = float(np.mean((y_true[:, idxs] - y_pred[:, idxs]) ** 2))
         g_mae = float(np.mean(np.abs(y_true[:, idxs] - y_pred[:, idxs])))
-        return {"mse_mean": g_mse, "mae_mean": g_mae, "count": len(idxs)}
+        g_mean = float(np.mean(y_true[:, idxs]))
+        return {
+            "mse_mean": g_mse,
+            "mae_mean": g_mae,
+            "误差百分比": error_pct(g_mae, g_mean),
+            "count": len(idxs),
+        }
 
     group_metrics = {}
     for g, idxs in groups.items():
@@ -518,7 +532,12 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], tar
         if stats:
             group_metrics[g] = stats
 
-    overall = {"mse_mean": float(np.mean(mse)), "mae_mean": float(np.mean(mae))}
+    overall_mean = float(np.mean(y_true))
+    overall = {
+        "mse_mean": float(np.mean(mse)),
+        "mae_mean": float(np.mean(mae)),
+        "误差百分比": error_pct(float(np.mean(mae)), overall_mean),
+    }
     return {"overall": overall, "per_target": per_target, "groups": group_metrics}
 
 
