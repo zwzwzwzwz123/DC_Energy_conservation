@@ -71,6 +71,11 @@ def main():
     parser.add_argument("--measurement-template", default="{uid}", help="measurement 模板，默认与 uid 同名，可用 {uid} 占位")
     parser.add_argument("--client-key", default="influxdb_dc_status_data", help="configs/utils_config.yaml 中的客户端配置键")
     parser.add_argument("--output", default=Path(__file__).with_name("artifacts") / "raw_timeseries.csv")
+    parser.add_argument("--plot", action="store_true", help="Plot per-uid timeseries after dump.")
+    parser.add_argument("--plot-output-dir", default=None, help="Output directory for plots.")
+    parser.add_argument("--plot-format", default="png", help="Plot image format.")
+    parser.add_argument("--plot-dpi", type=int, default=150, help="Plot image DPI.")
+    parser.add_argument("--plot-max-points", type=int, default=0, help="Max points per uid (0 = no limit).")
     args = parser.parse_args()
 
     now_utc = datetime.now(timezone.utc).replace(microsecond=0)
@@ -110,6 +115,19 @@ def main():
     out_path = Path(args.output)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     merged.to_csv(out_path, index=False, encoding="utf-8")
+    if args.plot:
+        try:
+            from plot_raw_timeseries import plot_from_csv
+        except Exception as exc:
+            raise RuntimeError(f"Failed to load plotter: {exc}") from exc
+        output_dir = Path(args.plot_output_dir) if args.plot_output_dir else None
+        plot_from_csv(
+            out_path,
+            output_dir=output_dir,
+            image_format=args.plot_format,
+            dpi=args.plot_dpi,
+            max_points=args.plot_max_points,
+        )
     print(f"完成，写出 {len(merged)} 行 -> {out_path}")
 
 
