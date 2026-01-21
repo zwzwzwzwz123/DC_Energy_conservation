@@ -718,10 +718,18 @@ def main():
         pred_df.insert(0, "time", test_df["time"].to_numpy())
 
     save_artifacts(model_bundle, metrics, pred_df, model_name=args.model)
-    print("训练完成，整体指标:", metrics["overall"])
+    overall_print = dict(metrics["overall"])
+    overall_pct = overall_print.get("误差百分比")
+    if isinstance(overall_pct, (int, float, np.floating)) and not np.isnan(overall_pct):
+        overall_print["误差百分比"] = f"{overall_pct}%"
+    print("训练完成，整体指标:", overall_print)
     if metrics.get("groups"):
         for g, st in metrics["groups"].items():
-            print(f"{g} 指标:", st)
+            st_print = dict(st)
+            st_pct = st_print.get("误差百分比")
+            if isinstance(st_pct, (int, float, np.floating)) and not np.isnan(st_pct):
+                st_print["误差百分比"] = f"{st_pct}%"
+            print(f"{g} 指标:", st_print)
     print(f"输出目录: {ARTIFACT_DIR}")
 
 

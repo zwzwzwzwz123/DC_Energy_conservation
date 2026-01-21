@@ -769,12 +769,24 @@ def main():
     pred_df.insert(0, 'time', test_time)
 
     save_artifacts(model_bundle, metrics, pred_df, model_name=args.model)
-    print('训练完成，整体指标：', metrics['overall'])
+    overall_print = dict(metrics['overall'])
+    overall_pct = overall_print.get('误差百分比')
+    if isinstance(overall_pct, (int, float, np.floating)) and not np.isnan(overall_pct):
+        overall_print['误差百分比'] = f"{overall_pct}%"
+    print('训练完成，整体指标：', overall_print)
     if metrics.get('groups'):
         if 'temperature' in metrics['groups']:
-            print('温度指标：', metrics['groups']['temperature'])
+            temp_print = dict(metrics['groups']['temperature'])
+            temp_pct = temp_print.get('误差百分比')
+            if isinstance(temp_pct, (int, float, np.floating)) and not np.isnan(temp_pct):
+                temp_print['误差百分比'] = f"{temp_pct}%"
+            print('温度指标：', temp_print)
         if 'humidity' in metrics['groups']:
-            print('湿度指标：', metrics['groups']['humidity'])
+            hum_print = dict(metrics['groups']['humidity'])
+            hum_pct = hum_print.get('误差百分比')
+            if isinstance(hum_pct, (int, float, np.floating)) and not np.isnan(hum_pct):
+                hum_print['误差百分比'] = f"{hum_pct}%"
+            print('湿度指标：', hum_print)
     print(f'输出目录：{ARTIFACT_DIR}')
 
 
