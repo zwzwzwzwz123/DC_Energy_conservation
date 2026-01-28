@@ -523,7 +523,7 @@ def train_gru(X_seq: np.ndarray, Y: np.ndarray, epochs: int = 60, lr: float = 1e
     criterion = nn.MSELoss()
 
     model.train()
-    batch_size = min(32, len(X_tensor))
+    batch_size = min(256, len(X_tensor))
     for epoch in range(epochs):
         perm = torch.randperm(len(X_tensor))
         for i in range(0, len(X_tensor), batch_size):
@@ -802,7 +802,7 @@ def train_patchtst(X_seq: np.ndarray, Y: np.ndarray, pred_len: int = 7, epochs: 
     criterion = nn.MSELoss()
 
     model.train()
-    batch_size = min(256, len(X_tensor))
+    batch_size = min(32, len(X_tensor))
     for epoch in range(epochs):
         perm = torch.randperm(len(X_tensor))
         for i in range(0, len(X_tensor), batch_size):
