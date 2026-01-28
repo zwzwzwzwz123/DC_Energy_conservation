@@ -200,6 +200,25 @@ def shift_targets(target_df: pd.DataFrame, horizon: pd.Timedelta) -> pd.DataFram
     return df
 
 
+def build_multi_step_targets(target_df: pd.DataFrame, horizon_step: pd.Timedelta, steps: int) -> pd.DataFrame:
+    """构造多步预测目标（t+1Δ ... t+stepsΔ），列名追加 __t+{k}。"""
+    if target_df.empty:
+        return target_df
+    if steps <= 0:
+        raise RuntimeError(f"steps 必须为正数，当前={steps}")
+    merged = None
+    for k in range(1, steps + 1):
+        shifted = shift_targets(target_df, horizon=horizon_step * k)
+        renamed = {}
+        for col in shifted.columns:
+            if col == "time":
+                continue
+            renamed[col] = f"{col}__t+{k}"
+        shifted = shifted.rename(columns=renamed)
+        merged = shifted if merged is None else merged.merge(shifted, on="time", how="inner")
+    return merged
+
+
 def drop_constant_columns(df: pd.DataFrame, exclude_cols: List[str], min_range: float = 1e-6) -> pd.DataFrame:
     """移除恒定或近恒定列（范围<=min_range），time 列与 exclude_cols 不处理。"""
     keep = ["time"]
@@ -469,6 +488,244 @@ def predict_lstm(bundle, X_seq: np.ndarray) -> np.ndarray:
     return preds
 
 
+def train_gru(X_seq: np.ndarray, Y: np.ndarray, epochs: int = 60, lr: float = 1e-3, hidden_size: int = 64):
+    try:
+        import torch
+        from torch import nn
+    except ImportError as exc:  # pragma: no cover - optional dependency
+        raise ImportError("缺少依赖 torch，无法使用 gru 模型；请安装 torch") from exc
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    scaler = StandardScaler()
+    N, T, F = X_seq.shape
+    Xs_flat = scaler.fit_transform(X_seq.reshape(N, T * F))
+    Xs = Xs_flat.reshape(N, T, F)
+
+    X_tensor = torch.tensor(Xs, dtype=torch.float32).to(device)
+    Y_tensor = torch.tensor(Y, dtype=torch.float32).to(device)
+
+    output_dim = Y.shape[1]
+
+    class GRUReg(nn.Module):
+        def __init__(self, input_dim, hidden_size, output_dim):
+            super().__init__()
+            self.gru = nn.GRU(input_size=input_dim, hidden_size=hidden_size, batch_first=True)
+            self.fc = nn.Linear(hidden_size, output_dim)
+
+        def forward(self, x):
+            out, _ = self.gru(x)
+            out = out[:, -1, :]
+            return self.fc(out)
+
+    model = GRUReg(F, hidden_size, output_dim).to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    criterion = nn.MSELoss()
+
+    model.train()
+    batch_size = min(256, len(X_tensor))
+    for epoch in range(epochs):
+        perm = torch.randperm(len(X_tensor))
+        for i in range(0, len(X_tensor), batch_size):
+            idx = perm[i : i + batch_size]
+            xb = X_tensor[idx]
+            yb = Y_tensor[idx]
+            optimizer.zero_grad()
+            pred = model(xb)
+            loss = criterion(pred, yb)
+            loss.backward()
+            optimizer.step()
+
+    return {
+        "type": "gru",
+        "scaler": scaler,
+        "state_dict": model.state_dict(),
+        "hidden_size": hidden_size,
+        "input_dim": F,
+        "output_dim": output_dim,
+        "seq_len": T,
+        "device": str(device),
+    }
+
+
+def predict_gru(bundle, X_seq: np.ndarray) -> np.ndarray:
+    import torch
+    from torch import nn
+
+    scaler = bundle["scaler"]
+    input_dim = bundle["input_dim"]
+    hidden_size = bundle["hidden_size"]
+    output_dim = bundle["output_dim"]
+    seq_len = bundle["seq_len"]
+    state_dict = bundle["state_dict"]
+
+    class GRUReg(nn.Module):
+        def __init__(self, input_dim, hidden_size, output_dim):
+            super().__init__()
+            self.gru = nn.GRU(input_size=input_dim, hidden_size=hidden_size, batch_first=True)
+            self.fc = nn.Linear(hidden_size, output_dim)
+
+        def forward(self, x):
+            out, _ = self.gru(x)
+            out = out[:, -1, :]
+            return self.fc(out)
+
+    device = torch.device(bundle.get("device", "cpu"))
+    model = GRUReg(input_dim, hidden_size, output_dim).to(device)
+    model.load_state_dict(state_dict)
+
+    N, T, F = X_seq.shape
+    if T != seq_len or F != input_dim:
+        raise RuntimeError(f"GRU 输入维度不符：期望 (*, {seq_len}, {input_dim})，实际 ({N}, {T}, {F})")
+    Xs_flat = scaler.transform(X_seq.reshape(N, T * F))
+    Xs = Xs_flat.reshape(N, T, F)
+    X_tensor = torch.tensor(Xs, dtype=torch.float32).to(device)
+    model.eval()
+    with torch.no_grad():
+        preds = model(X_tensor).cpu().numpy()
+    return preds
+
+
+def train_transformer(
+    X_seq: np.ndarray,
+    Y: np.ndarray,
+    epochs: int = 60,
+    lr: float = 5e-4,
+    d_model: int = 64,
+    nhead: int = 4,
+    num_layers: int = 2,
+    dim_feedforward: int = 256,
+    dropout: float = 0.1,
+):
+    try:
+        import torch
+        from torch import nn
+    except ImportError as exc:  # pragma: no cover - optional dependency
+        raise ImportError("缺少依赖 torch，无法使用 transformer 模型；请安装 torch") from exc
+
+    if d_model % nhead != 0:
+        raise ValueError(f"d_model={d_model} 必须能被 nhead={nhead} 整除")
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    scaler = StandardScaler()
+    N, T, F = X_seq.shape
+    Xs_flat = scaler.fit_transform(X_seq.reshape(N, T * F))
+    Xs = Xs_flat.reshape(N, T, F)
+
+    X_tensor = torch.tensor(Xs, dtype=torch.float32).to(device)
+    Y_tensor = torch.tensor(Y, dtype=torch.float32).to(device)
+
+    output_dim = Y.shape[1]
+
+    class TransformerReg(nn.Module):
+        def __init__(self, input_dim, output_dim, seq_len):
+            super().__init__()
+            self.input_proj = nn.Linear(input_dim, d_model)
+            self.pos_embed = nn.Parameter(torch.zeros(1, seq_len, d_model))
+            encoder_layer = nn.TransformerEncoderLayer(
+                d_model=d_model,
+                nhead=nhead,
+                dim_feedforward=dim_feedforward,
+                dropout=dropout,
+                batch_first=True,
+            )
+            self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+            self.fc = nn.Linear(d_model, output_dim)
+
+        def forward(self, x):
+            x = self.input_proj(x) + self.pos_embed
+            x = self.encoder(x)
+            out = x[:, -1, :]
+            return self.fc(out)
+
+    model = TransformerReg(F, output_dim, seq_len=T).to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    criterion = nn.MSELoss()
+
+    model.train()
+    batch_size = min(256, len(X_tensor))
+    for epoch in range(epochs):
+        perm = torch.randperm(len(X_tensor))
+        for i in range(0, len(X_tensor), batch_size):
+            idx = perm[i : i + batch_size]
+            xb = X_tensor[idx]
+            yb = Y_tensor[idx]
+            optimizer.zero_grad()
+            pred = model(xb)
+            loss = criterion(pred, yb)
+            loss.backward()
+            optimizer.step()
+
+    return {
+        "type": "transformer",
+        "scaler": scaler,
+        "state_dict": model.state_dict(),
+        "input_dim": F,
+        "output_dim": output_dim,
+        "seq_len": T,
+        "d_model": d_model,
+        "nhead": nhead,
+        "num_layers": num_layers,
+        "dim_feedforward": dim_feedforward,
+        "dropout": dropout,
+        "device": str(device),
+    }
+
+
+def predict_transformer(bundle, X_seq: np.ndarray) -> np.ndarray:
+    import torch
+    from torch import nn
+
+    scaler = bundle["scaler"]
+    input_dim = bundle["input_dim"]
+    output_dim = bundle["output_dim"]
+    seq_len = bundle["seq_len"]
+    d_model = bundle["d_model"]
+    nhead = bundle["nhead"]
+    num_layers = bundle["num_layers"]
+    dim_feedforward = bundle["dim_feedforward"]
+    dropout = bundle["dropout"]
+    state_dict = bundle["state_dict"]
+
+    if d_model % nhead != 0:
+        raise ValueError(f"d_model={d_model} 必须能被 nhead={nhead} 整除")
+
+    class TransformerReg(nn.Module):
+        def __init__(self, input_dim, output_dim, seq_len):
+            super().__init__()
+            self.input_proj = nn.Linear(input_dim, d_model)
+            self.pos_embed = nn.Parameter(torch.zeros(1, seq_len, d_model))
+            encoder_layer = nn.TransformerEncoderLayer(
+                d_model=d_model,
+                nhead=nhead,
+                dim_feedforward=dim_feedforward,
+                dropout=dropout,
+                batch_first=True,
+            )
+            self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+            self.fc = nn.Linear(d_model, output_dim)
+
+        def forward(self, x):
+            x = self.input_proj(x) + self.pos_embed
+            x = self.encoder(x)
+            out = x[:, -1, :]
+            return self.fc(out)
+
+    device = torch.device(bundle.get("device", "cpu"))
+    model = TransformerReg(input_dim, output_dim, seq_len=seq_len).to(device)
+    model.load_state_dict(state_dict)
+
+    N, T, F = X_seq.shape
+    if T != seq_len or F != input_dim:
+        raise RuntimeError(f"Transformer 输入维度不符：期望 (*, {seq_len}, {input_dim})，实际 ({N}, {T}, {F})")
+    Xs_flat = scaler.transform(X_seq.reshape(N, T * F))
+    Xs = Xs_flat.reshape(N, T, F)
+    X_tensor = torch.tensor(Xs, dtype=torch.float32).to(device)
+    model.eval()
+    with torch.no_grad():
+        preds = model(X_tensor).cpu().numpy()
+    return preds
+
+
 def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], target_meta: Dict[str, Dict]) -> Dict:
     mse = np.mean((y_true - y_pred) ** 2, axis=0)
     mae = np.mean(np.abs(y_true - y_pred), axis=0)
@@ -500,12 +757,18 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], tar
         return "other"
 
     for idx, col in enumerate(target_cols):
-        meta = target_meta.get(col, {})
+        base_col, step_label = col, None
+        if "__t+" in col:
+            base_col, step_label = col.split("__t+", 1)
+        meta = target_meta.get(base_col, {})
         group = classify(meta)
+        name = meta.get("name")
+        if name and step_label:
+            name = f"{name}__t+{step_label}"
         per_target.append(
             {
                 "uid": col,
-                "name": meta.get("name"),
+                "name": name,
                 "mse": float(mse[idx]),
                 "mae": float(mae[idx]),
                 "group": group,
@@ -549,6 +812,10 @@ def save_artifacts(model_bundle, metrics: Dict, predictions: pd.DataFrame, model
         joblib.dump(model_bundle, ARTIFACT_DIR / "model_mlp.pkl")
     elif model_name == "lstm":
         joblib.dump(model_bundle, ARTIFACT_DIR / "model_lstm.pkl")
+    elif model_name == "gru":
+        joblib.dump(model_bundle, ARTIFACT_DIR / "model_gru.pkl")
+    elif model_name == "transformer":
+        joblib.dump(model_bundle, ARTIFACT_DIR / "model_transformer.pkl")
     elif model_name == "rf":
         joblib.dump(model_bundle, ARTIFACT_DIR / "model_rf.pkl")
     elif model_name == "xgb":
@@ -566,11 +833,12 @@ def main():
     parser.add_argument("--start", help="ISO8601，默认 stop 往前 365 天")
     parser.add_argument("--stop", help="ISO8601，默认当前 UTC")
     parser.add_argument("--every", default="5m", help="聚合窗口，例如 5m/15m/1h")
-    parser.add_argument("--lags", type=int, default=3, help="输入特征滞后阶数或序列长度（LSTM 时）")
-    parser.add_argument("--target-lags", type=int, default=3, help="输出状态自回归滞后阶数（用于时序模型特征）")
-    parser.add_argument("--horizon", default="5m", help="预测步长 Δ，如 5m/15m/1h；特征时间 t 对应目标 t+Δ（LSTM 等时序模型使用）")
+    parser.add_argument("--lags", type=int, default=3, help="输入特征滞后阶数（用于特征构造）")
+    parser.add_argument("--seq-len", type=int, default=None, help="时序模型序列长度，默认 21（=7步×3）")
+    parser.add_argument("--target-lags", type=int, default=None, help="输出状态自回归滞后阶数（时序模型默认 7）")
+    parser.add_argument("--horizon", default=None, help="预测步长 Δ（单步间隔）；默认等于 every")
     parser.add_argument(
-        "--model", choices=["linear", "lstsq", "mlp", "rf", "xgb", "lstm"], default="linear", help="训练模型类型"
+        "--model", choices=["linear", "lstsq", "mlp", "rf", "xgb", "lstm", "gru", "transformer"], default="linear", help="训练模型类型"
     )
     parser.add_argument("--test-ratio", type=float, default=0.2, help="验证集比例")
     parser.add_argument("--field", default="value", help="Influx 数值字段名，默认 value")
@@ -583,7 +851,18 @@ def main():
     parser.add_argument("--mapping", default=str(MAPPING_PATH), help="自定义映射路径，可覆盖默认路径")
     args = parser.parse_args()
 
-    horizon_td = pd.to_timedelta(args.horizon)
+    seq_models = {"lstm", "gru", "transformer"}
+    forecast_steps = 7
+    window_steps = forecast_steps * 3
+    if args.seq_len is None and args.model in seq_models:
+        args.seq_len = window_steps
+    if args.target_lags is None:
+        args.target_lags = forecast_steps if args.model in seq_models else 3
+    every_td = pd.to_timedelta(args.every)
+    if args.horizon:
+        horizon_td = pd.to_timedelta(args.horizon)
+    else:
+        horizon_td = every_td
 
     now_utc = datetime.now(timezone.utc).replace(microsecond=0)
     stop = args.stop or now_utc.isoformat().replace("+00:00", "Z")
@@ -625,22 +904,13 @@ def main():
     if input_df.empty or output_df.empty:
         raise RuntimeError("Influx 数据为空，请检查 measurement/field 或时间范围")
 
-    # 仅对需要滞后的输入列加滞后
-    lag_uids = [rec["uid"] for rec in input_recs if should_lag(rec.get("name", ""))]
-    if lag_uids:
-        print(f"滞后特征列: {len(lag_uids)} 个 / 输入 {len(input_uids)} 个")
-    else:
-        print("未识别到需要滞后的输入特征，特征仅使用当前值")
-    feature_df = build_feature_matrix_selective(input_df, lag_uids=lag_uids, lags=max(args.lags, 0))
-
-    seq_models = {"lstm"}
     timeseries_mode = args.model in seq_models
 
-    if timeseries_mode and args.model == "lstm":
+    if timeseries_mode:
         # LSTM: 使用当前输入+状态，构造序列，预测未来 t+Δ 的输出
         state_col_map = {uid: f"state_{uid}" for uid in output_uids}
         base_feat_df = input_df.merge(output_df.rename(columns=state_col_map), on="time", how="left")
-        shifted_targets = shift_targets(output_df, horizon=horizon_td)
+        shifted_targets = build_multi_step_targets(output_df, horizon_step=horizon_td, steps=forecast_steps)
         merged = base_feat_df.merge(shifted_targets, on="time", how="inner")
         merged = merged.dropna().reset_index(drop=True)
         if merged.empty:
@@ -653,7 +923,7 @@ def main():
             if merged[col].notna().sum() == 0:
                 raise RuntimeError(f"列 {col} 全为空，无法训练")
 
-        seq_len = max(1, args.lags)
+        seq_len = max(1, args.seq_len or window_steps)
         X_seq, seq_df = build_lstm_sequences_table(merged, feature_cols, seq_len=seq_len)
         target_df = seq_df[target_cols]
         time_series = seq_df["time"]
@@ -670,6 +940,13 @@ def main():
         test_time = time_series.iloc[train_size:].to_numpy()
     else:
         # 非时序模式：输入滞后 + 同步输出
+        # 仅对需要滞后的输入列加滞后
+        lag_uids = [rec["uid"] for rec in input_recs if should_lag(rec.get("name", ""))]
+        if lag_uids:
+            print(f"滞后特征列: {len(lag_uids)} 个 / 输入 {len(input_uids)} 个")
+        else:
+            print("未识别到需要滞后的输入特征，特征仅使用当前值")
+        feature_df = build_feature_matrix_selective(input_df, lag_uids=lag_uids, lags=max(args.lags, 0))
         dataset = align_dataset(feature_df, output_df)
         if dataset.empty:
             raise RuntimeError("对齐后的数据为空，可能是时间窗口或聚合粒度不匹配")
@@ -706,13 +983,19 @@ def main():
     elif args.model == "xgb":
         model_bundle = train_xgb(X_train, Y_train)
         preds = predict_xgb(model_bundle, X_test)
-    else:  # lstm
+    elif args.model == "lstm":
         model_bundle = train_lstm(X_train, Y_train)
         preds = predict_lstm(model_bundle, X_test)
+    elif args.model == "gru":
+        model_bundle = train_gru(X_train, Y_train)
+        preds = predict_gru(model_bundle, X_test)
+    else:  # transformer
+        model_bundle = train_transformer(X_train, Y_train)
+        preds = predict_transformer(model_bundle, X_test)
 
     metrics = evaluate(Y_test, preds, target_cols, target_meta)
     pred_df = pd.DataFrame(preds, columns=target_cols)
-    if timeseries_mode and args.model == "lstm":
+    if timeseries_mode:
         pred_df.insert(0, "time", time_series.iloc[train_size:].to_numpy())
     else:
         pred_df.insert(0, "time", test_df["time"].to_numpy())
