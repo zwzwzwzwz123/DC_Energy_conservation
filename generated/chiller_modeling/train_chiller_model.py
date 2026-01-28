@@ -7,6 +7,7 @@ Chiller modeling pipeline
 """
 import argparse
 import json
+import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -726,6 +727,168 @@ def predict_transformer(bundle, X_seq: np.ndarray) -> np.ndarray:
     return preds
 
 
+def _load_patchtst_model():
+    patch_root = PROJECT_ROOT / "models" / "PatchTST" / "PatchTST_supervised"
+    if not patch_root.exists():
+        raise ImportError(f"未找到 PatchTST 源码目录: {patch_root}")
+    if str(patch_root) not in sys.path:
+        sys.path.insert(0, str(patch_root))
+    try:
+        from models.PatchTST import Model as PatchTSTModel
+    except Exception as exc:
+        raise ImportError("无法导入 PatchTST 模型，请检查源码依赖") from exc
+    return PatchTSTModel
+
+
+def train_patchtst(X_seq: np.ndarray, Y: np.ndarray, pred_len: int = 7, epochs: int = 60, lr: float = 5e-4):
+    try:
+        import torch
+        from torch import nn
+    except ImportError as exc:  # pragma: no cover - optional dependency
+        raise ImportError("缺少依赖 torch，无法使用 patchtst 模型；请安装 torch") from exc
+
+    PatchTSTModel = _load_patchtst_model()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    scaler = StandardScaler()
+    N, T, F = X_seq.shape
+    if pred_len <= 0:
+        raise RuntimeError(f"pred_len 必须为正数，当前={pred_len}")
+    if Y.shape[1] % pred_len != 0:
+        raise RuntimeError("PatchTST 需要按步数整除目标维度，请检查 target_cols 构造顺序")
+    target_dim = Y.shape[1] // pred_len
+
+    Xs_flat = scaler.fit_transform(X_seq.reshape(N, T * F))
+    Xs = Xs_flat.reshape(N, T, F)
+    Y_seq = Y.reshape(N, pred_len, target_dim)
+
+    X_tensor = torch.tensor(Xs, dtype=torch.float32).to(device)
+    Y_tensor = torch.tensor(Y_seq, dtype=torch.float32).to(device)
+
+    patch_len = min(max(4, T // 3), 6)
+    stride = max(1, patch_len // 2)
+
+    class PatchTSTReg(nn.Module):
+        def __init__(self, input_dim: int, target_dim: int, seq_len: int, pred_len: int):
+            super().__init__()
+            configs = type("Cfg", (), {})()
+            configs.enc_in = input_dim
+            configs.seq_len = seq_len
+            configs.pred_len = pred_len
+            configs.e_layers = 2
+            configs.n_heads = 4
+            configs.d_model = 64
+            configs.d_ff = 128
+            configs.dropout = 0.1
+            configs.fc_dropout = 0.1
+            configs.head_dropout = 0.1
+            configs.individual = False
+            configs.patch_len = patch_len
+            configs.stride = stride
+            configs.padding_patch = "end"
+            configs.revin = True
+            configs.affine = True
+            configs.subtract_last = False
+            configs.decomposition = False
+            configs.kernel_size = 25
+            self.model = PatchTSTModel(configs)
+            self.proj = nn.Linear(input_dim, target_dim)
+
+        def forward(self, x):
+            out = self.model(x)
+            return self.proj(out)
+
+    model = PatchTSTReg(F, target_dim, T, pred_len).to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    criterion = nn.MSELoss()
+
+    model.train()
+    batch_size = min(256, len(X_tensor))
+    for epoch in range(epochs):
+        perm = torch.randperm(len(X_tensor))
+        for i in range(0, len(X_tensor), batch_size):
+            idx = perm[i : i + batch_size]
+            xb = X_tensor[idx]
+            yb = Y_tensor[idx]
+            optimizer.zero_grad()
+            pred = model(xb)
+            loss = criterion(pred, yb)
+            loss.backward()
+            optimizer.step()
+
+    return {
+        "type": "patchtst",
+        "scaler": scaler,
+        "state_dict": model.state_dict(),
+        "input_dim": F,
+        "target_dim": target_dim,
+        "seq_len": T,
+        "pred_len": pred_len,
+        "patch_len": patch_len,
+        "stride": stride,
+        "device": str(device),
+    }
+
+
+def predict_patchtst(bundle, X_seq: np.ndarray) -> np.ndarray:
+    import torch
+    from torch import nn
+
+    PatchTSTModel = _load_patchtst_model()
+    scaler = bundle["scaler"]
+    input_dim = bundle["input_dim"]
+    target_dim = bundle["target_dim"]
+    seq_len = bundle["seq_len"]
+    pred_len = bundle["pred_len"]
+    patch_len = bundle["patch_len"]
+    stride = bundle["stride"]
+    state_dict = bundle["state_dict"]
+
+    class PatchTSTReg(nn.Module):
+        def __init__(self, input_dim: int, target_dim: int, seq_len: int, pred_len: int):
+            super().__init__()
+            configs = type("Cfg", (), {})()
+            configs.enc_in = input_dim
+            configs.seq_len = seq_len
+            configs.pred_len = pred_len
+            configs.e_layers = 2
+            configs.n_heads = 4
+            configs.d_model = 64
+            configs.d_ff = 128
+            configs.dropout = 0.1
+            configs.fc_dropout = 0.1
+            configs.head_dropout = 0.1
+            configs.individual = False
+            configs.patch_len = patch_len
+            configs.stride = stride
+            configs.padding_patch = "end"
+            configs.revin = True
+            configs.affine = True
+            configs.subtract_last = False
+            configs.decomposition = False
+            configs.kernel_size = 25
+            self.model = PatchTSTModel(configs)
+            self.proj = nn.Linear(input_dim, target_dim)
+
+        def forward(self, x):
+            out = self.model(x)
+            return self.proj(out)
+
+    device = torch.device(bundle.get("device", "cpu"))
+    model = PatchTSTReg(input_dim, target_dim, seq_len, pred_len).to(device)
+    model.load_state_dict(state_dict)
+
+    N, T, F = X_seq.shape
+    if T != seq_len or F != input_dim:
+        raise RuntimeError(f"PatchTST 输入维度不符：期望 (*, {seq_len}, {input_dim})，实际 ({N}, {T}, {F})")
+    Xs_flat = scaler.transform(X_seq.reshape(N, T * F))
+    Xs = Xs_flat.reshape(N, T, F)
+    X_tensor = torch.tensor(Xs, dtype=torch.float32).to(device)
+    model.eval()
+    with torch.no_grad():
+        preds_seq = model(X_tensor).cpu().numpy()
+    return preds_seq.reshape(N, pred_len * target_dim)
+
+
 def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], target_meta: Dict[str, Dict]) -> Dict:
     mse = np.mean((y_true - y_pred) ** 2, axis=0)
     mae = np.mean(np.abs(y_true - y_pred), axis=0)
@@ -816,6 +979,8 @@ def save_artifacts(model_bundle, metrics: Dict, predictions: pd.DataFrame, model
         joblib.dump(model_bundle, ARTIFACT_DIR / "model_gru.pkl")
     elif model_name == "transformer":
         joblib.dump(model_bundle, ARTIFACT_DIR / "model_transformer.pkl")
+    elif model_name == "patchtst":
+        joblib.dump(model_bundle, ARTIFACT_DIR / "model_patchtst.pkl")
     elif model_name == "rf":
         joblib.dump(model_bundle, ARTIFACT_DIR / "model_rf.pkl")
     elif model_name == "xgb":
@@ -838,7 +1003,7 @@ def main():
     parser.add_argument("--target-lags", type=int, default=None, help="输出状态自回归滞后阶数（时序模型默认 7）")
     parser.add_argument("--horizon", default=None, help="预测步长 Δ（单步间隔）；默认等于 every")
     parser.add_argument(
-        "--model", choices=["linear", "lstsq", "mlp", "rf", "xgb", "lstm", "gru", "transformer"], default="linear", help="训练模型类型"
+        "--model", choices=["linear", "lstsq", "mlp", "rf", "xgb", "lstm", "gru", "transformer", "patchtst"], default="linear", help="训练模型类型"
     )
     parser.add_argument("--test-ratio", type=float, default=0.2, help="验证集比例")
     parser.add_argument("--field", default="value", help="Influx 数值字段名，默认 value")
@@ -851,7 +1016,7 @@ def main():
     parser.add_argument("--mapping", default=str(MAPPING_PATH), help="自定义映射路径，可覆盖默认路径")
     args = parser.parse_args()
 
-    seq_models = {"lstm", "gru", "transformer"}
+    seq_models = {"lstm", "gru", "transformer", "patchtst"}
     forecast_steps = 7
     window_steps = forecast_steps * 3
     if args.seq_len is None and args.model in seq_models:
@@ -989,9 +1154,12 @@ def main():
     elif args.model == "gru":
         model_bundle = train_gru(X_train, Y_train)
         preds = predict_gru(model_bundle, X_test)
-    else:  # transformer
+    elif args.model == "transformer":
         model_bundle = train_transformer(X_train, Y_train)
         preds = predict_transformer(model_bundle, X_test)
+    else:  # patchtst
+        model_bundle = train_patchtst(X_train, Y_train, pred_len=forecast_steps)
+        preds = predict_patchtst(model_bundle, X_test)
 
     metrics = evaluate(Y_test, preds, target_cols, target_meta)
     pred_df = pd.DataFrame(preds, columns=target_cols)

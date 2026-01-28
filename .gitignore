@@ -162,8 +162,8 @@ augment/
 # *.csv
 # *.xlsx
 # *.xls
-
-
+generated/103A_modeling/raw_timeseries.csv
+generated/chiller_modeling/raw_timeseries.csv
 # ==================== 其他 ====================
 # 压缩文件
 *.zip
