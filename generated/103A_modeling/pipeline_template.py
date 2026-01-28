@@ -13,7 +13,7 @@ import re
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -687,7 +687,7 @@ def train_patchtst(X_seq: np.ndarray, Y: np.ndarray, pred_len: int = 7, epochs: 
     criterion = nn.MSELoss()
 
     model.train()
-    batch_size = min(32, len(X_tensor))
+    batch_size = min(8, len(X_tensor))
     for epoch in range(epochs):
         perm = torch.randperm(len(X_tensor))
         for i in range(0, len(X_tensor), batch_size):
@@ -956,6 +956,99 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], sen
     }
 
 
+def _pick_chinese_font() -> str:
+    try:
+        from matplotlib import font_manager
+    except Exception:
+        return ""
+    candidates = [
+        "Microsoft YaHei",
+        "SimHei",
+        "SimSun",
+        "Noto Sans CJK SC",
+        "Source Han Sans SC",
+        "Arial Unicode MS",
+    ]
+    available = {f.name for f in font_manager.fontManager.ttflist}
+    for name in candidates:
+        if name in available:
+            return name
+    return ""
+
+
+def plot_predictions(
+    test_time: np.ndarray,
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    target_cols: List[str],
+    sensor_meta: Dict,
+    model_name: str,
+    out_dir: Path,
+    horizon_td: Optional[pd.Timedelta] = None,
+):
+    try:
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except ImportError:
+        print("缺少 matplotlib，跳过预测可视化")
+        return
+
+    font_name = _pick_chinese_font()
+    if font_name:
+        plt.rcParams["font.sans-serif"] = [font_name]
+    plt.rcParams["axes.unicode_minus"] = False
+
+    out_dir = Path(out_dir) / "plots"
+    out_dir.mkdir(exist_ok=True)
+
+    y_true_arr = np.asarray(y_true)
+    y_pred_arr = np.asarray(y_pred)
+    if y_true_arr.ndim == 1:
+        y_true_arr = y_true_arr.reshape(-1, 1)
+    if y_pred_arr.ndim == 1:
+        y_pred_arr = y_pred_arr.reshape(-1, 1)
+
+    times = pd.to_datetime(test_time, errors="coerce")
+    if pd.isna(times).all():
+        times = np.arange(len(test_time))
+    model_name = model_name or "model"
+
+    for idx, col in enumerate(target_cols):
+        base_col = col
+        step_label = None
+        if "__t+" in col:
+            base_col, step_label = col.split("__t+", 1)
+        meta = sensor_meta.get(base_col, {})
+        name = meta.get("name") or meta.get("tag") or ""
+        title = base_col if not name else f"{base_col} {name}"
+        if step_label:
+            title = f"{title} t+{step_label}"
+
+        plot_time = times
+        if step_label and horizon_td is not None and np.issubdtype(np.asarray(times).dtype, np.datetime64):
+            try:
+                step_n = int(step_label)
+                plot_time = times + horizon_td * step_n
+            except ValueError:
+                plot_time = times
+
+        fig, ax = plt.subplots(figsize=(12, 4))
+        ax.plot(plot_time, y_true_arr[:, idx], label="真实值", linewidth=1.4)
+        ax.plot(plot_time, y_pred_arr[:, idx], label="预测值", linewidth=1.4)
+        ax.set_title(title)
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+        ax.set_xlabel("time")
+        ax.set_ylabel("value")
+        fig.autofmt_xdate()
+        fig.tight_layout()
+        filename = f"{model_name}_{slugify(col)}.png"
+        fig.savefig(out_dir / filename, dpi=150)
+        plt.close(fig)
+
+
 def split_train_test(dataset: pd.DataFrame, test_ratio: float = 0.2):
     """???????????????"""
     n = len(dataset)
@@ -1216,6 +1309,7 @@ def main():
     pred_df.insert(0, 'time', test_time)
 
     save_artifacts(model_bundle, metrics, pred_df, model_name=args.model)
+    plot_predictions(test_time, Y_test, preds, target_cols, sensor_meta, args.model, ARTIFACT_DIR, horizon_td)
     overall_print = dict(metrics['overall'])
     overall_pct = overall_print.get('误差百分比')
     if isinstance(overall_pct, (int, float, np.floating)) and not np.isnan(overall_pct):
