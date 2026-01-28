@@ -1000,8 +1000,11 @@ def plot_predictions(
         plt.rcParams["font.sans-serif"] = [font_name]
     plt.rcParams["axes.unicode_minus"] = False
 
+    model_name = model_name or "model"
     out_dir = Path(out_dir) / "plots"
     out_dir.mkdir(exist_ok=True)
+    model_dir = out_dir / slugify(model_name)
+    model_dir.mkdir(exist_ok=True)
 
     y_true_arr = np.asarray(y_true)
     y_pred_arr = np.asarray(y_pred)
@@ -1013,8 +1016,6 @@ def plot_predictions(
     times = pd.to_datetime(test_time, errors="coerce")
     if pd.isna(times).all():
         times = np.arange(len(test_time))
-    model_name = model_name or "model"
-
     for idx, col in enumerate(target_cols):
         base_col = col
         step_label = None
@@ -1037,6 +1038,7 @@ def plot_predictions(
         fig, ax = plt.subplots(figsize=(12, 4))
         ax.plot(plot_time, y_true_arr[:, idx], label="真实值", linewidth=1.4)
         ax.plot(plot_time, y_pred_arr[:, idx], label="预测值", linewidth=1.4)
+        ax.set_ylim(bottom=0)
         ax.set_title(title)
         ax.legend()
         ax.grid(True, alpha=0.3)
@@ -1045,7 +1047,7 @@ def plot_predictions(
         fig.autofmt_xdate()
         fig.tight_layout()
         filename = f"{model_name}_{slugify(col)}.png"
-        fig.savefig(out_dir / filename, dpi=150)
+        fig.savefig(model_dir / filename, dpi=150)
         plt.close(fig)
 
 
