@@ -899,7 +899,16 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], tar
     mse = np.mean((y_true - y_pred) ** 2, axis=0)
     mae = np.mean(np.abs(y_true - y_pred), axis=0)
     per_target = []
-    groups = {"energy": [], "temperature": [], "flow": [], "other": []}
+    groups = {
+        "energy": [],
+        "energy_chiller": [],
+        "energy_chilled_pump": [],
+        "energy_cooling_pump": [],
+        "energy_other": [],
+        "temperature": [],
+        "flow": [],
+        "other": [],
+    }
 
     def error_pct(mae_val: float, mean_val: float) -> float:
         if mean_val is None or np.isnan(mean_val):
@@ -913,12 +922,18 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], tar
         name = str(meta.get("name", ""))
         lname = name.lower()
         if is_cumulative(name):
-            return "energy"
-        if "温度" in name:
+            if "\u51b7\u6c34\u673a\u7ec4" in name or "\u51b7\u6c34\u4e3b\u673a" in name:
+                return "energy_chiller"
+            if "\u51b7\u51bb\u6cf5" in name:
+                return "energy_chilled_pump"
+            if "\u51b7\u5374\u6cf5" in name:
+                return "energy_cooling_pump"
+            return "energy_other"
+        if "\u6e29\u5ea6" in name:
             return "temperature"
-        if "流量" in name:
+        if "\u6d41\u91cf" in name:
             return "flow"
-        # 兜底
+        # fallback
         if "temp" in lname:
             return "temperature"
         if "flow" in lname:
@@ -944,6 +959,8 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], tar
             }
         )
         groups[group].append(idx)
+        if group.startswith("energy_"):
+            groups["energy"].append(idx)
 
     def group_stats(idxs: List[int]):
         if not idxs:
