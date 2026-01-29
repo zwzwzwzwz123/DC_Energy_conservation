@@ -985,6 +985,9 @@ def plot_predictions(
     model_name: str,
     out_dir: Path,
     horizon_td: Optional[pd.Timedelta] = None,
+    history_df: Optional[pd.DataFrame] = None,
+    seq_len: Optional[int] = None,
+    sample_indices: Optional[List[int]] = None,
 ):
     try:
         import matplotlib
@@ -1016,6 +1019,94 @@ def plot_predictions(
     times = pd.to_datetime(test_time, errors="coerce")
     if pd.isna(times).all():
         times = np.arange(len(test_time))
+
+    is_multi_step = any("__t+" in col for col in target_cols)
+    if is_multi_step and history_df is not None and seq_len and horizon_td is not None:
+        hist_df = history_df.copy()
+        hist_df["time"] = pd.to_datetime(hist_df["time"], errors="coerce", utc=True).dt.tz_convert(None)
+        hist_df = hist_df.dropna(subset=["time"]).sort_values("time").reset_index(drop=True)
+        if hist_df.empty:
+            return
+        hist_times = hist_df["time"].to_numpy()
+
+        def _find_time_index(values: np.ndarray, target: pd.Timestamp) -> Optional[int]:
+            if values.size == 0 or pd.isna(target):
+                return None
+            target64 = np.datetime64(target)
+            idx = np.searchsorted(values, target64)
+            if idx < len(values) and values[idx] == target64:
+                return int(idx)
+            if idx > 0 and values[idx - 1] == target64:
+                return int(idx - 1)
+            diffs = np.abs(values.astype("datetime64[ns]").astype("int64") - target64.astype("datetime64[ns]").astype("int64"))
+            if diffs.size == 0:
+                return None
+            return int(diffs.argmin())
+
+        grouped = {}
+        for idx, col in enumerate(target_cols):
+            if "__t+" not in col:
+                continue
+            base_col, step_label = col.split("__t+", 1)
+            try:
+                step_n = int(step_label)
+            except ValueError:
+                continue
+            grouped.setdefault(base_col, []).append((step_n, idx))
+
+        if not grouped:
+            return
+
+        if not sample_indices:
+            sample_indices = [len(times) - 1] if len(times) > 0 else []
+
+        for base_col, step_items in grouped.items():
+            if base_col not in hist_df.columns:
+                continue
+            step_items = sorted(step_items, key=lambda x: x[0])
+            step_idxs = [idx for _, idx in step_items]
+            steps = len(step_idxs)
+            meta = sensor_meta.get(base_col, {})
+            name = meta.get("name") or meta.get("tag") or ""
+            title = base_col if not name else f"{base_col} {name}"
+
+            for sample_idx in sample_indices:
+                if sample_idx < 0 or sample_idx >= len(times):
+                    continue
+                base_time = pd.to_datetime(times[sample_idx], errors="coerce", utc=True)
+                if not pd.isna(base_time):
+                    base_time = base_time.tz_convert(None)
+                pos = _find_time_index(hist_times, base_time)
+                if pos is None:
+                    continue
+                start_idx = pos - seq_len + 1
+                if start_idx < 0:
+                    continue
+                hist_slice = slice(start_idx, pos + 1)
+                hist_vals = hist_df.iloc[hist_slice][base_col].to_numpy()
+                hist_plot_times = hist_times[hist_slice]
+                true_seq = y_true_arr[sample_idx, step_idxs]
+                pred_seq = y_pred_arr[sample_idx, step_idxs]
+                forecast_times = [base_time + horizon_td * k for k in range(1, steps + 1)]
+
+                fig, ax = plt.subplots(figsize=(12, 4))
+                ax.plot(hist_plot_times, hist_vals, label="history", linewidth=1.4)
+                ax.plot(forecast_times, true_seq, label="true", linewidth=1.4)
+                ax.plot(forecast_times, pred_seq, label="pred", linewidth=1.4)
+                ax.axvline(base_time, color="gray", linestyle="--", linewidth=1.0, alpha=0.8)
+                ax.set_ylim(bottom=0)
+                ax.set_title(title)
+                ax.legend()
+                ax.grid(True, alpha=0.3)
+                ax.set_xlabel("time")
+                ax.set_ylabel("value")
+                fig.autofmt_xdate()
+                fig.tight_layout()
+                filename = f"{model_name}_{slugify(base_col)}_win{sample_idx}.png"
+                fig.savefig(model_dir / filename, dpi=150)
+                plt.close(fig)
+        return
+
     for idx, col in enumerate(target_cols):
         base_col = col
         step_label = None
@@ -1311,7 +1402,23 @@ def main():
     pred_df.insert(0, 'time', test_time)
 
     save_artifacts(model_bundle, metrics, pred_df, model_name=args.model)
-    plot_predictions(test_time, Y_test, preds, target_cols, sensor_meta, args.model, ARTIFACT_DIR, horizon_td)
+    sample_indices = None
+    if timeseries_mode:
+        total = len(test_time)
+        sample_indices = [idx for idx in (total - 1, total - 2, total - 3) if idx >= 0]
+    plot_predictions(
+        test_time,
+        Y_test,
+        preds,
+        target_cols,
+        sensor_meta,
+        args.model,
+        ARTIFACT_DIR,
+        horizon_td,
+        history_df=sensor_df if timeseries_mode else None,
+        seq_len=seq_len if timeseries_mode else None,
+        sample_indices=sample_indices,
+    )
     overall_print = dict(metrics['overall'])
     overall_pct = overall_print.get('误差百分比')
     if isinstance(overall_pct, (int, float, np.floating)) and not np.isnan(overall_pct):

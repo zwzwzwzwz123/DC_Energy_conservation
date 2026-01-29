@@ -156,16 +156,6 @@
       "category": "input"
     },
     {
-      "name": "1#压缩机运行时间",
-      "uid": "9f6f28dd_70b4_4c7c_964e_c1ca7990ca48",
-      "category": "input"
-    },
-    {
-      "name": "1#压缩机启动次数",
-      "uid": "ded19ee4_432c_4580_8463_693e7f4103d7",
-      "category": "input"
-    },
-    {
       "name": "1#压缩机导叶开度",
       "uid": "18df604b_1891_47be_8e76_05a8f0cdac0d",
       "category": "input"
@@ -313,16 +303,6 @@
     {
       "name": "2#压缩机油箱压力",
       "uid": "8fb77b0f_de8e_4c12_9165_f228909b95d9",
-      "category": "input"
-    },
-    {
-      "name": "2#压缩机运行时间",
-      "uid": "c9408206_ac3d_497c_bd14_40880f4a0835",
-      "category": "input"
-    },
-    {
-      "name": "2#压缩机启动次数",
-      "uid": "4b0aad38_85eb_432c_af69_4dc0bf0dbee5",
       "category": "input"
     },
     {
@@ -476,16 +456,6 @@
       "category": "input"
     },
     {
-      "name": "3#压缩机运行时间",
-      "uid": "ff57a76d_3397_4b93_8fc0_fbb8ff86c0fa",
-      "category": "input"
-    },
-    {
-      "name": "3#压缩机启动次数",
-      "uid": "e5f579e6_2ff3_4d7e_a952_eb0bf401e338",
-      "category": "input"
-    },
-    {
       "name": "3#压缩机导叶开度",
       "uid": "5e881b26_92a5_4c14_aba8_dab0367b39c4",
       "category": "input"
@@ -633,16 +603,6 @@
     {
       "name": "4#压缩机油箱压力",
       "uid": "e1d9ed98_07b4_45b1_befe_12febfe97c69",
-      "category": "input"
-    },
-    {
-      "name": "4#压缩机运行时间",
-      "uid": "75d25dc4_c47d_4e45_b223_3e6f306985fa",
-      "category": "input"
-    },
-    {
-      "name": "4#压缩机启动次数",
-      "uid": "f729642f_7d6d_4b24_866d_4374295014d8",
       "category": "input"
     },
     {
@@ -1084,32 +1044,152 @@
       "name": "2#蓄冷泵变频设定",
       "uid": "96071936_4def_471f_b92f_5f4042a19702",
       "category": "input"
-    }
-  ],
-  "outputs": [
+    },
     {
       "name": "冷冻总管回水平均温度",
       "uid": "26aa984f_ddc1_4c33_9c96_b3313aad2a72",
-      "category": "output"
+      "category": "input"
     },
     {
       "name": "蓄冷水池平均温度",
       "uid": "4398dbf6_8f98_4222_9f58_4e91feab323d",
-      "category": "output"
+      "category": "input"
     },
     {
       "name": "1#冷机冷冻进水温度",
       "uid": "b1858cac_4abf_4789_8a62_6c1aec8615c6",
-      "category": "output"
-    },
-    {
-      "name": "1#冷机冷却出水温度",
-      "uid": "8f3102af_f9e3_4a68_b191_bc1a995af0c4",
-      "category": "output"
+      "category": "input"
     },
     {
       "name": "2#冷机冷冻进水温度",
       "uid": "7479ada1_b9b3_41b4_a3fa_05e3d4969d04",
+      "category": "input"
+    },
+    {
+      "name": "3#冷机冷冻进水温度",
+      "uid": "d8f07bad_c577_4b09_96f9_5a989212ddfb",
+      "category": "input"
+    },
+    {
+      "name": "4#冷机冷冻进水温度",
+      "uid": "0d4d1f7d_d7e0_46ff_9779_b92f59b1ab04",
+      "category": "input"
+    },
+    {
+      "name": "冷冻回水温度1",
+      "uid": "7c70b29c_173e_4b3a_9cb7_e49af1206593",
+      "category": "input"
+    },
+    {
+      "name": "冷冻回水温度2",
+      "uid": "aa95fde4_879a_468d_9a2a_cbd63121cb68",
+      "category": "input"
+    },
+    {
+      "name": "1#冷却塔出水温度",
+      "uid": "0a85728b_efa0_42e5_aa27_81c30fb45786",
+      "category": "input"
+    },
+    {
+      "name": "2#冷却塔出水温度",
+      "uid": "fa492a03_c5df_42d4_96df_7eef051bb972",
+      "category": "input"
+    },
+    {
+      "name": "3#冷却塔出水温度",
+      "uid": "73c216fa_7de6_4b7a_827b_2b3caaa7ab94",
+      "category": "input"
+    },
+    {
+      "name": "4#冷却塔出水温度",
+      "uid": "d712284a_e38f_4433_b507_ca48b5977b42",
+      "category": "input"
+    },
+    {
+      "name": "5#冷却塔出水温度",
+      "uid": "46902447_9fe5_45bc_8f59_e17471cbead8",
+      "category": "input"
+    },
+    {
+      "name": "6#冷却塔出水温度",
+      "uid": "1b1de943_5762_4279_b7dc_7867c706718f",
+      "category": "input"
+    },
+    {
+      "name": "7#冷却塔出水温度",
+      "uid": "dd80b34a_e30e_4076_9182_ca306c58d890",
+      "category": "input"
+    },
+    {
+      "name": "8#冷却塔出水温度",
+      "uid": "2a6a59ff_6a08_4cab_9466_ffd7784b7af2",
+      "category": "input"
+    },
+    {
+      "name": "1#冷冻流量",
+      "uid": "a616e7a5_256e_474b_845a_1d2a90501361",
+      "category": "input"
+    },
+    {
+      "name": "2#冷冻流量",
+      "uid": "d4d52740_8708_4948_aeed_b31db72a55b2",
+      "category": "input"
+    },
+    {
+      "name": "1#冷冻泵流量",
+      "uid": "2cc6d2c9_4bd2_402d_86db_6312cd3e2ec9",
+      "category": "input"
+    },
+    {
+      "name": "2#冷冻泵流量",
+      "uid": "20f5539c_76b4_4b67_b3f4_778ee0249861",
+      "category": "input"
+    },
+    {
+      "name": "3#冷冻泵流量",
+      "uid": "083fcd86_7d54_4eab_b230_361c468db6f2",
+      "category": "input"
+    },
+    {
+      "name": "4#冷冻泵流量",
+      "uid": "e99ad1be_a413_4c14_accb_abcf0b113049",
+      "category": "input"
+    },
+    {
+      "name": "1#冷却流量",
+      "uid": "d068e9c2_cc13_4429_8f00_74b9eb2e9efe",
+      "category": "input"
+    },
+    {
+      "name": "2#冷却流量",
+      "uid": "f33d9a62_38da_4eb6_b3ee_80860711640b",
+      "category": "input"
+    },
+    {
+      "name": "1#冷却泵流量",
+      "uid": "62425c39_ad95_41ca_95ac_ccf03323279a",
+      "category": "input"
+    },
+    {
+      "name": "2#冷却泵流量",
+      "uid": "54746436_93d5_4296_bf91_0943ffa7e60b",
+      "category": "input"
+    },
+    {
+      "name": "3#冷却泵流量",
+      "uid": "3dad770e_54f8_4625_a3d4_ab309cdec95a",
+      "category": "input"
+    },
+    {
+      "name": "4#冷却泵流量",
+      "uid": "79cd63eb_7d18_4dc6_b6ec_1aee7db83ef6",
+      "category": "input"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "1#冷机冷却出水温度",
+      "uid": "8f3102af_f9e3_4a68_b191_bc1a995af0c4",
       "category": "output"
     },
     {
@@ -1118,133 +1198,13 @@
       "category": "output"
     },
     {
-      "name": "3#冷机冷冻进水温度",
-      "uid": "d8f07bad_c577_4b09_96f9_5a989212ddfb",
-      "category": "output"
-    },
-    {
       "name": "3#冷机冷却出水温度",
       "uid": "0a9f2a34_183d_4434_b2b4_dc581d25e29a",
       "category": "output"
     },
     {
-      "name": "4#冷机冷冻进水温度",
-      "uid": "0d4d1f7d_d7e0_46ff_9779_b92f59b1ab04",
-      "category": "output"
-    },
-    {
       "name": "4#冷机冷却出水温度",
       "uid": "3d88232c_0a10_452c_aa67_c8d0737a93a7",
-      "category": "output"
-    },
-    {
-      "name": "冷冻回水温度1",
-      "uid": "7c70b29c_173e_4b3a_9cb7_e49af1206593",
-      "category": "output"
-    },
-    {
-      "name": "冷冻回水温度2",
-      "uid": "aa95fde4_879a_468d_9a2a_cbd63121cb68",
-      "category": "output"
-    },
-    {
-      "name": "1#冷却塔出水温度",
-      "uid": "0a85728b_efa0_42e5_aa27_81c30fb45786",
-      "category": "output"
-    },
-    {
-      "name": "2#冷却塔出水温度",
-      "uid": "fa492a03_c5df_42d4_96df_7eef051bb972",
-      "category": "output"
-    },
-    {
-      "name": "3#冷却塔出水温度",
-      "uid": "73c216fa_7de6_4b7a_827b_2b3caaa7ab94",
-      "category": "output"
-    },
-    {
-      "name": "4#冷却塔出水温度",
-      "uid": "d712284a_e38f_4433_b507_ca48b5977b42",
-      "category": "output"
-    },
-    {
-      "name": "5#冷却塔出水温度",
-      "uid": "46902447_9fe5_45bc_8f59_e17471cbead8",
-      "category": "output"
-    },
-    {
-      "name": "6#冷却塔出水温度",
-      "uid": "1b1de943_5762_4279_b7dc_7867c706718f",
-      "category": "output"
-    },
-    {
-      "name": "7#冷却塔出水温度",
-      "uid": "dd80b34a_e30e_4076_9182_ca306c58d890",
-      "category": "output"
-    },
-    {
-      "name": "8#冷却塔出水温度",
-      "uid": "2a6a59ff_6a08_4cab_9466_ffd7784b7af2",
-      "category": "output"
-    },
-    {
-      "name": "1#冷冻流量",
-      "uid": "a616e7a5_256e_474b_845a_1d2a90501361",
-      "category": "output"
-    },
-    {
-      "name": "2#冷冻流量",
-      "uid": "d4d52740_8708_4948_aeed_b31db72a55b2",
-      "category": "output"
-    },
-    {
-      "name": "1#冷冻泵流量",
-      "uid": "2cc6d2c9_4bd2_402d_86db_6312cd3e2ec9",
-      "category": "output"
-    },
-    {
-      "name": "2#冷冻泵流量",
-      "uid": "20f5539c_76b4_4b67_b3f4_778ee0249861",
-      "category": "output"
-    },
-    {
-      "name": "3#冷冻泵流量",
-      "uid": "083fcd86_7d54_4eab_b230_361c468db6f2",
-      "category": "output"
-    },
-    {
-      "name": "4#冷冻泵流量",
-      "uid": "e99ad1be_a413_4c14_accb_abcf0b113049",
-      "category": "output"
-    },
-    {
-      "name": "1#冷却流量",
-      "uid": "d068e9c2_cc13_4429_8f00_74b9eb2e9efe",
-      "category": "output"
-    },
-    {
-      "name": "2#冷却流量",
-      "uid": "f33d9a62_38da_4eb6_b3ee_80860711640b",
-      "category": "output"
-    },
-    {
-      "name": "1#冷却泵流量",
-      "uid": "62425c39_ad95_41ca_95ac_ccf03323279a",
-      "category": "output"
-    },
-    {
-      "name": "2#冷却泵流量",
-      "uid": "54746436_93d5_4296_bf91_0943ffa7e60b",
-      "category": "output"
-    },
-    {
-      "name": "3#冷却泵流量",
-      "uid": "3dad770e_54f8_4625_a3d4_ab309cdec95a",
-      "category": "output"
-    },
-    {
-      "name": "4#冷却泵流量",
-      "uid": "79cd63eb_7d18_4dc6_b6ec_1aee7db83ef6",
       "category": "output"
     },
     {
@@ -1305,246 +1265,6 @@
     {
       "name": "109空调配电室/3AK2柜-4#冷却泵.正向有功电能",
       "uid": "nodeZNV.00001006000000000079.0116145001",
-      "category": "output"
-    },
-    {
-      "name": "1#冷冻泵电压",
-      "uid": "efbff8e2_dcfb_494e_aead_a2d46cd5fe77",
-      "category": "output"
-    },
-    {
-      "name": "1#冷冻泵电流",
-      "uid": "6b24aa30_667c_46ce_92f8_d624cc6688b4",
-      "category": "output"
-    },
-    {
-      "name": "1#冷却塔电压",
-      "uid": "606852c3_6961_49c8_a654_37a905fce06e",
-      "category": "output"
-    },
-    {
-      "name": "1#冷却塔电流",
-      "uid": "cc1045c8_6e36_48e0_8202_6a848a442418",
-      "category": "output"
-    },
-    {
-      "name": "2#冷却塔电压",
-      "uid": "5e3afa6c_6003_4529_b6e6_2c4252c729c8",
-      "category": "output"
-    },
-    {
-      "name": "2#冷却塔电流",
-      "uid": "0f160bd4_6d42_43a9_be08_56a91673dcf7",
-      "category": "output"
-    },
-    {
-      "name": "1#压缩机A相电流",
-      "uid": "8ff98ce7_fe5a_4d75_a1e1_aa17644a49c3",
-      "category": "output"
-    },
-    {
-      "name": "1#压缩机B相电流",
-      "uid": "0913a4fe_7e4d_4238_b156_6ca74a383173",
-      "category": "output"
-    },
-    {
-      "name": "1#压缩机C相电流",
-      "uid": "d5833526_3740_42b6_b04e_49abbf412a16",
-      "category": "output"
-    },
-    {
-      "name": "2#冷冻泵电压",
-      "uid": "c30840bd_072c_46a5_a7de_6d6b7db7596f",
-      "category": "output"
-    },
-    {
-      "name": "2#冷冻泵电流",
-      "uid": "10fa55d9_60f8_4491_a64d_e4c3c844d5ec",
-      "category": "output"
-    },
-    {
-      "name": "2#冷却泵电压",
-      "uid": "e3d11f8d_9615_4808_87e9_9de4661db34c",
-      "category": "output"
-    },
-    {
-      "name": "2#冷却泵电流",
-      "uid": "e7e075f3_8d85_4469_b0af_fed6aeb1c4f7",
-      "category": "output"
-    },
-    {
-      "name": "7#冷却塔电压",
-      "uid": "0d2b7ca4_2511_4468_8721_b162f1855037",
-      "category": "output"
-    },
-    {
-      "name": "7#冷却塔电流",
-      "uid": "23512f23_00fe_474b_8928_223731949a2c",
-      "category": "output"
-    },
-    {
-      "name": "8#冷却塔电压",
-      "uid": "058d58b7_bc8a_474f_9e82_5dd563ce574f",
-      "category": "output"
-    },
-    {
-      "name": "8#冷却塔电流",
-      "uid": "758c41c0_35da_4953_b1f0_93f89ddbe783",
-      "category": "output"
-    },
-    {
-      "name": "1#压缩机电流百分比",
-      "uid": "0ca13caa_052a_4abf_80bf_c8c55e2bec52",
-      "category": "output"
-    },
-    {
-      "name": "2#压缩机电流百分比",
-      "uid": "addba2cc_98aa_4794_9a09_f5e746d6e4fd",
-      "category": "output"
-    },
-    {
-      "name": "2#压缩机A相电流",
-      "uid": "8f9a84ff_71be_4180_b237_22cdd43abc6f",
-      "category": "output"
-    },
-    {
-      "name": "2#压缩机B相电流",
-      "uid": "bafd3567_9b9c_43dc_9057_b531e733c53d",
-      "category": "output"
-    },
-    {
-      "name": "2#压缩机C相电流",
-      "uid": "0847f871_f1d0_4d62_8288_0c47ccf8477b",
-      "category": "output"
-    },
-    {
-      "name": "3#冷冻泵电压",
-      "uid": "0f0072ff_d384_4554_b009_69e75bdbddf7",
-      "category": "output"
-    },
-    {
-      "name": "3#冷冻泵电流",
-      "uid": "3b7c16c1_7a98_454a_9a6a_78f410b9fc12",
-      "category": "output"
-    },
-    {
-      "name": "3#冷却泵电压",
-      "uid": "49f38bdf_e016_4c04_9b80_3ffcc2332ed3",
-      "category": "output"
-    },
-    {
-      "name": "3#冷却泵电流",
-      "uid": "5aed8639_7773_4a0e_b4e7_ee149b62b901",
-      "category": "output"
-    },
-    {
-      "name": "3#冷却塔电压",
-      "uid": "9b93eed9_4eca_4a8b_91c4_ef56d0cb4333",
-      "category": "output"
-    },
-    {
-      "name": "3#冷却塔电流",
-      "uid": "0d04a4a9_edd3_40a9_80ce_885e52787623",
-      "category": "output"
-    },
-    {
-      "name": "4#冷却塔电压",
-      "uid": "97e573de_bbb1_405d_8fcf_6062036f8211",
-      "category": "output"
-    },
-    {
-      "name": "4#冷却塔电流",
-      "uid": "72d4ac6c_e592_443f_bea3_2093a562a623",
-      "category": "output"
-    },
-    {
-      "name": "3#压缩机电流百分比",
-      "uid": "c6731afa_c189_4f29_866d_8b1a6905338a",
-      "category": "output"
-    },
-    {
-      "name": "3#压缩机A相电流",
-      "uid": "82a9e94b_16f3_4906_b14e_389ac3b9acdf",
-      "category": "output"
-    },
-    {
-      "name": "3#压缩机B相电流",
-      "uid": "fb636b66_f78f_4296_a844_cb077fcef13a",
-      "category": "output"
-    },
-    {
-      "name": "3#压缩机C相电流",
-      "uid": "b5d1318c_12c3_43d1_b568_669fdcbe558b",
-      "category": "output"
-    },
-    {
-      "name": "4#冷冻泵电压",
-      "uid": "9b5bdb29_b693_40fb_837c_7b0e14b780ae",
-      "category": "output"
-    },
-    {
-      "name": "4#冷冻泵电流",
-      "uid": "7e91bf2d_dc90_4286_9c8d_dae1dcdb1736",
-      "category": "output"
-    },
-    {
-      "name": "4#冷却泵电压",
-      "uid": "c3fd84e4_9b9b_45ac_a993_d93203553975",
-      "category": "output"
-    },
-    {
-      "name": "4#冷却泵电流",
-      "uid": "11c7e90b_1303_4029_a5f8_a8bf5c640780",
-      "category": "output"
-    },
-    {
-      "name": "5#冷却塔电压",
-      "uid": "5593c817_3be8_4373_8054_88495d7a7057",
-      "category": "output"
-    },
-    {
-      "name": "5#冷却塔电流",
-      "uid": "13e85966_e1b6_43f9_848b_66ac7b6b8046",
-      "category": "output"
-    },
-    {
-      "name": "6#冷却塔电压",
-      "uid": "4d78f278_c743_4d51_820c_bc6823a58a76",
-      "category": "output"
-    },
-    {
-      "name": "6#冷却塔电流",
-      "uid": "c953a3b1_95bc_455e_9b27_ca105e8dff63",
-      "category": "output"
-    },
-    {
-      "name": "4#压缩机电流百分比",
-      "uid": "e5b65ddd_0bed_4436_aba2_d5c18f141850",
-      "category": "output"
-    },
-    {
-      "name": "4#压缩机A相电流",
-      "uid": "3e088f0f_0d68_4379_b76d_2671d48ef2b4",
-      "category": "output"
-    },
-    {
-      "name": "4#压缩机B相电流",
-      "uid": "91bdd4d8_c9ca_44d7_b126_e91b4b798977",
-      "category": "output"
-    },
-    {
-      "name": "4#压缩机C相电流",
-      "uid": "78b88569_0bfb_4d86_9deb_09c6c30fab66",
-      "category": "output"
-    },
-    {
-      "name": "1#冷却泵电压",
-      "uid": "9aa15548_c1ad_4ae8_9122_4f9ba250361e",
-      "category": "output"
-    },
-    {
-      "name": "1#冷却泵电流",
-      "uid": "616cb0c3_5be5_4a8d_955a_883d799a671d",
       "category": "output"
     }
   ],
@@ -1705,16 +1425,6 @@
       "category": "input"
     },
     {
-      "name": "1#压缩机运行时间",
-      "uid": "9f6f28dd_70b4_4c7c_964e_c1ca7990ca48",
-      "category": "input"
-    },
-    {
-      "name": "1#压缩机启动次数",
-      "uid": "ded19ee4_432c_4580_8463_693e7f4103d7",
-      "category": "input"
-    },
-    {
       "name": "1#压缩机导叶开度",
       "uid": "18df604b_1891_47be_8e76_05a8f0cdac0d",
       "category": "input"
@@ -1862,16 +1572,6 @@
     {
       "name": "2#压缩机油箱压力",
       "uid": "8fb77b0f_de8e_4c12_9165_f228909b95d9",
-      "category": "input"
-    },
-    {
-      "name": "2#压缩机运行时间",
-      "uid": "c9408206_ac3d_497c_bd14_40880f4a0835",
-      "category": "input"
-    },
-    {
-      "name": "2#压缩机启动次数",
-      "uid": "4b0aad38_85eb_432c_af69_4dc0bf0dbee5",
       "category": "input"
     },
     {
@@ -2025,16 +1725,6 @@
       "category": "input"
     },
     {
-      "name": "3#压缩机运行时间",
-      "uid": "ff57a76d_3397_4b93_8fc0_fbb8ff86c0fa",
-      "category": "input"
-    },
-    {
-      "name": "3#压缩机启动次数",
-      "uid": "e5f579e6_2ff3_4d7e_a952_eb0bf401e338",
-      "category": "input"
-    },
-    {
       "name": "3#压缩机导叶开度",
       "uid": "5e881b26_92a5_4c14_aba8_dab0367b39c4",
       "category": "input"
@@ -2182,16 +1872,6 @@
     {
       "name": "4#压缩机油箱压力",
       "uid": "e1d9ed98_07b4_45b1_befe_12febfe97c69",
-      "category": "input"
-    },
-    {
-      "name": "4#压缩机运行时间",
-      "uid": "75d25dc4_c47d_4e45_b223_3e6f306985fa",
-      "category": "input"
-    },
-    {
-      "name": "4#压缩机启动次数",
-      "uid": "f729642f_7d6d_4b24_866d_4374295014d8",
       "category": "input"
     },
     {
@@ -2637,26 +2317,146 @@
     {
       "name": "冷冻总管回水平均温度",
       "uid": "26aa984f_ddc1_4c33_9c96_b3313aad2a72",
-      "category": "output"
+      "category": "input"
     },
     {
       "name": "蓄冷水池平均温度",
       "uid": "4398dbf6_8f98_4222_9f58_4e91feab323d",
-      "category": "output"
+      "category": "input"
     },
     {
       "name": "1#冷机冷冻进水温度",
       "uid": "b1858cac_4abf_4789_8a62_6c1aec8615c6",
-      "category": "output"
-    },
-    {
-      "name": "1#冷机冷却出水温度",
-      "uid": "8f3102af_f9e3_4a68_b191_bc1a995af0c4",
-      "category": "output"
+      "category": "input"
     },
     {
       "name": "2#冷机冷冻进水温度",
       "uid": "7479ada1_b9b3_41b4_a3fa_05e3d4969d04",
+      "category": "input"
+    },
+    {
+      "name": "3#冷机冷冻进水温度",
+      "uid": "d8f07bad_c577_4b09_96f9_5a989212ddfb",
+      "category": "input"
+    },
+    {
+      "name": "4#冷机冷冻进水温度",
+      "uid": "0d4d1f7d_d7e0_46ff_9779_b92f59b1ab04",
+      "category": "input"
+    },
+    {
+      "name": "冷冻回水温度1",
+      "uid": "7c70b29c_173e_4b3a_9cb7_e49af1206593",
+      "category": "input"
+    },
+    {
+      "name": "冷冻回水温度2",
+      "uid": "aa95fde4_879a_468d_9a2a_cbd63121cb68",
+      "category": "input"
+    },
+    {
+      "name": "1#冷却塔出水温度",
+      "uid": "0a85728b_efa0_42e5_aa27_81c30fb45786",
+      "category": "input"
+    },
+    {
+      "name": "2#冷却塔出水温度",
+      "uid": "fa492a03_c5df_42d4_96df_7eef051bb972",
+      "category": "input"
+    },
+    {
+      "name": "3#冷却塔出水温度",
+      "uid": "73c216fa_7de6_4b7a_827b_2b3caaa7ab94",
+      "category": "input"
+    },
+    {
+      "name": "4#冷却塔出水温度",
+      "uid": "d712284a_e38f_4433_b507_ca48b5977b42",
+      "category": "input"
+    },
+    {
+      "name": "5#冷却塔出水温度",
+      "uid": "46902447_9fe5_45bc_8f59_e17471cbead8",
+      "category": "input"
+    },
+    {
+      "name": "6#冷却塔出水温度",
+      "uid": "1b1de943_5762_4279_b7dc_7867c706718f",
+      "category": "input"
+    },
+    {
+      "name": "7#冷却塔出水温度",
+      "uid": "dd80b34a_e30e_4076_9182_ca306c58d890",
+      "category": "input"
+    },
+    {
+      "name": "8#冷却塔出水温度",
+      "uid": "2a6a59ff_6a08_4cab_9466_ffd7784b7af2",
+      "category": "input"
+    },
+    {
+      "name": "1#冷冻流量",
+      "uid": "a616e7a5_256e_474b_845a_1d2a90501361",
+      "category": "input"
+    },
+    {
+      "name": "2#冷冻流量",
+      "uid": "d4d52740_8708_4948_aeed_b31db72a55b2",
+      "category": "input"
+    },
+    {
+      "name": "1#冷冻泵流量",
+      "uid": "2cc6d2c9_4bd2_402d_86db_6312cd3e2ec9",
+      "category": "input"
+    },
+    {
+      "name": "2#冷冻泵流量",
+      "uid": "20f5539c_76b4_4b67_b3f4_778ee0249861",
+      "category": "input"
+    },
+    {
+      "name": "3#冷冻泵流量",
+      "uid": "083fcd86_7d54_4eab_b230_361c468db6f2",
+      "category": "input"
+    },
+    {
+      "name": "4#冷冻泵流量",
+      "uid": "e99ad1be_a413_4c14_accb_abcf0b113049",
+      "category": "input"
+    },
+    {
+      "name": "1#冷却流量",
+      "uid": "d068e9c2_cc13_4429_8f00_74b9eb2e9efe",
+      "category": "input"
+    },
+    {
+      "name": "2#冷却流量",
+      "uid": "f33d9a62_38da_4eb6_b3ee_80860711640b",
+      "category": "input"
+    },
+    {
+      "name": "1#冷却泵流量",
+      "uid": "62425c39_ad95_41ca_95ac_ccf03323279a",
+      "category": "input"
+    },
+    {
+      "name": "2#冷却泵流量",
+      "uid": "54746436_93d5_4296_bf91_0943ffa7e60b",
+      "category": "input"
+    },
+    {
+      "name": "3#冷却泵流量",
+      "uid": "3dad770e_54f8_4625_a3d4_ab309cdec95a",
+      "category": "input"
+    },
+    {
+      "name": "4#冷却泵流量",
+      "uid": "79cd63eb_7d18_4dc6_b6ec_1aee7db83ef6",
+      "category": "input"
+    },
+    {
+      "name": "1#冷机冷却出水温度",
+      "uid": "8f3102af_f9e3_4a68_b191_bc1a995af0c4",
       "category": "output"
     },
     {
@@ -2665,133 +2465,13 @@
       "category": "output"
     },
     {
-      "name": "3#冷机冷冻进水温度",
-      "uid": "d8f07bad_c577_4b09_96f9_5a989212ddfb",
-      "category": "output"
-    },
-    {
       "name": "3#冷机冷却出水温度",
       "uid": "0a9f2a34_183d_4434_b2b4_dc581d25e29a",
       "category": "output"
     },
     {
-      "name": "4#冷机冷冻进水温度",
-      "uid": "0d4d1f7d_d7e0_46ff_9779_b92f59b1ab04",
-      "category": "output"
-    },
-    {
       "name": "4#冷机冷却出水温度",
       "uid": "3d88232c_0a10_452c_aa67_c8d0737a93a7",
-      "category": "output"
-    },
-    {
-      "name": "冷冻回水温度1",
-      "uid": "7c70b29c_173e_4b3a_9cb7_e49af1206593",
-      "category": "output"
-    },
-    {
-      "name": "冷冻回水温度2",
-      "uid": "aa95fde4_879a_468d_9a2a_cbd63121cb68",
-      "category": "output"
-    },
-    {
-      "name": "1#冷却塔出水温度",
-      "uid": "0a85728b_efa0_42e5_aa27_81c30fb45786",
-      "category": "output"
-    },
-    {
-      "name": "2#冷却塔出水温度",
-      "uid": "fa492a03_c5df_42d4_96df_7eef051bb972",
-      "category": "output"
-    },
-    {
-      "name": "3#冷却塔出水温度",
-      "uid": "73c216fa_7de6_4b7a_827b_2b3caaa7ab94",
-      "category": "output"
-    },
-    {
-      "name": "4#冷却塔出水温度",
-      "uid": "d712284a_e38f_4433_b507_ca48b5977b42",
-      "category": "output"
-    },
-    {
-      "name": "5#冷却塔出水温度",
-      "uid": "46902447_9fe5_45bc_8f59_e17471cbead8",
-      "category": "output"
-    },
-    {
-      "name": "6#冷却塔出水温度",
-      "uid": "1b1de943_5762_4279_b7dc_7867c706718f",
-      "category": "output"
-    },
-    {
-      "name": "7#冷却塔出水温度",
-      "uid": "dd80b34a_e30e_4076_9182_ca306c58d890",
-      "category": "output"
-    },
-    {
-      "name": "8#冷却塔出水温度",
-      "uid": "2a6a59ff_6a08_4cab_9466_ffd7784b7af2",
-      "category": "output"
-    },
-    {
-      "name": "1#冷冻流量",
-      "uid": "a616e7a5_256e_474b_845a_1d2a90501361",
-      "category": "output"
-    },
-    {
-      "name": "2#冷冻流量",
-      "uid": "d4d52740_8708_4948_aeed_b31db72a55b2",
-      "category": "output"
-    },
-    {
-      "name": "1#冷冻泵流量",
-      "uid": "2cc6d2c9_4bd2_402d_86db_6312cd3e2ec9",
-      "category": "output"
-    },
-    {
-      "name": "2#冷冻泵流量",
-      "uid": "20f5539c_76b4_4b67_b3f4_778ee0249861",
-      "category": "output"
-    },
-    {
-      "name": "3#冷冻泵流量",
-      "uid": "083fcd86_7d54_4eab_b230_361c468db6f2",
-      "category": "output"
-    },
-    {
-      "name": "4#冷冻泵流量",
-      "uid": "e99ad1be_a413_4c14_accb_abcf0b113049",
-      "category": "output"
-    },
-    {
-      "name": "1#冷却流量",
-      "uid": "d068e9c2_cc13_4429_8f00_74b9eb2e9efe",
-      "category": "output"
-    },
-    {
-      "name": "2#冷却流量",
-      "uid": "f33d9a62_38da_4eb6_b3ee_80860711640b",
-      "category": "output"
-    },
-    {
-      "name": "1#冷却泵流量",
-      "uid": "62425c39_ad95_41ca_95ac_ccf03323279a",
-      "category": "output"
-    },
-    {
-      "name": "2#冷却泵流量",
-      "uid": "54746436_93d5_4296_bf91_0943ffa7e60b",
-      "category": "output"
-    },
-    {
-      "name": "3#冷却泵流量",
-      "uid": "3dad770e_54f8_4625_a3d4_ab309cdec95a",
-      "category": "output"
-    },
-    {
-      "name": "4#冷却泵流量",
-      "uid": "79cd63eb_7d18_4dc6_b6ec_1aee7db83ef6",
       "category": "output"
     },
     {
@@ -2852,246 +2532,6 @@
     {
       "name": "109空调配电室/3AK2柜-4#冷却泵.正向有功电能",
       "uid": "nodeZNV.00001006000000000079.0116145001",
-      "category": "output"
-    },
-    {
-      "name": "1#冷冻泵电压",
-      "uid": "efbff8e2_dcfb_494e_aead_a2d46cd5fe77",
-      "category": "output"
-    },
-    {
-      "name": "1#冷冻泵电流",
-      "uid": "6b24aa30_667c_46ce_92f8_d624cc6688b4",
-      "category": "output"
-    },
-    {
-      "name": "1#冷却塔电压",
-      "uid": "606852c3_6961_49c8_a654_37a905fce06e",
-      "category": "output"
-    },
-    {
-      "name": "1#冷却塔电流",
-      "uid": "cc1045c8_6e36_48e0_8202_6a848a442418",
-      "category": "output"
-    },
-    {
-      "name": "2#冷却塔电压",
-      "uid": "5e3afa6c_6003_4529_b6e6_2c4252c729c8",
-      "category": "output"
-    },
-    {
-      "name": "2#冷却塔电流",
-      "uid": "0f160bd4_6d42_43a9_be08_56a91673dcf7",
-      "category": "output"
-    },
-    {
-      "name": "1#压缩机A相电流",
-      "uid": "8ff98ce7_fe5a_4d75_a1e1_aa17644a49c3",
-      "category": "output"
-    },
-    {
-      "name": "1#压缩机B相电流",
-      "uid": "0913a4fe_7e4d_4238_b156_6ca74a383173",
-      "category": "output"
-    },
-    {
-      "name": "1#压缩机C相电流",
-      "uid": "d5833526_3740_42b6_b04e_49abbf412a16",
-      "category": "output"
-    },
-    {
-      "name": "2#冷冻泵电压",
-      "uid": "c30840bd_072c_46a5_a7de_6d6b7db7596f",
-      "category": "output"
-    },
-    {
-      "name": "2#冷冻泵电流",
-      "uid": "10fa55d9_60f8_4491_a64d_e4c3c844d5ec",
-      "category": "output"
-    },
-    {
-      "name": "2#冷却泵电压",
-      "uid": "e3d11f8d_9615_4808_87e9_9de4661db34c",
-      "category": "output"
-    },
-    {
-      "name": "2#冷却泵电流",
-      "uid": "e7e075f3_8d85_4469_b0af_fed6aeb1c4f7",
-      "category": "output"
-    },
-    {
-      "name": "7#冷却塔电压",
-      "uid": "0d2b7ca4_2511_4468_8721_b162f1855037",
-      "category": "output"
-    },
-    {
-      "name": "7#冷却塔电流",
-      "uid": "23512f23_00fe_474b_8928_223731949a2c",
-      "category": "output"
-    },
-    {
-      "name": "8#冷却塔电压",
-      "uid": "058d58b7_bc8a_474f_9e82_5dd563ce574f",
-      "category": "output"
-    },
-    {
-      "name": "8#冷却塔电流",
-      "uid": "758c41c0_35da_4953_b1f0_93f89ddbe783",
-      "category": "output"
-    },
-    {
-      "name": "1#压缩机电流百分比",
-      "uid": "0ca13caa_052a_4abf_80bf_c8c55e2bec52",
-      "category": "output"
-    },
-    {
-      "name": "2#压缩机电流百分比",
-      "uid": "addba2cc_98aa_4794_9a09_f5e746d6e4fd",
-      "category": "output"
-    },
-    {
-      "name": "2#压缩机A相电流",
-      "uid": "8f9a84ff_71be_4180_b237_22cdd43abc6f",
-      "category": "output"
-    },
-    {
-      "name": "2#压缩机B相电流",
-      "uid": "bafd3567_9b9c_43dc_9057_b531e733c53d",
-      "category": "output"
-    },
-    {
-      "name": "2#压缩机C相电流",
-      "uid": "0847f871_f1d0_4d62_8288_0c47ccf8477b",
-      "category": "output"
-    },
-    {
-      "name": "3#冷冻泵电压",
-      "uid": "0f0072ff_d384_4554_b009_69e75bdbddf7",
-      "category": "output"
-    },
-    {
-      "name": "3#冷冻泵电流",
-      "uid": "3b7c16c1_7a98_454a_9a6a_78f410b9fc12",
-      "category": "output"
-    },
-    {
-      "name": "3#冷却泵电压",
-      "uid": "49f38bdf_e016_4c04_9b80_3ffcc2332ed3",
-      "category": "output"
-    },
-    {
-      "name": "3#冷却泵电流",
-      "uid": "5aed8639_7773_4a0e_b4e7_ee149b62b901",
-      "category": "output"
-    },
-    {
-      "name": "3#冷却塔电压",
-      "uid": "9b93eed9_4eca_4a8b_91c4_ef56d0cb4333",
-      "category": "output"
-    },
-    {
-      "name": "3#冷却塔电流",
-      "uid": "0d04a4a9_edd3_40a9_80ce_885e52787623",
-      "category": "output"
-    },
-    {
-      "name": "4#冷却塔电压",
-      "uid": "97e573de_bbb1_405d_8fcf_6062036f8211",
-      "category": "output"
-    },
-    {
-      "name": "4#冷却塔电流",
-      "uid": "72d4ac6c_e592_443f_bea3_2093a562a623",
-      "category": "output"
-    },
-    {
-      "name": "3#压缩机电流百分比",
-      "uid": "c6731afa_c189_4f29_866d_8b1a6905338a",
-      "category": "output"
-    },
-    {
-      "name": "3#压缩机A相电流",
-      "uid": "82a9e94b_16f3_4906_b14e_389ac3b9acdf",
-      "category": "output"
-    },
-    {
-      "name": "3#压缩机B相电流",
-      "uid": "fb636b66_f78f_4296_a844_cb077fcef13a",
-      "category": "output"
-    },
-    {
-      "name": "3#压缩机C相电流",
-      "uid": "b5d1318c_12c3_43d1_b568_669fdcbe558b",
-      "category": "output"
-    },
-    {
-      "name": "4#冷冻泵电压",
-      "uid": "9b5bdb29_b693_40fb_837c_7b0e14b780ae",
-      "category": "output"
-    },
-    {
-      "name": "4#冷冻泵电流",
-      "uid": "7e91bf2d_dc90_4286_9c8d_dae1dcdb1736",
-      "category": "output"
-    },
-    {
-      "name": "4#冷却泵电压",
-      "uid": "c3fd84e4_9b9b_45ac_a993_d93203553975",
-      "category": "output"
-    },
-    {
-      "name": "4#冷却泵电流",
-      "uid": "11c7e90b_1303_4029_a5f8_a8bf5c640780",
-      "category": "output"
-    },
-    {
-      "name": "5#冷却塔电压",
-      "uid": "5593c817_3be8_4373_8054_88495d7a7057",
-      "category": "output"
-    },
-    {
-      "name": "5#冷却塔电流",
-      "uid": "13e85966_e1b6_43f9_848b_66ac7b6b8046",
-      "category": "output"
-    },
-    {
-      "name": "6#冷却塔电压",
-      "uid": "4d78f278_c743_4d51_820c_bc6823a58a76",
-      "category": "output"
-    },
-    {
-      "name": "6#冷却塔电流",
-      "uid": "c953a3b1_95bc_455e_9b27_ca105e8dff63",
-      "category": "output"
-    },
-    {
-      "name": "4#压缩机电流百分比",
-      "uid": "e5b65ddd_0bed_4436_aba2_d5c18f141850",
-      "category": "output"
-    },
-    {
-      "name": "4#压缩机A相电流",
-      "uid": "3e088f0f_0d68_4379_b76d_2671d48ef2b4",
-      "category": "output"
-    },
-    {
-      "name": "4#压缩机B相电流",
-      "uid": "91bdd4d8_c9ca_44d7_b126_e91b4b798977",
-      "category": "output"
-    },
-    {
-      "name": "4#压缩机C相电流",
-      "uid": "78b88569_0bfb_4d86_9deb_09c6c30fab66",
-      "category": "output"
-    },
-    {
-      "name": "1#冷却泵电压",
-      "uid": "9aa15548_c1ad_4ae8_9122_4f9ba250361e",
-      "category": "output"
-    },
-    {
-      "name": "1#冷却泵电流",
-      "uid": "616cb0c3_5be5_4a8d_955a_883d799a671d",
       "category": "output"
     }
   ]
