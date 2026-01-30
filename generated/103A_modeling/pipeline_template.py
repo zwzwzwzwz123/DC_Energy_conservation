@@ -1010,10 +1010,10 @@ def plot_predictions(
             return
         y_max = float(np.max(vals))
         y_min = float(np.min(vals))
-        pad = (y_max - y_min) * 0.08
-        if pad <= 0:
-            pad = max(1.0, abs(y_max) * 0.05)
-        ax.set_ylim(bottom=0, top=y_max + pad)
+        span = y_max - y_min
+        pad = max(span * 0.15, abs(y_max) * 0.15, 1.0)
+        bottom = 0 if y_min >= 0 else y_min - pad * 0.15
+        ax.set_ylim(bottom=bottom, top=y_max + pad)
 
     model_name = model_name or "model"
     out_dir = Path(out_dir) / "plots"
