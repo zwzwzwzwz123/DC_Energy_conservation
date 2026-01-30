@@ -1571,12 +1571,12 @@ def main():
     seq_models = {"lstm", "gru", "transformer", "patchtst"}
     forecast_steps = 7
     window_steps = forecast_steps * 3
-    if args.seq_len is None and args.model in seq_models:
-        day_steps = max(1, int(pd.Timedelta(days=1) / every_td))
-        args.seq_len = max(window_steps, day_steps)
     if args.target_lags is None:
         args.target_lags = forecast_steps if args.model in seq_models else 3
     every_td = pd.to_timedelta(args.every)
+    if args.seq_len is None and args.model in seq_models:
+        day_steps = max(1, int(pd.Timedelta(days=1) / every_td))
+        args.seq_len = max(window_steps, day_steps)
     if args.horizon:
         horizon_td = pd.to_timedelta(args.horizon)
     else:
