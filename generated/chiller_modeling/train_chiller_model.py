@@ -163,12 +163,15 @@ def fetch_timeseries(
     return merged
 
 
-def fill_timeseries(df: pd.DataFrame) -> pd.DataFrame:
+def fill_timeseries(df: pd.DataFrame, skip_cols: Optional[Set[str]] = None) -> pd.DataFrame:
     if df.empty:
         return df
+    skip = set(skip_cols or [])
     filled = df.sort_values("time").reset_index(drop=True).copy()
     for col in filled.columns:
         if col == "time":
+            continue
+        if col in skip:
             continue
         series = filled[col]
         if series.notna().sum() == 0:
@@ -1658,6 +1661,8 @@ def main():
         raise RuntimeError("Influx 数据为空，请检查 measurement/field 或时间范围")
 
     timeseries_mode = args.model in seq_models
+    if timeseries_mode and diff_output_uids:
+        output_df = ensure_datetime(fill_timeseries(output_df, skip_cols=diff_output_uids))
 
     if timeseries_mode:
         # LSTM: 使用当前输入+状态，构造序列，预测未来 t+Δ 的输出
