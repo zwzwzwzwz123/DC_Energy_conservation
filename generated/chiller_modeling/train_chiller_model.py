@@ -1035,6 +1035,8 @@ def evaluate(
     mse_vals: List[float] = []
     mae_vals: List[float] = []
     mean_vals: List[float] = []
+    pct_mae_vals: List[float] = []
+    pct_mean_vals: List[float] = []
     groups = {
         "energy": [],
         "energy_chiller": [],
@@ -1098,6 +1100,14 @@ def evaluate(
         else:
             yt = y_true_arr[mask, idx]
             yp = y_pred_arr[mask, idx]
+        if mask is None:
+            pct_mask = y_true_arr[:, idx] > 0
+        else:
+            pct_mask = mask & (y_true_arr[:, idx] > 0)
+        if pct_mask is not None:
+            pct_mask = np.asarray(pct_mask, dtype=bool)
+            if pct_mask.shape[0] != y_true_arr.shape[0]:
+                pct_mask = None
         if yt.size == 0:
             mse_val = float("nan")
             mae_val = float("nan")
@@ -1106,9 +1116,23 @@ def evaluate(
             mse_val = float(np.mean((yt - yp) ** 2))
             mae_val = float(np.mean(np.abs(yt - yp)))
             mean_val = float(np.mean(yt))
+        if pct_mask is None:
+            pct_mae_val = float("nan")
+            pct_mean_val = float("nan")
+        else:
+            yt_pct = y_true_arr[pct_mask, idx]
+            yp_pct = y_pred_arr[pct_mask, idx]
+            if yt_pct.size == 0:
+                pct_mae_val = float("nan")
+                pct_mean_val = float("nan")
+            else:
+                pct_mae_val = float(np.mean(np.abs(yt_pct - yp_pct)))
+                pct_mean_val = float(np.mean(yt_pct))
         mse_vals.append(mse_val)
         mae_vals.append(mae_val)
         mean_vals.append(mean_val)
+        pct_mae_vals.append(pct_mae_val)
+        pct_mean_vals.append(pct_mean_val)
         per_target.append(
             {
                 "uid": col,
@@ -1128,15 +1152,19 @@ def evaluate(
         g_mse = [mse_vals[i] for i in idxs if not np.isnan(mse_vals[i])]
         g_mae = [mae_vals[i] for i in idxs if not np.isnan(mae_vals[i])]
         g_mean = [mean_vals[i] for i in idxs if not np.isnan(mean_vals[i])]
+        g_pct_mae = [pct_mae_vals[i] for i in idxs if not np.isnan(pct_mae_vals[i])]
+        g_pct_mean = [pct_mean_vals[i] for i in idxs if not np.isnan(pct_mean_vals[i])]
         if not g_mse:
             return None
         mse_mean = float(np.mean(g_mse))
         mae_mean = float(np.mean(g_mae)) if g_mae else float("nan")
         mean_mean = float(np.mean(g_mean)) if g_mean else float("nan")
+        pct_mae_mean = float(np.mean(g_pct_mae)) if g_pct_mae else float("nan")
+        pct_mean_mean = float(np.mean(g_pct_mean)) if g_pct_mean else float("nan")
         return {
             "mse_mean": mse_mean,
             "mae_mean": mae_mean,
-            "\u8bef\u5dee\u767e\u5206\u6bd4": error_pct(mae_mean, mean_mean),
+            "\u8bef\u5dee\u767e\u5206\u6bd4": error_pct(pct_mae_mean, pct_mean_mean),
             "count": len(g_mse),
         }
 
@@ -1149,10 +1177,12 @@ def evaluate(
     overall_mse = float(np.nanmean(mse_vals)) if mse_vals else float("nan")
     overall_mae = float(np.nanmean(mae_vals)) if mae_vals else float("nan")
     overall_mean = float(np.nanmean(mean_vals)) if mean_vals else float("nan")
+    overall_pct_mae = float(np.nanmean(pct_mae_vals)) if pct_mae_vals else float("nan")
+    overall_pct_mean = float(np.nanmean(pct_mean_vals)) if pct_mean_vals else float("nan")
     overall = {
         "mse_mean": overall_mse,
         "mae_mean": overall_mae,
-        "\u8bef\u5dee\u767e\u5206\u6bd4": error_pct(overall_mae, overall_mean),
+        "\u8bef\u5dee\u767e\u5206\u6bd4": error_pct(overall_pct_mae, overall_pct_mean),
     }
     return {"overall": overall, "per_target": per_target, "groups": group_metrics}
 
