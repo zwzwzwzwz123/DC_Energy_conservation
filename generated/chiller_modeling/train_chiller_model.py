@@ -1810,10 +1810,10 @@ def main():
         horizon_td if timeseries_mode else None,
     )
     standby_map = build_standby_map(Y_train, target_cols, target_meta, train_run_masks)
-    if standby_map:
+    if standby_map and not timeseries_mode:
         preds = apply_run_status_gate(preds, target_cols, target_meta, run_masks, standby_map)
     metrics = evaluate(Y_test, preds, target_cols, target_meta, run_masks=run_masks)
-    if standby_map:
+    if standby_map and not timeseries_mode:
         metrics["standby"] = {
             uid: {"name": target_meta.get(uid, {}).get("name", uid), "value": val}
             for uid, val in standby_map.items()
