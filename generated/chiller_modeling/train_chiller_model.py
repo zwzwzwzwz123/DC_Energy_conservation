@@ -1572,7 +1572,8 @@ def main():
     forecast_steps = 7
     window_steps = forecast_steps * 3
     if args.seq_len is None and args.model in seq_models:
-        args.seq_len = window_steps
+        day_steps = max(1, int(pd.Timedelta(days=1) / every_td))
+        args.seq_len = max(window_steps, day_steps)
     if args.target_lags is None:
         args.target_lags = forecast_steps if args.model in seq_models else 3
     every_td = pd.to_timedelta(args.every)
@@ -1665,24 +1666,7 @@ def main():
         shifted_targets = build_multi_step_targets(output_df, horizon_step=horizon_td, steps=forecast_steps)
         merged = base_feat_df.merge(shifted_targets, on="time", how="inner")
         merged = merged.dropna().reset_index(drop=True)
-        if run_target_df is not None:
-            merged_f = merged.merge(run_target_df[["time", "__run_target__"]], on="time", how="left")
-            merged_f = merged_f[merged_f["__run_target__"]]
-            merged_f = merged_f.drop(columns=["__run_target__"]).reset_index(drop=True)
-            if merged_f.empty:
-                if run_any_df is not None:
-                    print("运行状态过滤后样本为空，改为任一设备运行过滤")
-                    merged_f = merged.merge(run_any_df[["time", "__run_any__"]], on="time", how="left")
-                    merged_f = merged_f[merged_f["__run_any__"]]
-                    merged_f = merged_f.drop(columns=["__run_any__"]).reset_index(drop=True)
-                else:
-                    print("运行状态过滤后样本为空，跳过运行过滤")
-                    merged_f = merged
-            merged = merged_f
-        elif run_any_df is not None:
-            merged = merged.merge(run_any_df[["time", "__run_any__"]], on="time", how="left")
-            merged = merged[merged["__run_any__"]]
-            merged = merged.drop(columns=["__run_any__"]).reset_index(drop=True)
+        # 时序模型不做运行状态过滤，保留完整历史以学习启停规律
         if merged.empty:
             raise RuntimeError("对齐后的数据为空，可能是时间粒度或聚合粒度不匹配")
 
@@ -1694,6 +1678,9 @@ def main():
                 raise RuntimeError(f"列 {col} 全为空，无法训练")
 
         seq_len = max(1, args.seq_len or window_steps)
+        if len(merged) < seq_len:
+            print(f"序列长度 {seq_len} 超过样本数 {len(merged)}，自动调整为 {len(merged)}")
+            seq_len = max(1, len(merged))
         X_seq, seq_df = build_lstm_sequences_table(merged, feature_cols, seq_len=seq_len)
         target_df = seq_df[target_cols]
         time_series = seq_df["time"]
