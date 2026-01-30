@@ -386,6 +386,44 @@ def build_target_run_masks_with_time(
         masks.append(mask)
     return masks
 
+def build_any_run_masks_with_time(
+    target_cols: List[str],
+    target_uid: str,
+    run_status_df: Optional[pd.DataFrame],
+    run_uids: List[str],
+    base_times: np.ndarray,
+    horizon_td: Optional[pd.Timedelta] = None,
+) -> List[Optional[np.ndarray]]:
+    if run_status_df is None or run_status_df.empty or not run_uids:
+        return [None for _ in target_cols]
+    run_df = run_status_df.copy()
+    run_df["time"] = pd.to_datetime(run_df["time"], errors="coerce")
+    run_df = run_df.dropna(subset=["time"])
+    valid_uids = [u for u in run_uids if u in run_df.columns]
+    if not valid_uids:
+        return [None for _ in target_cols]
+    base_times = pd.to_datetime(base_times, errors="coerce")
+    masks: List[Optional[np.ndarray]] = []
+    for col in target_cols:
+        base_col = col.split("__t+", 1)[0]
+        if base_col != target_uid:
+            masks.append(None)
+            continue
+        step = 0
+        if "__t+" in col and horizon_td is not None:
+            try:
+                step = int(col.split("__t+", 1)[1])
+            except ValueError:
+                step = 0
+        target_times = base_times
+        if step and horizon_td is not None:
+            target_times = base_times + horizon_td * step
+        tmp = pd.DataFrame({"time": target_times})
+        merged = tmp.merge(run_df[["time"] + valid_uids], on="time", how="left")
+        mask = merged[valid_uids].fillna(0).gt(0).any(axis=1).to_numpy()
+        masks.append(mask)
+    return masks
+
 def build_standby_map(
     y_true: np.ndarray,
     target_cols: List[str],
@@ -1742,22 +1780,29 @@ def main():
     elif cum_output_uids:
         print(f"检测到累积量输出 {len(cum_output_uids)} 个，已在 Influx 做差分")
 
+    agg_uid = "chiller_energy_total"
+    agg_name = "\u51b7\u6c34\u673a\u7ec4\u603b\u80fd\u8017"
     if aggregate_chiller_energy:
-        agg_uid = "chiller_energy_total"
-        agg_name = "\u51b7\u6c34\u673a\u7ec4\u603b\u80fd\u8017"
         present_uids = [uid for uid in chiller_energy_uids if uid in output_df.columns]
         if not present_uids:
             print("\u805a\u5408\u80fd\u8017\u5931\u8d25\uff0c\u8f93\u51fa\u5217\u4e0d\u5b58\u5728\uff0c\u8df3\u8fc7\u805a\u5408")
             aggregate_chiller_energy = False
         else:
             agg_vals = output_df[present_uids].sum(axis=1, min_count=1)
-            output_df = output_df[["time"]].copy()
-            output_df[agg_uid] = agg_vals
-            output_recs = [{"uid": agg_uid, "name": agg_name, "category": "output"}]
-            output_uids = [agg_uid]
-            target_meta = {agg_uid: output_recs[0]}
-            output_run_uid_map = {}
-            diff_output_uids = {agg_uid}
+            if timeseries_mode:
+                output_df = output_df.copy()
+                output_df[agg_uid] = agg_vals
+                output_recs = output_recs + [{"uid": agg_uid, "name": agg_name, "category": "output"}]
+                output_uids = output_uids + [agg_uid]
+                target_meta[agg_uid] = {"uid": agg_uid, "name": agg_name, "category": "output"}
+                diff_output_uids = set(diff_output_uids) | {agg_uid}
+            else:
+                output_df = output_df.copy()
+                output_df[agg_uid] = agg_vals
+                output_recs = output_recs + [{"uid": agg_uid, "name": agg_name, "category": "output"}]
+                output_uids = output_uids + [agg_uid]
+                target_meta[agg_uid] = {"uid": agg_uid, "name": agg_name, "category": "output"}
+                diff_output_uids = set(diff_output_uids) | {agg_uid}
 
     # 移除恒定/近恒定输入/输出列，记录剔除列表
     uid_name_map = {r["uid"]: r.get("name") for r in input_recs + output_recs}
@@ -1970,10 +2015,17 @@ def main():
         horizon_td if timeseries_mode else None,
     )
     if aggregate_chiller_energy and run_status_test_df is not None and chiller_run_uids:
-        valid_uids = [u for u in chiller_run_uids if u in run_status_test_df.columns]
-        if valid_uids and len(target_cols) == 1:
-            agg_mask = run_status_test_df[valid_uids].fillna(0).gt(0).any(axis=1).to_numpy()
-            run_masks = [agg_mask]
+        agg_masks = build_any_run_masks_with_time(
+            target_cols,
+            agg_uid,
+            run_status_test_df,
+            chiller_run_uids,
+            test_time,
+            horizon_td if timeseries_mode else None,
+        )
+        for i, m in enumerate(agg_masks):
+            if m is not None:
+                run_masks[i] = m
     train_run_masks = build_target_run_masks_with_time(
         target_cols,
         output_run_uid_map,

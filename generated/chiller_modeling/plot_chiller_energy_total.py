@@ -17,6 +17,25 @@ from generated.chiller_modeling.train_chiller_model import (  # noqa: E402
     load_mapping,
 )
 
+def _pick_chinese_font() -> str:
+    try:
+        from matplotlib import font_manager
+    except Exception:
+        return ""
+    candidates = [
+        "Microsoft YaHei",
+        "SimHei",
+        "SimSun",
+        "Noto Sans CJK SC",
+        "Source Han Sans SC",
+        "Arial Unicode MS",
+    ]
+    available = {f.name for f in font_manager.fontManager.ttflist}
+    for name in candidates:
+        if name in available:
+            return name
+    return ""
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -60,6 +79,11 @@ def main():
         import matplotlib.pyplot as plt
     except Exception as exc:
         raise RuntimeError("缺少 matplotlib，无法绘图") from exc
+
+    font_name = _pick_chinese_font()
+    if font_name:
+        plt.rcParams["font.sans-serif"] = [font_name]
+    plt.rcParams["axes.unicode_minus"] = False
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
