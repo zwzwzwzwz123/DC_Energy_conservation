@@ -1272,6 +1272,7 @@ def evaluate(
         "other": [],
     }
     chiller_groups = {str(i): [] for i in range(1, 5)}
+    total_energy_idxs: List[int] = []
 
     def error_pct(mae_val: float, mean_val: float) -> float:
         if mean_val is None or np.isnan(mean_val):
@@ -1381,6 +1382,8 @@ def evaluate(
         groups[group].append(idx)
         if chiller_id in chiller_groups and is_chiller_energy_name(meta.get("name", "")):
             chiller_groups[chiller_id].append(idx)
+        if base_col == "chiller_energy_total":
+            total_energy_idxs.append(idx)
         if group.startswith("energy_"):
             groups["energy"].append(idx)
 
@@ -1420,6 +1423,12 @@ def evaluate(
         if stats:
             chiller_metrics[cid] = stats
 
+    total_energy_metric = None
+    if total_energy_idxs:
+        total_energy_metric = group_stats(
+            total_energy_idxs, count_override=len({base_cols[i] for i in total_energy_idxs})
+        )
+
     overall_mse = float(np.nanmean(mse_vals)) if mse_vals else float("nan")
     overall_mae = float(np.nanmean(mae_vals)) if mae_vals else float("nan")
     overall_mean = float(np.nanmean(mean_vals)) if mean_vals else float("nan")
@@ -1435,6 +1444,7 @@ def evaluate(
         "per_target": per_target,
         "groups": group_metrics,
         "chillers": chiller_metrics,
+        "total_energy": total_energy_metric,
     }
 
 def _pick_chinese_font() -> str:
@@ -2071,20 +2081,28 @@ def main():
     if isinstance(overall_pct, (int, float, np.floating)) and not np.isnan(overall_pct):
         overall_print["误差百分比"] = f"{overall_pct}%"
     print("训练完成，整体指标:", overall_print)
-    if metrics.get("groups"):
-        for g, st in metrics["groups"].items():
-            st_print = dict(st)
-            st_pct = st_print.get("误差百分比")
-            if isinstance(st_pct, (int, float, np.floating)) and not np.isnan(st_pct):
-                st_print["误差百分比"] = f"{st_pct}%"
-            print(f"{g} 指标:", st_print)
+    if metrics.get("total_energy"):
+        st_print = dict(metrics["total_energy"])
+        st_pct = st_print.get("误差百分比")
+        if isinstance(st_pct, (int, float, np.floating)) and not np.isnan(st_pct):
+            st_print["误差百分比"] = f"{st_pct}%"
+        print("冷水机组总能耗 指标:", st_print)
     if metrics.get("chillers"):
-        for cid, st in metrics["chillers"].items():
+        for cid in ("1", "2", "3", "4"):
+            st = metrics["chillers"].get(cid)
+            if not st:
+                continue
             st_print = dict(st)
             st_pct = st_print.get("误差百分比")
             if isinstance(st_pct, (int, float, np.floating)) and not np.isnan(st_pct):
                 st_print["误差百分比"] = f"{st_pct}%"
             print(f"冷水机组 {cid}# 指标:", st_print)
+    if metrics.get("groups") and "temperature" in metrics["groups"]:
+        st_print = dict(metrics["groups"]["temperature"])
+        st_pct = st_print.get("误差百分比")
+        if isinstance(st_pct, (int, float, np.floating)) and not np.isnan(st_pct):
+            st_print["误差百分比"] = f"{st_pct}%"
+        print("温度 指标:", st_print)
     print(f"输出目录: {ARTIFACT_DIR}")
 
 
