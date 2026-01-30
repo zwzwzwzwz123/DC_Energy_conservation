@@ -240,6 +240,69 @@ def is_chiller_energy_name(name: str) -> bool:
         return False
     return True
 
+def compute_run_count_df(input_df: pd.DataFrame, run_uids: List[str]) -> Optional[pd.DataFrame]:
+    if input_df.empty or not run_uids:
+        return None
+    cols = [u for u in run_uids if u in input_df.columns]
+    if not cols:
+        return None
+    df = input_df[["time"] + cols].copy()
+    df["run_count"] = df[cols].fillna(0).gt(0).sum(axis=1)
+    return df[["time", "run_count"]]
+
+def train_run_count_model(X: np.ndarray, y: np.ndarray, max_count: int, is_seq: bool):
+    from sklearn.ensemble import RandomForestRegressor
+
+    X_in = X.reshape(X.shape[0], -1) if is_seq else X
+    model = RandomForestRegressor(
+        n_estimators=300,
+        max_depth=8,
+        random_state=42,
+        n_jobs=-1,
+    )
+    model.fit(X_in, y)
+    model.max_count = max_count
+    return model
+
+def predict_run_count_model(model, X: np.ndarray, is_seq: bool) -> np.ndarray:
+    X_in = X.reshape(X.shape[0], -1) if is_seq else X
+    pred = model.predict(X_in)
+    max_count = int(getattr(model, "max_count", 4))
+    pred = np.clip(np.rint(pred), 0, max_count)
+    return pred
+
+def train_energy_calibrator(base_pred: np.ndarray, run_count_true: np.ndarray, y_true: np.ndarray) -> List[LinearRegression]:
+    base_arr = np.asarray(base_pred)
+    run_arr = np.asarray(run_count_true)
+    if base_arr.ndim == 1:
+        base_arr = base_arr.reshape(-1, 1)
+    if run_arr.ndim == 1:
+        run_arr = run_arr.reshape(-1, 1)
+    models: List[LinearRegression] = []
+    y_arr = np.asarray(y_true)
+    if y_arr.ndim == 1:
+        y_arr = y_arr.reshape(-1, 1)
+    for i in range(base_arr.shape[1]):
+        X = np.column_stack([base_arr[:, i], run_arr[:, min(i, run_arr.shape[1] - 1)]])
+        y = y_arr[:, i]
+        reg = LinearRegression()
+        reg.fit(X, y)
+        models.append(reg)
+    return models
+
+def apply_energy_calibrator(models: List[LinearRegression], base_pred: np.ndarray, run_count_pred: np.ndarray) -> np.ndarray:
+    base_arr = np.asarray(base_pred)
+    run_arr = np.asarray(run_count_pred)
+    if base_arr.ndim == 1:
+        base_arr = base_arr.reshape(-1, 1)
+    if run_arr.ndim == 1:
+        run_arr = run_arr.reshape(-1, 1)
+    out = np.zeros_like(base_arr, dtype=float)
+    for i, reg in enumerate(models):
+        X = np.column_stack([base_arr[:, i], run_arr[:, min(i, run_arr.shape[1] - 1)]])
+        out[:, i] = reg.predict(X)
+    return out
+
 def build_run_status_map(input_recs: List[Dict]) -> Dict[Tuple[str, str], str]:
     mapping: Dict[Tuple[str, str], str] = {}
     for rec in input_recs:
@@ -1660,6 +1723,9 @@ def main():
     run_target_uids = [u for u in sorted(set(output_run_uid_map.values())) if u in input_df.columns]
     if aggregate_chiller_energy and chiller_run_uids:
         run_target_uids = [u for u in chiller_run_uids if u in input_df.columns]
+    run_count_df = None
+    if aggregate_chiller_energy and chiller_run_uids:
+        run_count_df = compute_run_count_df(input_df, chiller_run_uids)
     if run_status_uids:
         run_status_full_df = input_df[["time"] + run_status_uids].copy()
         run_any_df = run_status_full_df.copy()
@@ -1707,19 +1773,27 @@ def main():
 
     # timeseries_mode 已在前面确定
 
+    run_count_train = None
+    run_count_test = None
+    run_count_target_cols: List[str] = []
+
     if timeseries_mode:
         # LSTM: 使用当前输入+状态，构造序列，预测未来 t+Δ 的输出
         state_col_map = {uid: f"state_{uid}" for uid in output_uids}
         base_feat_df = input_df.merge(output_df.rename(columns=state_col_map), on="time", how="left")
         shifted_targets = build_multi_step_targets(output_df, horizon_step=horizon_td, steps=forecast_steps)
         merged = base_feat_df.merge(shifted_targets, on="time", how="inner")
+        if aggregate_chiller_energy and run_count_df is not None:
+            run_count_targets = build_multi_step_targets(run_count_df, horizon_step=horizon_td, steps=forecast_steps)
+            run_count_target_cols = [c for c in run_count_targets.columns if c != "time"]
+            merged = merged.merge(run_count_targets, on="time", how="left")
         merged = merged.dropna().reset_index(drop=True)
         # 时序模型不做运行状态过滤，保留完整历史以学习启停规律
         if merged.empty:
             raise RuntimeError("对齐后的数据为空，可能是时间粒度或聚合粒度不匹配")
 
         target_cols = [c for c in shifted_targets.columns if c != "time"]
-        feature_cols = [c for c in merged.columns if c not in ["time"] + target_cols]
+        feature_cols = [c for c in merged.columns if c not in ["time"] + target_cols + run_count_target_cols]
 
         for col in feature_cols + target_cols:
             if merged[col].notna().sum() == 0:
@@ -1743,6 +1817,9 @@ def main():
         X_test = X_seq[train_size:]
         Y_test = target_df.iloc[train_size:].to_numpy()
         test_time = time_series.iloc[train_size:].to_numpy()
+        if run_count_target_cols:
+            run_count_train = seq_df[run_count_target_cols].iloc[:train_size].to_numpy()
+            run_count_test = seq_df[run_count_target_cols].iloc[train_size:].to_numpy()
         run_status_test_df = None
         if run_status_full_df is not None:
             run_status_seq_df = seq_df[["time"]].merge(run_status_full_df, on="time", how="left")
@@ -1757,6 +1834,8 @@ def main():
             print("未识别到需要滞后的输入特征，特征仅使用当前值")
         feature_df = build_feature_matrix_selective(input_df, lag_uids=lag_uids, lags=max(args.lags, 0))
         dataset = align_dataset(feature_df, output_df)
+        if aggregate_chiller_energy and run_count_df is not None:
+            dataset = dataset.merge(run_count_df, on="time", how="left")
         if run_target_df is not None:
             dataset_f = dataset.merge(run_target_df[["time", "__run_target__"]], on="time", how="left")
             dataset_f = dataset_f[dataset_f["__run_target__"]]
@@ -1778,7 +1857,7 @@ def main():
         if dataset.empty:
             raise RuntimeError("对齐后的数据为空，可能是时间窗口或聚合粒度不匹配")
         target_cols = [c for c in output_df.columns if c != "time"]
-        feature_cols = [c for c in dataset.columns if c != "time" and c not in target_cols]
+        feature_cols = [c for c in dataset.columns if c != "time" and c not in target_cols and c != "run_count"]
 
         for col in feature_cols + target_cols:
             if dataset[col].notna().sum() == 0:
@@ -1790,6 +1869,9 @@ def main():
         X_test = test_df[feature_cols].to_numpy()
         Y_test = test_df[target_cols].to_numpy()
         test_time = test_df["time"].to_numpy()
+        if "run_count" in train_df.columns:
+            run_count_train = train_df["run_count"].to_numpy()
+            run_count_test = test_df["run_count"].to_numpy()
         run_status_test_df = None
         if run_status_full_df is not None:
             run_status_test_df = test_df[["time"]].merge(run_status_full_df, on="time", how="left").reset_index(drop=True)
@@ -1826,6 +1908,35 @@ def main():
         model_bundle = train_patchtst(X_train, Y_train, pred_len=forecast_steps)
         preds = predict_patchtst(model_bundle, X_test)
 
+    base_preds_train = None
+    if run_count_train is not None:
+        if args.model == "linear":
+            base_preds_train = predict_linear(model_bundle, X_train)
+        elif args.model == "lstsq":
+            base_preds_train = predict_lstsq(model_bundle, model_bundle["x_scaler"].transform(X_train))
+        elif args.model == "mlp":
+            base_preds_train = predict_mlp(model_bundle, X_train)
+        elif args.model == "rf":
+            base_preds_train = predict_random_forest(model_bundle, X_train)
+        elif args.model == "xgb":
+            base_preds_train = predict_xgb(model_bundle, X_train)
+        elif args.model == "lstm":
+            base_preds_train = predict_lstm(model_bundle, X_train)
+        elif args.model == "gru":
+            base_preds_train = predict_gru(model_bundle, X_train)
+        elif args.model == "transformer":
+            base_preds_train = predict_transformer(model_bundle, X_train)
+        else:  # patchtst
+            base_preds_train = predict_patchtst(model_bundle, X_train)
+
+    if aggregate_chiller_energy and run_count_train is not None:
+        max_count = max(1, len(chiller_run_uids))
+        is_seq = timeseries_mode
+        run_count_model = train_run_count_model(X_train, run_count_train, max_count=max_count, is_seq=is_seq)
+        run_count_pred_test = predict_run_count_model(run_count_model, X_test, is_seq=is_seq)
+        if base_preds_train is not None:
+            calibrator = train_energy_calibrator(base_preds_train, run_count_train, Y_train)
+            preds = apply_energy_calibrator(calibrator, preds, run_count_pred_test)
     if timeseries_mode:
         train_time = time_series.iloc[:train_size].to_numpy()
     else:
