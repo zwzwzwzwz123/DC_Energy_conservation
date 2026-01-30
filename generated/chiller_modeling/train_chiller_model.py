@@ -66,10 +66,18 @@ def build_query(
     field: str,
     measurement: str,
     use_diff: bool = False,
+    use_last: bool = False,
 ) -> str:
     if use_diff:
         return (
             f'SELECT non_negative_difference(last("{field}")) AS value '
+            f'FROM "{measurement}" '
+            f"WHERE time >= '{start}' AND time <= '{stop}' "
+            f"GROUP BY time({every}) fill(null)"
+        )
+    if use_last:
+        return (
+            f'SELECT last("{field}") AS value '
             f'FROM "{measurement}" '
             f"WHERE time >= '{start}' AND time <= '{stop}' "
             f"GROUP BY time({every}) fill(null)"
@@ -91,9 +99,10 @@ def _query_one_uid(
     field: str,
     measurement_template: str,
     use_diff: bool = False,
+    use_last: bool = False,
 ) -> pd.DataFrame:
     measurement = measurement_template.format(uid=uid)
-    q = build_query(uid, start, stop, every, field, measurement, use_diff=use_diff)
+    q = build_query(uid, start, stop, every, field, measurement, use_diff=use_diff, use_last=use_last)
     result = client.query(q)
     points = list(result.get_points())
     if not points:
@@ -114,6 +123,7 @@ def fetch_timeseries(
     measurement_template: str,
     client_key: str,
     diff_uids: Optional[Set[str]] = None,
+    last_uids: Optional[Set[str]] = None,
 ) -> pd.DataFrame:
     creds = load_influx_credentials(client_key)
     client = InfluxDBClient(
@@ -126,9 +136,23 @@ def fetch_timeseries(
     )
     dfs: List[pd.DataFrame] = []
     diff_uids = diff_uids or set()
+    last_uids = last_uids or set()
     for uid in uids:
         use_diff = uid in diff_uids
-        dfs.append(_query_one_uid(client, uid, start, stop, every, field, measurement_template, use_diff=use_diff))
+        use_last = (uid in last_uids) and not use_diff
+        dfs.append(
+            _query_one_uid(
+                client,
+                uid,
+                start,
+                stop,
+                every,
+                field,
+                measurement_template,
+                use_diff=use_diff,
+                use_last=use_last,
+            )
+        )
     client.close()
     if not dfs:
         return pd.DataFrame()
@@ -165,6 +189,15 @@ def should_lag(name: str) -> bool:
     exclude_keys = ["平均", "累积", "累计", "能耗", "计量"]  # 平滑缓变量，一般可不滞后
     if any(k in text for k in exclude_keys):
         return False
+    return any(k in text for k in include_keys)
+
+
+def should_use_last(name: str) -> bool:
+    """
+    状态/设定类信号使用 last() 聚合，避免均值导致状态模糊。
+    """
+    text = str(name)
+    include_keys = ["运行", "启停", "状态", "模式", "给定", "设定", "开关"]
     return any(k in text for k in include_keys)
 
 
@@ -1386,10 +1419,18 @@ def main():
     run_status_uids = sorted(set(output_run_uid_map.values()))
     cum_output_uids = [r["uid"] for r in output_recs if is_cumulative(r.get("name", ""))]
     diff_output_uids = set(cum_output_uids)
+    last_input_uids = {rec["uid"] for rec in input_recs if should_use_last(rec.get("name", ""))}
 
     print(f"拉取输入 {len(input_uids)} 个，输出 {len(output_uids)} 个，时间范围 {start} ~ {stop}")
     input_df = fetch_timeseries(
-        input_uids, start, stop, args.every, field=args.field, measurement_template=args.measurement_template, client_key=args.client_key
+        input_uids,
+        start,
+        stop,
+        args.every,
+        field=args.field,
+        measurement_template=args.measurement_template,
+        client_key=args.client_key,
+        last_uids=last_input_uids,
     )
     output_df = fetch_timeseries(
         output_uids,
@@ -1408,10 +1449,15 @@ def main():
     run_status_uids = [u for u in run_status_uids if u in input_df.columns]
     run_status_full_df = None
     run_any_df = None
+    run_target_df = None
+    run_target_uids = [u for u in sorted(set(output_run_uid_map.values())) if u in input_df.columns]
     if run_status_uids:
         run_status_full_df = input_df[["time"] + run_status_uids].copy()
         run_any_df = run_status_full_df.copy()
         run_any_df["__run_any__"] = run_any_df[run_status_uids].fillna(0).gt(0).any(axis=1)
+    if run_target_uids:
+        run_target_df = input_df[["time"] + run_target_uids].copy()
+        run_target_df["__run_target__"] = run_target_df[run_target_uids].fillna(0).gt(0).all(axis=1)
 
     # 对输出中的累积量（电能/能耗等）做差分，避免累积值主导误差
     cum_to_diff = [uid for uid in cum_output_uids if uid not in diff_output_uids]
@@ -1442,7 +1488,11 @@ def main():
         shifted_targets = build_multi_step_targets(output_df, horizon_step=horizon_td, steps=forecast_steps)
         merged = base_feat_df.merge(shifted_targets, on="time", how="inner")
         merged = merged.dropna().reset_index(drop=True)
-        if run_any_df is not None:
+        if run_target_df is not None:
+            merged = merged.merge(run_target_df[["time", "__run_target__"]], on="time", how="left")
+            merged = merged[merged["__run_target__"]]
+            merged = merged.drop(columns=["__run_target__"]).reset_index(drop=True)
+        elif run_any_df is not None:
             merged = merged.merge(run_any_df[["time", "__run_any__"]], on="time", how="left")
             merged = merged[merged["__run_any__"]]
             merged = merged.drop(columns=["__run_any__"]).reset_index(drop=True)
@@ -1485,7 +1535,11 @@ def main():
             print("未识别到需要滞后的输入特征，特征仅使用当前值")
         feature_df = build_feature_matrix_selective(input_df, lag_uids=lag_uids, lags=max(args.lags, 0))
         dataset = align_dataset(feature_df, output_df)
-        if run_any_df is not None:
+        if run_target_df is not None:
+            dataset = dataset.merge(run_target_df[["time", "__run_target__"]], on="time", how="left")
+            dataset = dataset[dataset["__run_target__"]]
+            dataset = dataset.drop(columns=["__run_target__"]).reset_index(drop=True)
+        elif run_any_df is not None:
             dataset = dataset.merge(run_any_df[["time", "__run_any__"]], on="time", how="left")
             dataset = dataset[dataset["__run_any__"]]
             dataset = dataset.drop(columns=["__run_any__"]).reset_index(drop=True)
