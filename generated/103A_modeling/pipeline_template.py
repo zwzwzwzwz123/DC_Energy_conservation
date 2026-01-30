@@ -1003,6 +1003,18 @@ def plot_predictions(
         plt.rcParams["font.sans-serif"] = [font_name]
     plt.rcParams["axes.unicode_minus"] = False
 
+    def _set_ylim_with_padding(ax, values: np.ndarray):
+        vals = np.asarray(values, dtype=float).ravel()
+        vals = vals[np.isfinite(vals)]
+        if vals.size == 0:
+            return
+        y_max = float(np.max(vals))
+        y_min = float(np.min(vals))
+        pad = (y_max - y_min) * 0.08
+        if pad <= 0:
+            pad = max(1.0, abs(y_max) * 0.05)
+        ax.set_ylim(bottom=0, top=y_max + pad)
+
     model_name = model_name or "model"
     out_dir = Path(out_dir) / "plots"
     out_dir.mkdir(exist_ok=True)
@@ -1094,7 +1106,7 @@ def plot_predictions(
                 ax.plot(forecast_times, true_seq, label="true", linewidth=1.4)
                 ax.plot(forecast_times, pred_seq, label="pred", linewidth=1.4)
                 ax.axvline(base_time, color="gray", linestyle="--", linewidth=1.0, alpha=0.8)
-                ax.set_ylim(bottom=0)
+                _set_ylim_with_padding(ax, np.concatenate([hist_vals, true_seq, pred_seq]))
                 ax.set_title(title)
                 ax.legend()
                 ax.grid(True, alpha=0.3)
@@ -1129,7 +1141,7 @@ def plot_predictions(
         fig, ax = plt.subplots(figsize=(12, 4))
         ax.plot(plot_time, y_true_arr[:, idx], label="真实值", linewidth=1.4)
         ax.plot(plot_time, y_pred_arr[:, idx], label="预测值", linewidth=1.4)
-        ax.set_ylim(bottom=0)
+        _set_ylim_with_padding(ax, np.concatenate([y_true_arr[:, idx], y_pred_arr[:, idx]]))
         ax.set_title(title)
         ax.legend()
         ax.grid(True, alpha=0.3)
