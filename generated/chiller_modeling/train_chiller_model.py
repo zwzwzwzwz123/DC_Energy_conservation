@@ -229,6 +229,17 @@ def infer_device_type(name: str) -> Optional[str]:
         return "chiller"
     return None
 
+def is_chiller_energy_name(name: str) -> bool:
+    text = str(name)
+    if not is_cumulative(text):
+        return False
+    dtype = infer_device_type(text)
+    if dtype != "chiller":
+        return False
+    if "\u51b7\u51bb\u6cf5" in text or "\u51b7\u5374\u6cf5" in text:
+        return False
+    return True
+
 def build_run_status_map(input_recs: List[Dict]) -> Dict[Tuple[str, str], str]:
     mapping: Dict[Tuple[str, str], str] = {}
     for rec in input_recs:
@@ -1200,17 +1211,6 @@ def evaluate(
             return None
         return match.group(1)
 
-    def is_chiller_energy(meta: Dict) -> bool:
-        name = str(meta.get("name", ""))
-        if not is_cumulative(name):
-            return False
-        dtype = infer_device_type(name)
-        if dtype != "chiller":
-            return False
-        if "\u51b7\u51bb\u6cf5" in name or "\u51b7\u5374\u6cf5" in name:
-            return False
-        return True
-
     for idx, col in enumerate(target_cols):
         base_col, step_label = col, None
         if "__t+" in col:
@@ -1278,7 +1278,7 @@ def evaluate(
             }
         )
         groups[group].append(idx)
-        if chiller_id in chiller_groups and is_chiller_energy(meta):
+        if chiller_id in chiller_groups and is_chiller_energy_name(meta.get("name", "")):
             chiller_groups[chiller_id].append(idx)
         if group.startswith("energy_"):
             groups["energy"].append(idx)
@@ -1584,6 +1584,7 @@ def main():
     args = parser.parse_args()
 
     seq_models = {"lstm", "gru", "transformer", "patchtst"}
+    timeseries_mode = args.model in seq_models
     forecast_steps = 7
     window_steps = forecast_steps * 3
     if args.target_lags is None:
@@ -1608,8 +1609,18 @@ def main():
     output_uids = [r["uid"] for r in output_recs]
     target_meta = {r["uid"]: r for r in output_recs}
     run_status_map = build_run_status_map(input_recs)
+    chiller_energy_uids = [r["uid"] for r in output_recs if is_chiller_energy_name(r.get("name", ""))]
+    chiller_run_uids = sorted({uid for (dtype, _num), uid in run_status_map.items() if dtype == "chiller"})
+    aggregate_chiller_energy = True
+    if aggregate_chiller_energy and not chiller_energy_uids:
+        print("未检测到冷水机组能耗输出，跳过能耗聚合")
+        aggregate_chiller_energy = False
+    if aggregate_chiller_energy:
+        print(f"冷水机组能耗将聚合为单一目标: {len(chiller_energy_uids)} 个")
     output_run_uid_map = build_output_run_uid_map(output_recs, run_status_map)
     run_status_uids = sorted(set(output_run_uid_map.values()))
+    if aggregate_chiller_energy and chiller_run_uids:
+        run_status_uids = chiller_run_uids
     cum_output_uids = [r["uid"] for r in output_recs if is_cumulative(r.get("name", ""))]
     diff_output_uids = set(cum_output_uids)
     last_input_uids = {rec["uid"] for rec in input_recs if should_use_last(rec.get("name", ""))}
@@ -1637,13 +1648,18 @@ def main():
     )
 
     input_df = ensure_datetime(fill_timeseries(input_df))
-    output_df = ensure_datetime(fill_timeseries(output_df))
+    if timeseries_mode and diff_output_uids:
+        output_df = ensure_datetime(fill_timeseries(output_df, skip_cols=diff_output_uids))
+    else:
+        output_df = ensure_datetime(fill_timeseries(output_df))
 
     run_status_uids = [u for u in run_status_uids if u in input_df.columns]
     run_status_full_df = None
     run_any_df = None
     run_target_df = None
     run_target_uids = [u for u in sorted(set(output_run_uid_map.values())) if u in input_df.columns]
+    if aggregate_chiller_energy and chiller_run_uids:
+        run_target_uids = [u for u in chiller_run_uids if u in input_df.columns]
     if run_status_uids:
         run_status_full_df = input_df[["time"] + run_status_uids].copy()
         run_any_df = run_status_full_df.copy()
@@ -1660,6 +1676,23 @@ def main():
     elif cum_output_uids:
         print(f"检测到累积量输出 {len(cum_output_uids)} 个，已在 Influx 做差分")
 
+    if aggregate_chiller_energy:
+        agg_uid = "chiller_energy_total"
+        agg_name = "\u51b7\u6c34\u673a\u7ec4\u603b\u80fd\u8017"
+        present_uids = [uid for uid in chiller_energy_uids if uid in output_df.columns]
+        if not present_uids:
+            print("\u805a\u5408\u80fd\u8017\u5931\u8d25\uff0c\u8f93\u51fa\u5217\u4e0d\u5b58\u5728\uff0c\u8df3\u8fc7\u805a\u5408")
+            aggregate_chiller_energy = False
+        else:
+            agg_vals = output_df[present_uids].sum(axis=1, min_count=1)
+            output_df = output_df[["time"]].copy()
+            output_df[agg_uid] = agg_vals
+            output_recs = [{"uid": agg_uid, "name": agg_name, "category": "output"}]
+            output_uids = [agg_uid]
+            target_meta = {agg_uid: output_recs[0]}
+            output_run_uid_map = {}
+            diff_output_uids = {agg_uid}
+
     # 移除恒定/近恒定输入/输出列，记录剔除列表
     uid_name_map = {r["uid"]: r.get("name") for r in input_recs + output_recs}
     input_df, removed_inputs = drop_constant_with_meta(input_df, uid_name_map, min_range=1e-6, dominance=0.995)
@@ -1672,9 +1705,7 @@ def main():
     if input_df.empty or output_df.empty:
         raise RuntimeError("Influx 数据为空，请检查 measurement/field 或时间范围")
 
-    timeseries_mode = args.model in seq_models
-    if timeseries_mode and diff_output_uids:
-        output_df = ensure_datetime(fill_timeseries(output_df, skip_cols=diff_output_uids))
+    # timeseries_mode 已在前面确定
 
     if timeseries_mode:
         # LSTM: 使用当前输入+状态，构造序列，预测未来 t+Δ 的输出
@@ -1806,6 +1837,11 @@ def main():
         test_time,
         horizon_td if timeseries_mode else None,
     )
+    if aggregate_chiller_energy and run_status_test_df is not None and chiller_run_uids:
+        valid_uids = [u for u in chiller_run_uids if u in run_status_test_df.columns]
+        if valid_uids and len(target_cols) == 1:
+            agg_mask = run_status_test_df[valid_uids].fillna(0).gt(0).any(axis=1).to_numpy()
+            run_masks = [agg_mask]
     train_run_masks = build_target_run_masks_with_time(
         target_cols,
         output_run_uid_map,
