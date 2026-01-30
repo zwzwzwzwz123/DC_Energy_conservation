@@ -274,6 +274,114 @@ def build_target_run_masks(
             masks.append(None)
     return masks
 
+def build_target_run_masks_with_time(
+    target_cols: List[str],
+    output_run_uid_map: Dict[str, str],
+    run_status_df: Optional[pd.DataFrame],
+    base_times: np.ndarray,
+    horizon_td: Optional[pd.Timedelta] = None,
+) -> List[Optional[np.ndarray]]:
+    if run_status_df is None or run_status_df.empty:
+        return [None for _ in target_cols]
+    run_df = run_status_df.copy()
+    run_df["time"] = pd.to_datetime(run_df["time"], errors="coerce")
+    run_df = run_df.dropna(subset=["time"])
+    base_times = pd.to_datetime(base_times, errors="coerce")
+    masks: List[Optional[np.ndarray]] = []
+    for col in target_cols:
+        base_col = col.split("__t+", 1)[0]
+        run_uid = output_run_uid_map.get(base_col)
+        if not run_uid or run_uid not in run_df.columns:
+            masks.append(None)
+            continue
+        step = 0
+        if "__t+" in col and horizon_td is not None:
+            try:
+                step = int(col.split("__t+", 1)[1])
+            except ValueError:
+                step = 0
+        target_times = base_times
+        if step and horizon_td is not None:
+            target_times = base_times + horizon_td * step
+        tmp = pd.DataFrame({"time": target_times})
+        merged = tmp.merge(run_df[["time", run_uid]], on="time", how="left")
+        mask = merged[run_uid].fillna(0).to_numpy() > 0
+        masks.append(mask)
+    return masks
+
+def build_standby_map(
+    y_true: np.ndarray,
+    target_cols: List[str],
+    target_meta: Dict[str, Dict],
+    run_masks: Optional[List[Optional[np.ndarray]]],
+) -> Dict[str, float]:
+    if run_masks is None:
+        return {}
+    y_true_arr = np.asarray(y_true)
+    if y_true_arr.ndim == 1:
+        y_true_arr = y_true_arr.reshape(-1, 1)
+    by_base: Dict[str, List[np.ndarray]] = {}
+    for idx, col in enumerate(target_cols):
+        base_col = col.split("__t+", 1)[0]
+        meta = target_meta.get(base_col, {})
+        if not is_cumulative(meta.get("name", "")):
+            continue
+        if idx >= len(run_masks):
+            continue
+        mask = run_masks[idx]
+        if mask is None:
+            continue
+        mask = np.asarray(mask, dtype=bool)
+        if mask.shape[0] != y_true_arr.shape[0]:
+            continue
+        off_vals = y_true_arr[~mask, idx]
+        off_vals = off_vals[np.isfinite(off_vals)]
+        if off_vals.size == 0:
+            continue
+        by_base.setdefault(base_col, []).append(off_vals)
+    standby: Dict[str, float] = {}
+    for base_col, arrays in by_base.items():
+        vals = np.concatenate(arrays)
+        vals_pos = vals[vals > 0]
+        if vals_pos.size > 0:
+            val = float(np.median(vals_pos))
+        else:
+            val = float(np.median(vals)) if vals.size else float("nan")
+        if np.isfinite(val) and val >= 0:
+            standby[base_col] = val
+    return standby
+
+def apply_run_status_gate(
+    y_pred: np.ndarray,
+    target_cols: List[str],
+    target_meta: Dict[str, Dict],
+    run_masks: Optional[List[Optional[np.ndarray]]],
+    standby_map: Dict[str, float],
+) -> np.ndarray:
+    if run_masks is None or not standby_map:
+        return y_pred
+    pred = np.asarray(y_pred).copy()
+    if pred.ndim == 1:
+        pred = pred.reshape(-1, 1)
+    for idx, col in enumerate(target_cols):
+        base_col = col.split("__t+", 1)[0]
+        meta = target_meta.get(base_col, {})
+        if not is_cumulative(meta.get("name", "")):
+            continue
+        if idx >= len(run_masks):
+            continue
+        mask = run_masks[idx]
+        if mask is None:
+            continue
+        mask = np.asarray(mask, dtype=bool)
+        if mask.shape[0] != pred.shape[0]:
+            continue
+        standby = standby_map.get(base_col)
+        if standby is None or not np.isfinite(standby):
+            continue
+        pred[~mask, idx] = standby
+    return pred
+
 def build_feature_matrix_selective(df: pd.DataFrame, lag_uids: List[str], lags: int) -> pd.DataFrame:
     """
     对需要滞后的列添加滞后，其余只保留当前值。
@@ -1047,6 +1155,7 @@ def evaluate(
         "flow": [],
         "other": [],
     }
+    chiller_groups = {str(i): [] for i in range(1, 5)}
 
     def error_pct(mae_val: float, mean_val: float) -> float:
         if mean_val is None or np.isnan(mean_val):
@@ -1078,12 +1187,22 @@ def evaluate(
             return "flow"
         return "other"
 
+    def extract_chiller_id(meta: Dict) -> Optional[str]:
+        name = str(meta.get("name", ""))
+        if not name:
+            return None
+        match = re.search(r"([1-4])\s*(?:#|\uff03|\u53f7)", name)
+        if not match:
+            return None
+        return match.group(1)
+
     for idx, col in enumerate(target_cols):
         base_col, step_label = col, None
         if "__t+" in col:
             base_col, step_label = col.split("__t+", 1)
         meta = target_meta.get(base_col, {})
         group = classify(meta)
+        chiller_id = extract_chiller_id(meta)
         name = meta.get("name")
         if name and step_label:
             name = f"{name}__t+{step_label}"
@@ -1143,6 +1262,8 @@ def evaluate(
             }
         )
         groups[group].append(idx)
+        if chiller_id in chiller_groups:
+            chiller_groups[chiller_id].append(idx)
         if group.startswith("energy_"):
             groups["energy"].append(idx)
 
@@ -1174,6 +1295,12 @@ def evaluate(
         if stats:
             group_metrics[g] = stats
 
+    chiller_metrics = {}
+    for cid, idxs in chiller_groups.items():
+        stats = group_stats(idxs)
+        if stats:
+            chiller_metrics[cid] = stats
+
     overall_mse = float(np.nanmean(mse_vals)) if mse_vals else float("nan")
     overall_mae = float(np.nanmean(mae_vals)) if mae_vals else float("nan")
     overall_mean = float(np.nanmean(mean_vals)) if mean_vals else float("nan")
@@ -1184,7 +1311,12 @@ def evaluate(
         "mae_mean": overall_mae,
         "\u8bef\u5dee\u767e\u5206\u6bd4": error_pct(overall_pct_mae, overall_pct_mean),
     }
-    return {"overall": overall, "per_target": per_target, "groups": group_metrics}
+    return {
+        "overall": overall,
+        "per_target": per_target,
+        "groups": group_metrics,
+        "chillers": chiller_metrics,
+    }
 
 def _pick_chinese_font() -> str:
     try:
@@ -1644,8 +1776,33 @@ def main():
         model_bundle = train_patchtst(X_train, Y_train, pred_len=forecast_steps)
         preds = predict_patchtst(model_bundle, X_test)
 
-    run_masks = build_target_run_masks(target_cols, output_run_uid_map, run_status_test_df)
+    if timeseries_mode:
+        train_time = time_series.iloc[:train_size].to_numpy()
+    else:
+        train_time = train_df["time"].to_numpy()
+    run_masks = build_target_run_masks_with_time(
+        target_cols,
+        output_run_uid_map,
+        run_status_full_df,
+        test_time,
+        horizon_td if timeseries_mode else None,
+    )
+    train_run_masks = build_target_run_masks_with_time(
+        target_cols,
+        output_run_uid_map,
+        run_status_full_df,
+        train_time,
+        horizon_td if timeseries_mode else None,
+    )
+    standby_map = build_standby_map(Y_train, target_cols, target_meta, train_run_masks)
+    if standby_map:
+        preds = apply_run_status_gate(preds, target_cols, target_meta, run_masks, standby_map)
     metrics = evaluate(Y_test, preds, target_cols, target_meta, run_masks=run_masks)
+    if standby_map:
+        metrics["standby"] = {
+            uid: {"name": target_meta.get(uid, {}).get("name", uid), "value": val}
+            for uid, val in standby_map.items()
+        }
     pred_df = pd.DataFrame(preds, columns=target_cols)
     if timeseries_mode:
         pred_df.insert(0, "time", time_series.iloc[train_size:].to_numpy())
@@ -1682,6 +1839,13 @@ def main():
             if isinstance(st_pct, (int, float, np.floating)) and not np.isnan(st_pct):
                 st_print["误差百分比"] = f"{st_pct}%"
             print(f"{g} 指标:", st_print)
+    if metrics.get("chillers"):
+        for cid, st in metrics["chillers"].items():
+            st_print = dict(st)
+            st_pct = st_print.get("误差百分比")
+            if isinstance(st_pct, (int, float, np.floating)) and not np.isnan(st_pct):
+                st_print["误差百分比"] = f"{st_pct}%"
+            print(f"冷水机组 {cid}# 指标:", st_print)
     print(f"输出目录: {ARTIFACT_DIR}")
 
 
