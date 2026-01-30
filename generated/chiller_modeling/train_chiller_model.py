@@ -1140,6 +1140,7 @@ def evaluate(
     if y_pred_arr.ndim == 1:
         y_pred_arr = y_pred_arr.reshape(-1, 1)
     per_target = []
+    base_cols: List[str] = []
     mse_vals: List[float] = []
     mae_vals: List[float] = []
     mean_vals: List[float] = []
@@ -1196,10 +1197,22 @@ def evaluate(
             return None
         return match.group(1)
 
+    def is_chiller_energy(meta: Dict) -> bool:
+        name = str(meta.get("name", ""))
+        if not is_cumulative(name):
+            return False
+        dtype = infer_device_type(name)
+        if dtype != "chiller":
+            return False
+        if "\u51b7\u51bb\u6cf5" in name or "\u51b7\u5374\u6cf5" in name:
+            return False
+        return True
+
     for idx, col in enumerate(target_cols):
         base_col, step_label = col, None
         if "__t+" in col:
             base_col, step_label = col.split("__t+", 1)
+        base_cols.append(base_col)
         meta = target_meta.get(base_col, {})
         group = classify(meta)
         chiller_id = extract_chiller_id(meta)
@@ -1262,12 +1275,12 @@ def evaluate(
             }
         )
         groups[group].append(idx)
-        if chiller_id in chiller_groups:
+        if chiller_id in chiller_groups and is_chiller_energy(meta):
             chiller_groups[chiller_id].append(idx)
         if group.startswith("energy_"):
             groups["energy"].append(idx)
 
-    def group_stats(idxs: List[int]):
+    def group_stats(idxs: List[int], count_override: Optional[int] = None):
         if not idxs:
             return None
         g_mse = [mse_vals[i] for i in idxs if not np.isnan(mse_vals[i])]
@@ -1282,11 +1295,12 @@ def evaluate(
         mean_mean = float(np.mean(g_mean)) if g_mean else float("nan")
         pct_mae_mean = float(np.mean(g_pct_mae)) if g_pct_mae else float("nan")
         pct_mean_mean = float(np.mean(g_pct_mean)) if g_pct_mean else float("nan")
+        count_val = count_override if count_override is not None else len(g_mse)
         return {
             "mse_mean": mse_mean,
             "mae_mean": mae_mean,
             "\u8bef\u5dee\u767e\u5206\u6bd4": error_pct(pct_mae_mean, pct_mean_mean),
-            "count": len(g_mse),
+            "count": count_val,
         }
 
     group_metrics = {}
@@ -1297,7 +1311,8 @@ def evaluate(
 
     chiller_metrics = {}
     for cid, idxs in chiller_groups.items():
-        stats = group_stats(idxs)
+        base_count = len({base_cols[i] for i in idxs}) if idxs else 0
+        stats = group_stats(idxs, count_override=base_count)
         if stats:
             chiller_metrics[cid] = stats
 
