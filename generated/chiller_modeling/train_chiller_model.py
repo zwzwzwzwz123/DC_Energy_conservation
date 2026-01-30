@@ -1457,7 +1457,7 @@ def main():
         run_any_df["__run_any__"] = run_any_df[run_status_uids].fillna(0).gt(0).any(axis=1)
     if run_target_uids:
         run_target_df = input_df[["time"] + run_target_uids].copy()
-        run_target_df["__run_target__"] = run_target_df[run_target_uids].fillna(0).gt(0).all(axis=1)
+        run_target_df["__run_target__"] = run_target_df[run_target_uids].fillna(0).gt(0).any(axis=1)
 
     # 对输出中的累积量（电能/能耗等）做差分，避免累积值主导误差
     cum_to_diff = [uid for uid in cum_output_uids if uid not in diff_output_uids]
@@ -1489,9 +1489,19 @@ def main():
         merged = base_feat_df.merge(shifted_targets, on="time", how="inner")
         merged = merged.dropna().reset_index(drop=True)
         if run_target_df is not None:
-            merged = merged.merge(run_target_df[["time", "__run_target__"]], on="time", how="left")
-            merged = merged[merged["__run_target__"]]
-            merged = merged.drop(columns=["__run_target__"]).reset_index(drop=True)
+            merged_f = merged.merge(run_target_df[["time", "__run_target__"]], on="time", how="left")
+            merged_f = merged_f[merged_f["__run_target__"]]
+            merged_f = merged_f.drop(columns=["__run_target__"]).reset_index(drop=True)
+            if merged_f.empty:
+                if run_any_df is not None:
+                    print("运行状态过滤后样本为空，改为任一设备运行过滤")
+                    merged_f = merged.merge(run_any_df[["time", "__run_any__"]], on="time", how="left")
+                    merged_f = merged_f[merged_f["__run_any__"]]
+                    merged_f = merged_f.drop(columns=["__run_any__"]).reset_index(drop=True)
+                else:
+                    print("运行状态过滤后样本为空，跳过运行过滤")
+                    merged_f = merged
+            merged = merged_f
         elif run_any_df is not None:
             merged = merged.merge(run_any_df[["time", "__run_any__"]], on="time", how="left")
             merged = merged[merged["__run_any__"]]
@@ -1536,9 +1546,19 @@ def main():
         feature_df = build_feature_matrix_selective(input_df, lag_uids=lag_uids, lags=max(args.lags, 0))
         dataset = align_dataset(feature_df, output_df)
         if run_target_df is not None:
-            dataset = dataset.merge(run_target_df[["time", "__run_target__"]], on="time", how="left")
-            dataset = dataset[dataset["__run_target__"]]
-            dataset = dataset.drop(columns=["__run_target__"]).reset_index(drop=True)
+            dataset_f = dataset.merge(run_target_df[["time", "__run_target__"]], on="time", how="left")
+            dataset_f = dataset_f[dataset_f["__run_target__"]]
+            dataset_f = dataset_f.drop(columns=["__run_target__"]).reset_index(drop=True)
+            if dataset_f.empty:
+                if run_any_df is not None:
+                    print("运行状态过滤后样本为空，改为任一设备运行过滤")
+                    dataset_f = dataset.merge(run_any_df[["time", "__run_any__"]], on="time", how="left")
+                    dataset_f = dataset_f[dataset_f["__run_any__"]]
+                    dataset_f = dataset_f.drop(columns=["__run_any__"]).reset_index(drop=True)
+                else:
+                    print("运行状态过滤后样本为空，跳过运行过滤")
+                    dataset_f = dataset
+            dataset = dataset_f
         elif run_any_df is not None:
             dataset = dataset.merge(run_any_df[["time", "__run_any__"]], on="time", how="left")
             dataset = dataset[dataset["__run_any__"]]
