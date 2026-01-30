@@ -7,10 +7,11 @@ Chiller modeling pipeline
 """
 import argparse
 import json
+import re
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import joblib
 import numpy as np
@@ -57,7 +58,22 @@ def load_influx_credentials(client_key: str) -> Dict:
     return merged
 
 
-def build_query(uid: str, start: str, stop: str, every: str, field: str, measurement: str) -> str:
+def build_query(
+    uid: str,
+    start: str,
+    stop: str,
+    every: str,
+    field: str,
+    measurement: str,
+    use_diff: bool = False,
+) -> str:
+    if use_diff:
+        return (
+            f'SELECT non_negative_difference(last("{field}")) AS value '
+            f'FROM "{measurement}" '
+            f"WHERE time >= '{start}' AND time <= '{stop}' "
+            f"GROUP BY time({every}) fill(null)"
+        )
     return (
         f'SELECT mean("{field}") AS value '
         f'FROM "{measurement}" '
@@ -67,10 +83,17 @@ def build_query(uid: str, start: str, stop: str, every: str, field: str, measure
 
 
 def _query_one_uid(
-    client: InfluxDBClient, uid: str, start: str, stop: str, every: str, field: str, measurement_template: str
+    client: InfluxDBClient,
+    uid: str,
+    start: str,
+    stop: str,
+    every: str,
+    field: str,
+    measurement_template: str,
+    use_diff: bool = False,
 ) -> pd.DataFrame:
     measurement = measurement_template.format(uid=uid)
-    q = build_query(uid, start, stop, every, field, measurement)
+    q = build_query(uid, start, stop, every, field, measurement, use_diff=use_diff)
     result = client.query(q)
     points = list(result.get_points())
     if not points:
@@ -90,6 +113,7 @@ def fetch_timeseries(
     field: str,
     measurement_template: str,
     client_key: str,
+    diff_uids: Optional[Set[str]] = None,
 ) -> pd.DataFrame:
     creds = load_influx_credentials(client_key)
     client = InfluxDBClient(
@@ -101,8 +125,10 @@ def fetch_timeseries(
         timeout=10,
     )
     dfs: List[pd.DataFrame] = []
+    diff_uids = diff_uids or set()
     for uid in uids:
-        dfs.append(_query_one_uid(client, uid, start, stop, every, field, measurement_template))
+        use_diff = uid in diff_uids
+        dfs.append(_query_one_uid(client, uid, start, stop, every, field, measurement_template, use_diff=use_diff))
     client.close()
     if not dfs:
         return pd.DataFrame()
@@ -150,6 +176,70 @@ def is_cumulative(name: str) -> bool:
     text = str(name).lower()
     return any(k in text for k in CUMULATIVE_KEYS)
 
+
+DEVICE_NO_RE = re.compile(r"(\d+)#")
+
+def extract_device_no(name: str) -> Optional[str]:
+    match = DEVICE_NO_RE.search(str(name))
+    return match.group(1) if match else None
+
+def infer_device_type(name: str) -> Optional[str]:
+    text = str(name)
+    if "\u51b7\u51bb\u6cf5" in text:
+        return "chilled_pump"
+    if "\u51b7\u5374\u6cf5" in text:
+        return "cooling_pump"
+    if "\u51b7\u673a" in text or "\u51b7\u6c34\u673a\u7ec4" in text or "\u51b7\u6c34\u4e3b\u673a" in text:
+        return "chiller"
+    return None
+
+def build_run_status_map(input_recs: List[Dict]) -> Dict[Tuple[str, str], str]:
+    mapping: Dict[Tuple[str, str], str] = {}
+    for rec in input_recs:
+        name = rec.get("name", "")
+        if "\u8fd0\u884c\u72b6\u6001" not in str(name):
+            continue
+        dtype = infer_device_type(name)
+        if not dtype:
+            continue
+        num = extract_device_no(name)
+        if not num:
+            continue
+        mapping[(dtype, num)] = rec["uid"]
+    return mapping
+
+def build_output_run_uid_map(output_recs: List[Dict], run_status_map: Dict[Tuple[str, str], str]) -> Dict[str, str]:
+    out_map: Dict[str, str] = {}
+    for rec in output_recs:
+        name = rec.get("name", "")
+        dtype = infer_device_type(name)
+        if not dtype:
+            continue
+        num = extract_device_no(name)
+        if not num:
+            continue
+        run_uid = run_status_map.get((dtype, num))
+        if run_uid:
+            out_map[rec["uid"]] = run_uid
+    return out_map
+
+def build_target_run_masks(
+    target_cols: List[str],
+    output_run_uid_map: Dict[str, str],
+    run_status_df: Optional[pd.DataFrame],
+) -> List[Optional[np.ndarray]]:
+    masks: List[Optional[np.ndarray]] = []
+    if run_status_df is None or run_status_df.empty:
+        return [None for _ in target_cols]
+    for col in target_cols:
+        base_col = col.split("__t+", 1)[0]
+        run_uid = output_run_uid_map.get(base_col)
+        if run_uid and run_uid in run_status_df.columns:
+            mask = run_status_df[run_uid].fillna(0).to_numpy() > 0
+            masks.append(mask)
+        else:
+            masks.append(None)
+    return masks
 
 def build_feature_matrix_selective(df: pd.DataFrame, lag_uids: List[str], lags: int) -> pd.DataFrame:
     """
@@ -895,10 +985,23 @@ def predict_patchtst(bundle, X_seq: np.ndarray) -> np.ndarray:
     return preds_seq.reshape(N, pred_len * target_dim)
 
 
-def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], target_meta: Dict[str, Dict]) -> Dict:
-    mse = np.mean((y_true - y_pred) ** 2, axis=0)
-    mae = np.mean(np.abs(y_true - y_pred), axis=0)
+def evaluate(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    target_cols: List[str],
+    target_meta: Dict[str, Dict],
+    run_masks: Optional[List[Optional[np.ndarray]]] = None,
+) -> Dict:
+    y_true_arr = np.asarray(y_true)
+    y_pred_arr = np.asarray(y_pred)
+    if y_true_arr.ndim == 1:
+        y_true_arr = y_true_arr.reshape(-1, 1)
+    if y_pred_arr.ndim == 1:
+        y_pred_arr = y_pred_arr.reshape(-1, 1)
     per_target = []
+    mse_vals: List[float] = []
+    mae_vals: List[float] = []
+    mean_vals: List[float] = []
     groups = {
         "energy": [],
         "energy_chiller": [],
@@ -949,12 +1052,36 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], tar
         name = meta.get("name")
         if name and step_label:
             name = f"{name}__t+{step_label}"
+        mask = None
+        if run_masks is not None and idx < len(run_masks):
+            mask = run_masks[idx]
+        if mask is not None:
+            mask = np.asarray(mask, dtype=bool)
+            if mask.shape[0] != y_true_arr.shape[0]:
+                mask = None
+        if mask is None:
+            yt = y_true_arr[:, idx]
+            yp = y_pred_arr[:, idx]
+        else:
+            yt = y_true_arr[mask, idx]
+            yp = y_pred_arr[mask, idx]
+        if yt.size == 0:
+            mse_val = float("nan")
+            mae_val = float("nan")
+            mean_val = float("nan")
+        else:
+            mse_val = float(np.mean((yt - yp) ** 2))
+            mae_val = float(np.mean(np.abs(yt - yp)))
+            mean_val = float(np.mean(yt))
+        mse_vals.append(mse_val)
+        mae_vals.append(mae_val)
+        mean_vals.append(mean_val)
         per_target.append(
             {
                 "uid": col,
                 "name": name,
-                "mse": float(mse[idx]),
-                "mae": float(mae[idx]),
+                "mse": mse_val,
+                "mae": mae_val,
                 "group": group,
             }
         )
@@ -965,14 +1092,19 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], tar
     def group_stats(idxs: List[int]):
         if not idxs:
             return None
-        g_mse = float(np.mean((y_true[:, idxs] - y_pred[:, idxs]) ** 2))
-        g_mae = float(np.mean(np.abs(y_true[:, idxs] - y_pred[:, idxs])))
-        g_mean = float(np.mean(y_true[:, idxs]))
+        g_mse = [mse_vals[i] for i in idxs if not np.isnan(mse_vals[i])]
+        g_mae = [mae_vals[i] for i in idxs if not np.isnan(mae_vals[i])]
+        g_mean = [mean_vals[i] for i in idxs if not np.isnan(mean_vals[i])]
+        if not g_mse:
+            return None
+        mse_mean = float(np.mean(g_mse))
+        mae_mean = float(np.mean(g_mae)) if g_mae else float("nan")
+        mean_mean = float(np.mean(g_mean)) if g_mean else float("nan")
         return {
-            "mse_mean": g_mse,
-            "mae_mean": g_mae,
-            "误差百分比": error_pct(g_mae, g_mean),
-            "count": len(idxs),
+            "mse_mean": mse_mean,
+            "mae_mean": mae_mean,
+            "\u8bef\u5dee\u767e\u5206\u6bd4": error_pct(mae_mean, mean_mean),
+            "count": len(g_mse),
         }
 
     group_metrics = {}
@@ -981,14 +1113,15 @@ def evaluate(y_true: np.ndarray, y_pred: np.ndarray, target_cols: List[str], tar
         if stats:
             group_metrics[g] = stats
 
-    overall_mean = float(np.mean(y_true))
+    overall_mse = float(np.nanmean(mse_vals)) if mse_vals else float("nan")
+    overall_mae = float(np.nanmean(mae_vals)) if mae_vals else float("nan")
+    overall_mean = float(np.nanmean(mean_vals)) if mean_vals else float("nan")
     overall = {
-        "mse_mean": float(np.mean(mse)),
-        "mae_mean": float(np.mean(mae)),
-        "误差百分比": error_pct(float(np.mean(mae)), overall_mean),
+        "mse_mean": overall_mse,
+        "mae_mean": overall_mae,
+        "\u8bef\u5dee\u767e\u5206\u6bd4": error_pct(overall_mae, overall_mean),
     }
     return {"overall": overall, "per_target": per_target, "groups": group_metrics}
-
 
 def _pick_chinese_font() -> str:
     try:
@@ -1248,23 +1381,45 @@ def main():
     input_uids = [r["uid"] for r in input_recs]
     output_uids = [r["uid"] for r in output_recs]
     target_meta = {r["uid"]: r for r in output_recs}
+    run_status_map = build_run_status_map(input_recs)
+    output_run_uid_map = build_output_run_uid_map(output_recs, run_status_map)
+    run_status_uids = sorted(set(output_run_uid_map.values()))
+    cum_output_uids = [r["uid"] for r in output_recs if is_cumulative(r.get("name", ""))]
+    diff_output_uids = set(cum_output_uids)
 
     print(f"拉取输入 {len(input_uids)} 个，输出 {len(output_uids)} 个，时间范围 {start} ~ {stop}")
     input_df = fetch_timeseries(
         input_uids, start, stop, args.every, field=args.field, measurement_template=args.measurement_template, client_key=args.client_key
     )
     output_df = fetch_timeseries(
-        output_uids, start, stop, args.every, field=args.field, measurement_template=args.measurement_template, client_key=args.client_key
+        output_uids,
+        start,
+        stop,
+        args.every,
+        field=args.field,
+        measurement_template=args.measurement_template,
+        client_key=args.client_key,
+        diff_uids=diff_output_uids,
     )
 
     input_df = ensure_datetime(fill_timeseries(input_df))
     output_df = ensure_datetime(fill_timeseries(output_df))
 
+    run_status_uids = [u for u in run_status_uids if u in input_df.columns]
+    run_status_full_df = None
+    run_any_df = None
+    if run_status_uids:
+        run_status_full_df = input_df[["time"] + run_status_uids].copy()
+        run_any_df = run_status_full_df.copy()
+        run_any_df["__run_any__"] = run_any_df[run_status_uids].fillna(0).gt(0).any(axis=1)
+
     # 对输出中的累积量（电能/能耗等）做差分，避免累积值主导误差
-    cum_output_uids = [r["uid"] for r in output_recs if is_cumulative(r.get("name", ""))]
-    if cum_output_uids:
-        print(f"检测到累积量输出 {len(cum_output_uids)} 个，将做差分")
-        output_df = apply_cumulative_diff(output_df, cum_output_uids)
+    cum_to_diff = [uid for uid in cum_output_uids if uid not in diff_output_uids]
+    if cum_to_diff:
+        print(f"检测到累积量输出 {len(cum_to_diff)} 个，将做差分")
+        output_df = apply_cumulative_diff(output_df, cum_to_diff)
+    elif cum_output_uids:
+        print(f"检测到累积量输出 {len(cum_output_uids)} 个，已在 Influx 做差分")
 
     # 移除恒定/近恒定输入/输出列，记录剔除列表
     uid_name_map = {r["uid"]: r.get("name") for r in input_recs + output_recs}
@@ -1287,6 +1442,10 @@ def main():
         shifted_targets = build_multi_step_targets(output_df, horizon_step=horizon_td, steps=forecast_steps)
         merged = base_feat_df.merge(shifted_targets, on="time", how="inner")
         merged = merged.dropna().reset_index(drop=True)
+        if run_any_df is not None:
+            merged = merged.merge(run_any_df[["time", "__run_any__"]], on="time", how="left")
+            merged = merged[merged["__run_any__"]]
+            merged = merged.drop(columns=["__run_any__"]).reset_index(drop=True)
         if merged.empty:
             raise RuntimeError("对齐后的数据为空，可能是时间粒度或聚合粒度不匹配")
 
@@ -1312,6 +1471,10 @@ def main():
         X_test = X_seq[train_size:]
         Y_test = target_df.iloc[train_size:].to_numpy()
         test_time = time_series.iloc[train_size:].to_numpy()
+        run_status_test_df = None
+        if run_status_full_df is not None:
+            run_status_seq_df = seq_df[["time"]].merge(run_status_full_df, on="time", how="left")
+            run_status_test_df = run_status_seq_df.iloc[train_size:].reset_index(drop=True)
     else:
         # 非时序模式：输入滞后 + 同步输出
         # 仅对需要滞后的输入列加滞后
@@ -1322,6 +1485,10 @@ def main():
             print("未识别到需要滞后的输入特征，特征仅使用当前值")
         feature_df = build_feature_matrix_selective(input_df, lag_uids=lag_uids, lags=max(args.lags, 0))
         dataset = align_dataset(feature_df, output_df)
+        if run_any_df is not None:
+            dataset = dataset.merge(run_any_df[["time", "__run_any__"]], on="time", how="left")
+            dataset = dataset[dataset["__run_any__"]]
+            dataset = dataset.drop(columns=["__run_any__"]).reset_index(drop=True)
         if dataset.empty:
             raise RuntimeError("对齐后的数据为空，可能是时间窗口或聚合粒度不匹配")
         target_cols = [c for c in output_df.columns if c != "time"]
@@ -1337,6 +1504,9 @@ def main():
         X_test = test_df[feature_cols].to_numpy()
         Y_test = test_df[target_cols].to_numpy()
         test_time = test_df["time"].to_numpy()
+        run_status_test_df = None
+        if run_status_full_df is not None:
+            run_status_test_df = test_df[["time"]].merge(run_status_full_df, on="time", how="left").reset_index(drop=True)
 
     if args.model == "linear":
         model_bundle = train_linear(X_train, Y_train)
@@ -1370,7 +1540,8 @@ def main():
         model_bundle = train_patchtst(X_train, Y_train, pred_len=forecast_steps)
         preds = predict_patchtst(model_bundle, X_test)
 
-    metrics = evaluate(Y_test, preds, target_cols, target_meta)
+    run_masks = build_target_run_masks(target_cols, output_run_uid_map, run_status_test_df)
+    metrics = evaluate(Y_test, preds, target_cols, target_meta, run_masks=run_masks)
     pred_df = pd.DataFrame(preds, columns=target_cols)
     if timeseries_mode:
         pred_df.insert(0, "time", time_series.iloc[train_size:].to_numpy())
