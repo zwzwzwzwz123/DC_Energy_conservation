@@ -41,11 +41,11 @@ from utils.data_processing import build_aligned_matrix
 
 # ==================== 常量（与方案要求保持一致） ====================
 
-DEFAULT_FREQ = "1min"  # ????????
-DEFAULT_MAX_MISSING_RATE = 0.05  # ??????? 5%
-DEFAULT_MAX_CONSECUTIVE_MISSING = 5  # ??????? 5 ????
-DEFAULT_FEATURE_ROW_TOLERANCE = 0.3  # ????????
-DEFAULT_TARGET_ROW_TOLERANCE = 0.0  # ?????????
+DEFAULT_FREQ = "1min"
+DEFAULT_MAX_MISSING_RATE = 0.05
+DEFAULT_MAX_CONSECUTIVE_MISSING = 5
+DEFAULT_FEATURE_ROW_TOLERANCE = 0.3
+DEFAULT_TARGET_ROW_TOLERANCE = 0.0
 
 
 # ==================== 配置与规格定义 ====================
@@ -174,7 +174,7 @@ class TwinModel:
     def _prepare_xy(
         self, data_map: Dict[str, pd.DataFrame]
     ) -> Optional[Tuple[pd.DataFrame, pd.DataFrame]]:
-        """????????? X ????? y?"""
+
         feature_row_tol = _metadata_float(
             self.spec.metadata,
             "feature_row_missing_tolerance",
@@ -206,16 +206,16 @@ class TwinModel:
         )
 
         if skipped_feat:
-            self.logger.warning(f"{self.spec.name}: ???? {skipped_feat}")
+            self.logger.warning(f"{self.spec.name}: 特征测点跳过 {skipped_feat}")
         if skipped_target:
-            self.logger.warning(f"{self.spec.name}: ???? {skipped_target}")
+            self.logger.warning(f"{self.spec.name}: 目标测点跳过 {skipped_target}")
 
         if X is None or y is None:
             return None
 
         merged_index = X.index.intersection(y.index)
         if merged_index.empty:
-            self.logger.error(f"{self.spec.name}: ??????????")
+            self.logger.error(f"{self.spec.name}: 特征与目标时间索引无交集")
             return None
         X = X.loc[merged_index]
         y = y.loc[merged_index]
@@ -232,7 +232,7 @@ class TwinModel:
         y = y.loc[feature_mask]
 
         if X.empty or y.empty:
-            self.logger.error(f"{self.spec.name}: ??????????")
+            self.logger.error(f"{self.spec.name}: 清洗后无有效样本")
             return None
 
         return X, y
