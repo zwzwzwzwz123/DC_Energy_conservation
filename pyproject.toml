@@ -10,6 +10,7 @@ dependencies = [
     "pandas>=2.3.3",
     "pyyaml>=6.0.3",
     "requests>=2.32.5",
+    "matplotlib>=3.8.0",
 
     # 优化算法依赖
     "optuna>=3.0.0",        # 贝叶斯优化 (BayesianOptimizer)

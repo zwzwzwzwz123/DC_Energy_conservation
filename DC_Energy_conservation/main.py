@@ -5,6 +5,7 @@
 import sys
 import time
 import logging
+import json
 from pathlib import Path
 from threading import Thread, Event, Lock
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
@@ -21,6 +22,8 @@ from utils.critical_operation import critical_operation, wait_for_critical_opera
 from utils.architecture_config_parser import load_datacenter_from_config
 from utils.data_read_write import create_data_reader, create_data_writer
 from modules.architecture_module import DataCenter
+from modules.prediction_module import TwinPredictor, build_specs_from_prediction_config
+from modules.optimization_module import run_optimization
 
 
 @dataclass
@@ -82,6 +85,8 @@ class AppContext:
     datacenter: DataCenter = None
     data_reader: Any = None
     data_writer: Any = None
+    predictor: TwinPredictor = None
+    predictor_lock: Lock = field(default_factory=Lock)
 
 
 def validate_data_and_wait_on_error_retry(data, data_type, error_retry_wait, shutdown_event, logger):
@@ -142,6 +147,16 @@ def prediction_training_thread(ctx: AppContext):
 
     logger.info(f"预测训练线程配置: mode={mode}, interval={interval}秒, error_retry_wait={error_retry_wait}秒")
 
+    if ctx.predictor is None:
+        logger.error("预测器未初始化，终止预测训练线程")
+        return
+
+    try:
+        with ctx.predictor_lock:
+            ctx.predictor.load_all()
+    except Exception as e:
+        logger.warning(f"加载已保存模型失败，将从头训练: {e}")
+
     while not ctx.shutdown_event.is_set():
         loop_start_time = time.time()  # 记录循环开始时间
 
@@ -171,35 +186,16 @@ def prediction_training_thread(ctx: AppContext):
                     break
                 continue
 
-            # ==================== 数据预处理阶段 ====================
-            # TODO: 实现数据预处理逻辑
-            # 将 observable_data (Dict[str, pd.DataFrame]) 转换为训练所需的格式
-            # 示例：
-            #   training_features, training_labels = preprocess_data(observable_data)
-            logger.info("数据预处理中...")
-
             # ==================== 模型训练阶段 ====================
-            # TODO: 实现预测模型训练逻辑
-            # ⚠️ 重要提醒 1：如果训练过程耗时很长（如模型训练），
-            # 必须在训练循环中定期检查 ctx.shutdown_event.is_set()
-            # 以便能够快速响应 Ctrl+C 退出信号。
-            # 示例：
-            #   for epoch in range(num_epochs):
-            #       if ctx.shutdown_event.is_set():
-            #           logger.info("检测到关闭信号，中断训练")
-            #           break
-            #       # 执行训练步骤...
-            logger.info("模型训练中...")
-
-            # ==================== 模型保存阶段 ====================
-            # TODO: 实现模型保存逻辑
-            # ⚠️ 重要提醒 2：对于关键操作（模型保存），
-            # 必须使用 critical_operation 上下文管理器保护，确保这些操作不会被中断。
-            # 示例：
-            #   # 保护模型保存操作
-            #   with critical_operation(ctx):
-            #       model.save("checkpoint.pth")
-            logger.info("预测训练完成")
+            try:
+                with ctx.predictor_lock:
+                    train_status = ctx.predictor.train_all(observable_data)
+                logger.info(f"预测模型训练完成，状态: {train_status}")
+            except Exception as e:
+                logger.error(f"模型训练失败: {e}", exc_info=True)
+                if ctx.shutdown_event.wait(timeout=error_retry_wait):
+                    break
+                continue
 
             # 根据运行模式决定是否等待
             if mode == "fixed_interval":
@@ -252,6 +248,10 @@ def prediction_inference_thread(ctx: AppContext):
 
     logger.info(f"预测推理线程配置: mode={mode}, interval={interval}秒, error_retry_wait={error_retry_wait}秒")
 
+    if ctx.predictor is None:
+        logger.error("预测器未初始化，终止预测推理线程")
+        return
+
     while not ctx.shutdown_event.is_set():
         loop_start_time = time.time()  # 记录循环开始时间
 
@@ -280,55 +280,36 @@ def prediction_inference_thread(ctx: AppContext):
                     break
                 continue
 
-            # ==================== 模型加载阶段 ====================
-            # TODO: 实现预测模型加载逻辑
-            # 示例：
-            #   model = load_prediction_model("checkpoint.pth")
-            logger.info("加载预测模型...")
+            # ==================== 模型加载与推理阶段 ====================
+            with ctx.predictor_lock:
+                if not any(m.trained for m in ctx.predictor.models.values()):
+                    ctx.predictor.load_all()
+                if not any(m.trained for m in ctx.predictor.models.values()):
+                    logger.warning("未找到已训练模型，跳过本次推理")
+                    continue
 
-            # ==================== 预测推理阶段 ====================
-            # TODO: 实现预测推理逻辑
-            # ⚠️ 重要提醒：如果推理过程耗时很长，
-            # 必须在推理循环中定期检查 ctx.shutdown_event.is_set()
-            # 示例：
-            #   for batch in data_batches:
-            #       if ctx.shutdown_event.is_set():
-            #           logger.info("检测到关闭信号，中断推理")
-            #           break
-            #       # 执行推理步骤...
-            logger.info("执行预测推理...")
+                predictions_all = ctx.predictor.predict_all(observable_data)
 
-            # ==================== 预测结果写入阶段 ====================
-            logger.info("开始写入预测结果...")
-            try:
-                # 示例 1: 预测数据 - 按测点分离存储
-                prediction_data_separate = {
-                    'sensor_temp_A1': 25.5,
-                    'sensor_temp_B2': 26.1
-                }
-                success1 = ctx.data_writer.write_influxdb_data(
-                    'prediction_data_client',
-                    'prediction_by_uid',
-                    prediction_data_separate,
-                    horizon='15mins'
+            if not predictions_all:
+                logger.warning("无预测结果可写入，跳过本次推理")
+            else:
+                flat_predictions = ctx.predictor.flatten_predictions(predictions_all)
+                horizon = (
+                    ctx.prediction_config.get("prediction_model", {})
+                    .get("output", {})
+                    .get("default_horizon", "15mins")
                 )
-                if success1: logger.info("按测点分离存储预测数据写入成功")
-
-                # 示例 2: 预测数据 - 统一存储格式
-                prediction_data_unified = {
-                    'sensor_temp_A1': '{"value": 25.5, "confidence": 0.95}',
-                    'sensor_temp_B2': '{"value": 26.1, "confidence": 0.93}'
-                }
-                success2 = ctx.data_writer.write_influxdb_data(
-                    'prediction_data_client',
-                    'prediction_unified',
-                    prediction_data_unified,
-                    horizon='1h'
-                )
-                if success2: logger.info("统一存储格式预测数据写入成功")
-
-            except Exception as e:
-                logger.error(f"写入预测结果失败: {e}", exc_info=True)
+                try:
+                    success = ctx.data_writer.write_influxdb_data(
+                        'prediction_data_client',
+                        'prediction_by_uid',
+                        flat_predictions,
+                        horizon=horizon
+                    )
+                    if success:
+                        logger.info(f"预测结果写入成功，条目数: {len(flat_predictions)}")
+                except Exception as e:
+                    logger.error(f"写入预测结果失败: {e}", exc_info=True)
 
             logger.info("预测推理完成")
 
@@ -383,6 +364,8 @@ def optimization_thread(ctx: AppContext):
 
     logger.info(f"优化线程配置: mode={mode}, interval={interval}秒, error_retry_wait={error_retry_wait}秒")
 
+    ac_devices = [d for d in ctx.datacenter.get_all_devices(include_unavailable=False) if str(d.device_type).startswith("AC_")]
+
     while not ctx.shutdown_event.is_set():
         loop_start_time = time.time()  # 记录循环开始时间
 
@@ -436,57 +419,60 @@ def optimization_thread(ctx: AppContext):
                 continue
 
             # ==================== 优化算法阶段 ====================
-            # TODO: 实现优化算法逻辑
-            # 根据预测数据和当前状态数据执行优化算法
-            # ⚠️ 重要提醒：如果优化过程耗时很长（如强化学习优化），
-            # 必须在优化循环中定期检查 ctx.shutdown_event.is_set()
-            # 示例：
-            #   for step in range(max_steps):
-            #       if ctx.shutdown_event.is_set():
-            #           logger.info("检测到关闭信号，中断优化")
-            #           break
-            #       # 执行优化步骤...
-            #       # 与环境交互...
             logger.info("执行优化算法...")
+            try:
+                # 使用最新一条数据作为当前状态，完整窗口作为历史评估数据
+                current_snapshot = {}
+                historical_window = {}
+                for uid, df in observable_data.items():
+                    if df is None or df.empty:
+                        continue
+                    trimmed = df.tail(100).reset_index(drop=True)
+                    historical_window[uid] = trimmed
+                    current_snapshot[uid] = trimmed.tail(1).reset_index(drop=True)
+
+                best_params = run_optimization(
+                    uid_config=ctx.uid_config,
+                    parameter_config=ctx.optimization_config,
+                    security_boundary_config=ctx.security_boundary_config,
+                    current_data=current_snapshot,
+                    # 历史评估基于近期窗口观测数据
+                    historical_data=historical_window,
+                    logger=logger,
+                    timeout_seconds=ctx.optimization_config.get("optimization_module", {}).get("timeout")
+                )
+            except Exception as e:
+                logger.error(f"优化执行失败: {e}", exc_info=True)
+                if ctx.shutdown_event.wait(timeout=error_retry_wait):
+                    break
+                continue
 
             # ==================== 控制指令写入阶段 ====================
             logger.info("开始写入控制指令...")
             try:
-                # 示例 3: 优化指令 - 按测点分离存储
-                optimization_data_separate = {
-                    'ac_a1_001_supply_temp_setpoint': 24.0,
-                    'ac_a1_002_supply_temp_setpoint': 24.5
-                }
-                success3 = ctx.data_writer.write_influxdb_data(
-                    'optimization_data_client',
-                    'optimization_by_uid',
-                    optimization_data_separate,
-                    is_auto_execute=False
-                )
-                if success3: logger.info("按测点分离存储优化指令写入成功")
+                temps = best_params.get('air_conditioner_setting_temperature', [])
+                hums = best_params.get('air_conditioner_setting_humidity', [])
+                modes = best_params.get('air_conditioner_cooling_mode', [])
 
-                # 示例 4: 优化指令 - 统一存储格式
-                optimization_data_unified = {
-                    'ac_a1_001_supply_temp_setpoint': '{"value": 24.0, "priority": "high"}',
-                    'ac_a1_002_supply_temp_setpoint': '{"value": 24.5, "priority": "medium"}'
-                }
-                success4 = ctx.data_writer.write_influxdb_data(
-                    'optimization_data_client',
-                    'optimization_unified',
-                    optimization_data_unified,
-                    is_auto_execute=True
-                )
-                if success4: logger.info("统一存储格式优化指令写入成功")
+                if not ac_devices or len(ac_devices) != len(temps):
+                    logger.warning("空调设备数量与优化结果不一致，跳过写入")
+                else:
+                    optimization_payload = {}
+                    for dev, t, h, m in zip(ac_devices, temps, hums, modes):
+                        content = {"set_temp": t, "set_humidity": h, "cooling_mode": m}
+                        optimization_payload[dev.device_uid] = json.dumps(content)
+
+                    success_opt = ctx.data_writer.write_influxdb_data(
+                        'optimization_data_client',
+                        'optimization_unified',
+                        optimization_payload,
+                        is_auto_execute=False
+                    )
+                    if success_opt:
+                        logger.info(f"控制指令写入成功，条目数: {len(optimization_payload)}")
 
             except Exception as e:
                 logger.error(f"写入控制指令失败: {e}", exc_info=True)
-
-            # ==================== 模型保存阶段（可选）====================
-            # TODO: 如果使用强化学习，定期保存模型
-            # ⚠️ 重要：对于模型保存操作，必须使用 critical_operation 保护
-            # 示例：
-            #   with critical_operation(ctx):
-            #       rl_agent.save("rl_checkpoint.pth")
 
             logger.info("优化完成")
 
@@ -538,12 +524,12 @@ def initialize_system():
     print("=" * 60)
 
     # 1. 加载配置文件
-    print("\n[1/7] 加载配置文件...")
+    print("\n[1/8] 加载配置文件...")
     main_config, prediction_config, optimization_config, security_boundary_config, uid_config, utils_config, influxdb_read_write_config = load_configs()
     print("✓ 配置文件加载成功")
 
     # 2. 初始化多层级日志系统
-    print("\n[2/7] 初始化多层级日志系统...")
+    print("\n[2/8] 初始化多层级日志系统...")
     try:
         loggers = init_multi_level_loggers(utils_config["logging"])
         print("✓ 多层级日志系统初始化成功")
@@ -562,7 +548,7 @@ def initialize_system():
         sys.exit(1)
 
     # 3. 初始化 InfluxDB 客户端
-    print("\n[3/7] 初始化 InfluxDB 客户端...")
+    print("\n[3/8] 初始化 InfluxDB 客户端...")
     try:
         # 传入 influxdb logger，使 InfluxDB 相关日志自动写入 influxdb_log.log 和 total_log.log
         dc_status_data_client, prediction_data_client, optimization_data_client = init_influxdb_clients(
@@ -584,7 +570,7 @@ def initialize_system():
         sys.exit(1)
 
     # 4. 加载数据中心配置
-    print("\n[4/7] 加载数据中心配置...")
+    print("\n[4/8] 加载数据中心配置...")
     try:
         datacenter = load_datacenter_from_config(uid_config, loggers["architecture_parser"])
 
@@ -611,7 +597,7 @@ def initialize_system():
         sys.exit(1)
 
     # 5. 创建数据读取器
-    print("\n[5/7] 创建数据读取器...")
+    print("\n[5/8] 创建数据读取器...")
     try:
         # 构建客户端字典
         reader_clients = {
@@ -633,7 +619,7 @@ def initialize_system():
         sys.exit(1)
 
     # 6. 创建应用上下文（只创建一次！）
-    print("\n[6/7] 创建应用上下文...")
+    print("\n[6/8] 创建应用上下文...")
     shutdown_event = Event()
     try:
         ctx = AppContext(
@@ -664,7 +650,7 @@ def initialize_system():
         sys.exit(1)
 
     # 7. 创建数据写入器并更新到上下文
-    print("\n[7/7] 创建数据写入器...")
+    print("\n[7/8] 创建数据写入器...")
     try:
         writer_clients = {
             'prediction_data_client': prediction_data_client,
@@ -686,6 +672,21 @@ def initialize_system():
     except Exception as e:
         loggers["main"].error(f"数据写入器创建失败: {e}", exc_info=True)
         print(f"✗ 数据写入器创建失败: {e}")
+        sys.exit(1)
+
+    # 8. 创建预测器
+    print("\n[8/8] 初始化预测器...")
+    try:
+        specs = build_specs_from_prediction_config(prediction_config)
+        predictor = TwinPredictor(specs, loggers["prediction_training"])
+        with ctx.predictor_lock:
+            predictor.load_all()
+        ctx.predictor = predictor
+        loggers["main"].info("预测器初始化完成")
+        print("✓ 预测器初始化完成")
+    except Exception as e:
+        loggers["main"].error(f"预测器初始化失败: {e}", exc_info=True)
+        print(f"✗ 预测器初始化失败: {e}")
         sys.exit(1)
 
     print("\n" + "=" * 60)

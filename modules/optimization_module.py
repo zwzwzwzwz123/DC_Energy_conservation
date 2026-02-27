@@ -162,7 +162,7 @@ def _normalize_uid_config(uid_config: Dict) -> Dict:
         sensors = uid_config[CONFIG_KEY_SENSORS] or {}
         for k in [CONFIG_KEY_TEMPERATURE_SENSOR, CONFIG_KEY_HUMIDITY_SENSOR, CONFIG_KEY_ENERGY_CONSUMPTION]:
             if k in sensors:
-                normalized[CONFIG_KEY_SENSORS][k] = [str(uid) for uid in sensors.get(k, [])]
+                normalized[CONFIG_KEY_SENSORS][k] = _ensure_uid_list(sensors.get(k))
 
     # 去重并确保 UID 唯一
     for k, lst in normalized[CONFIG_KEY_SENSORS].items():
@@ -522,6 +522,26 @@ def _normalize_input_data(data: Union[pd.DataFrame, Dict[str, pd.DataFrame]], la
     return normalized
 
 
+def _ensure_uid_list(raw_value: Optional[Any]) -> List[str]:
+    """
+    将传感器 UID 字段转换为字符串列表，兼容单个字符串/元组/集合等多种输入形式。
+    """
+    if raw_value is None:
+        return []
+
+    if isinstance(raw_value, (list, tuple, set)):
+        values = raw_value
+    else:
+        values = [raw_value]
+
+    uid_list: List[str] = []
+    for value in values:
+        if value is None:
+            continue
+        uid_list.append(str(value))
+    return uid_list
+
+
 TEMPERATURE_SETTING_CANDIDATES = [
     "回风温度设定点（℃）",
     "回风温度设定点(℃)",
@@ -611,7 +631,10 @@ class ACController:
                  logger: logging.Logger,
                  is_reference: bool = False,
                  target_uid: Optional[str] = None,
-                 device_config: Optional[Dict] = None):
+                 device_config: Optional[Dict] = None,
+                 stabilization_time: Optional[int] = None,
+                 reference_stabilization_time: Optional[int] = None,
+                 max_historical_records: Optional[int] = None):
         self.uid_config = _validate_uid_config(uid_config)
         self.logger = logger
         self.is_reference = is_reference
@@ -642,20 +665,28 @@ class ACController:
         self.device_power_uid = self._get_device_point_uid(POWER_READING_CANDIDATES)
 
         sensors = self.uid_config.get('sensors', {})
-        if 'temperature_sensor_uid' not in sensors or 'humidity_sensor_uid' not in sensors:
+        temp_sensor_uids = _ensure_uid_list(sensors.get(CONFIG_KEY_TEMPERATURE_SENSOR))
+        humidity_sensor_uids = _ensure_uid_list(sensors.get(CONFIG_KEY_HUMIDITY_SENSOR))
+        power_sensor_uids = _ensure_uid_list(sensors.get(CONFIG_KEY_ENERGY_CONSUMPTION))
+
+        if not temp_sensor_uids or not humidity_sensor_uids:
             raise ValueError("配置文件中缺少温湿度传感器UID配置 (sensors.temperature_sensor_uid / sensors.humidity_sensor_uid)")
 
-        self.temperature_sensor_uids = [str(uid) for uid in sensors['temperature_sensor_uid']]
-        self.humidity_sensor_uids = [str(uid) for uid in sensors['humidity_sensor_uid']]
-        self.power_sensor_uids = [str(uid) for uid in sensors.get('energy_consumption_uid', [])]
+        self.temperature_sensor_uids = temp_sensor_uids
+        self.humidity_sensor_uids = humidity_sensor_uids
+        self.power_sensor_uids = power_sensor_uids
         self.power_meter_index = (self.ac_index % len(self.power_sensor_uids)) if self.power_sensor_uids else None
 
         self.state = OptimizationState.IDLE
         self.result_queue = queue.Queue()
         self.stop_event = threading.Event()
-        self.stabilization_time = 1 if is_reference else 300
+        non_reference_time = int(stabilization_time if stabilization_time is not None else _FALLBACK_STABILIZATION_TIME)
+        reference_time = int(reference_stabilization_time if reference_stabilization_time is not None else _FALLBACK_REFERENCE_STABILIZATION_TIME)
+        self.stabilization_time = reference_time if is_reference else non_reference_time
         self.historical_data: List[DataRecord] = []
-        self.max_historical_records = 1000
+        self.max_historical_records = int(
+            max_historical_records if max_historical_records is not None else _FALLBACK_MAX_HISTORICAL_RECORDS
+        )
         self.previous_best_params = None
         self.active_thread: Optional[threading.Thread] = None
 
@@ -1027,6 +1058,9 @@ class DynamicOptimizer:
         if current_data.empty:
             raise ValueError("current_data 不能为空 DataFrame")
 
+        # 在启动优化之前等待系统达到稳定状态
+        self.controller.wait_for_stabilization()
+
         # 使用锁保护状态检查和修改
         with self.controller.state_lock:
             if self.controller.state != OptimizationState.IDLE:
@@ -1220,6 +1254,7 @@ class DynamicOptimizer:
 
         # 3. 重新创建优化器（确保优化器内部状态完全清空）
         try:
+            from .optimizers import OptimizerFactory
             self.optimizer = OptimizerFactory.create_optimizer(
                 algorithm=self.algorithm,
                 controller=self.controller,
@@ -1234,10 +1269,19 @@ class DynamicOptimizer:
         self.logger.info("优化模块已完全重置")
 
     def get_safe_params(self, default_temp: int = 25, default_humidity: int = 50,
-                        default_cooling_mode: int = 1) -> Dict:
-        """安全地获取优化参数，如果优化失败则返回默认值"""
+                        default_cooling_mode: int = 1, timeout: Optional[float] = None) -> Dict:
+        """
+        安全地获取优化参数，如果优化失败则返回默认值
+
+        Args:
+            default_temp: 回退温度
+            default_humidity: 回退湿度
+            default_cooling_mode: 回退制冷模式
+            timeout: 等待最优参数的最大时长，None 表示使用默认 600 秒
+        """
         try:
-            params = self.get_best_params()
+            wait_timeout = 600 if timeout is None else max(0.0, timeout)
+            params = self.get_best_params(timeout=wait_timeout)
             if params and isinstance(params, dict):
                 # 验证参数完整性
                 required_keys = ['set_temp', 'set_humidity', 'cooling_mode']
@@ -1287,7 +1331,8 @@ class ACInstanceManager:
                              parameter_config: Dict,
                              security_boundary_config: Dict,
                              logger: logging.Logger,
-                             is_reference: bool = False) -> None:
+                             is_reference: bool = False,
+                             optimization_defaults: Optional[Dict] = None) -> None:
         """
         初始化所有空调实例
 
@@ -1299,6 +1344,7 @@ class ACInstanceManager:
             security_boundary_config: 安全边界配置字典
             logger: 日志记录器
             is_reference: 是否为参考优化模式
+            optimization_defaults: 优化模块默认参数配置（可选）
 
         Raises:
             ValueError: 如果空调UID列表为空
@@ -1309,6 +1355,7 @@ class ACInstanceManager:
             self.ac_instances.clear()
 
             normalized_uid_config = _validate_uid_config(uid_config)
+            optimization_defaults = optimization_defaults or _load_optimization_defaults(parameter_config, logger)
             # 获取空调UID列表
             ac_uids, ac_names = _get_air_conditioner_uids_and_names(normalized_uid_config)
             if not ac_uids:
@@ -1329,7 +1376,10 @@ class ACInstanceManager:
                     logger,
                     is_reference,
                     target_uid=uid,
-                    device_config=uid_to_config.get(str(uid))
+                    device_config=uid_to_config.get(str(uid)),
+                    stabilization_time=optimization_defaults.get('stabilization_time'),
+                    reference_stabilization_time=optimization_defaults.get('reference_stabilization_time'),
+                    max_historical_records=optimization_defaults.get('max_historical_records')
                 )
                 optimizer = DynamicOptimizer(controller, parameter_config, security_boundary_config)
                 self.ac_instances[str(uid)] = optimizer  # 确保uid是字符串
@@ -1641,6 +1691,8 @@ def run_optimization(
 
     if not isinstance(security_boundary_config, dict):
         raise ValueError("security_boundary_config 必须为字典")
+
+    optimization_defaults = _load_optimization_defaults(parameter_config, logger)
     if historical_data is None:
         logger.info("未提供历史数据，使用当前数据作为历史数据")
         historical_data = current_data
@@ -1649,7 +1701,7 @@ def run_optimization(
 
     # 设置默认超时时间
     if timeout_seconds is None:
-        timeout_seconds = 600  # 默认10分钟
+        timeout_seconds = optimization_defaults['optimization_timeout']
 
     logger.info("="*60)
     logger.info("开始优化流程")
@@ -1672,7 +1724,8 @@ def run_optimization(
             ac_manager=ac_manager,
             timeout_seconds=timeout_seconds,
             progress_callback=progress_callback,
-            initial_params=initial_params
+            initial_params=initial_params,
+            optimization_defaults=optimization_defaults
         )
 
         # ✨ 新增：强制安全边界检查（最后一道防线）
@@ -1724,7 +1777,8 @@ def start_optimization_process(
         ac_manager: Optional[ACInstanceManager] = None,
         timeout_seconds: Optional[float] = None,
         progress_callback: Optional[callable] = None,
-        initial_params: Optional[Dict] = None
+        initial_params: Optional[Dict] = None,
+        optimization_defaults: Optional[Dict] = None
 ) -> dict:
     """
     启动优化过程，对所有空调进行优化（核心优化函数）。
@@ -1759,6 +1813,7 @@ def start_optimization_process(
         timeout_seconds: 优化超时时间（秒），如果为None则不设置超时
         progress_callback: 进度回调函数，签名为 callback(ac_index, ac_total, ac_name, status)
         initial_params: 初始参数字典，格式为 {'set_temp': int, 'set_humidity': int}
+        optimization_defaults: 优化模块默认配置（可选，便于复用）
 
     Returns:
         dict: 包含每台空调优化后的设定温度、湿度和制冷模式，格式为：
@@ -1800,6 +1855,7 @@ def start_optimization_process(
     normalized_uid_config = _validate_uid_config(uid_config)
     optimization_input = _normalize_input_data(optimization_input, "optimization_input")
     current_data = _normalize_input_data(current_data, "current_data")
+    defaults = optimization_defaults or _load_optimization_defaults(parameter_config, logger)
 
     try:
         # 初始化返回结果
@@ -1821,21 +1877,22 @@ def start_optimization_process(
             logger.info("未提供空调实例管理器，创建新的实例管理器")
             ac_manager = ACInstanceManager()
             ac_manager.initialize_instances(normalized_uid_config, parameter_config, security_boundary_config, logger,
-                                            is_reference)
+                                            is_reference, optimization_defaults=defaults)
 
         # 遍历所有空调进行优化
         logger.info(f"开始对 {len(ac_uids)} 台空调进行优化...")
 
         # 记录优化开始时间（用于超时控制）
         optimization_start_time = time.time()
+        deadline = (optimization_start_time + timeout_seconds) if timeout_seconds is not None else None
 
         for idx, (uid, name) in enumerate(zip(ac_uids, ac_names)):
             # 检查是否超时
-            if timeout_seconds is not None:
-                elapsed_time = time.time() - optimization_start_time
-                if elapsed_time > timeout_seconds:
-                    logger.error(f"优化过程超时（{elapsed_time:.1f}秒 > {timeout_seconds}秒），停止优化")
-                    raise TimeoutError(f"优化过程超时: {elapsed_time:.1f}秒")
+            if deadline is not None:
+                remaining_before_start = deadline - time.time()
+                if remaining_before_start <= 0:
+                    logger.error("优化过程超时，剩余时间不足以继续后续空调优化")
+                    raise TimeoutError("优化过程超时：没有剩余时间继续优化")
 
             logger.info(f"正在优化空调 [{idx+1}/{len(ac_uids)}]: {name} (UID: {uid})")
 
@@ -1867,8 +1924,15 @@ def start_optimization_process(
                 # 启动优化
                 optimizer.start_optimization(current_data)
 
-                # 安全地获取最优参数
-                params = optimizer.get_safe_params()
+                # 根据剩余时间安全地获取最优参数
+                remaining_for_result = None
+                if deadline is not None:
+                    remaining_for_result = deadline - time.time()
+                    if remaining_for_result <= 0:
+                        logger.error("优化过程超时，等待结果时耗尽剩余时间")
+                        raise TimeoutError("优化过程超时：等待优化结果超时")
+
+                params = optimizer.get_safe_params(timeout=remaining_for_result)
 
                 # 添加温度和湿度设定值
                 best_params['air_conditioner_setting_temperature'].append(params['set_temp'])
