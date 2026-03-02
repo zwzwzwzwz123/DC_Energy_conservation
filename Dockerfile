@@ -1,17 +1,39 @@
-# 1. 使用自带 Miniconda3 的基础镜像
-FROM continuumio/miniconda3
+FROM python:3.10-slim
 
-# 2. 设置工作目录
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    MPLBACKEND=Agg \
+    TZ=Asia/Shanghai
+
 WORKDIR /app
 
-# 3. 把当前目录下的所有文件复制到容器内
+# Runtime/system libraries:
+# - libgomp1: for lightgbm/xgboost OpenMP
+# - libgl1/libx*: for matplotlib backend dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libgomp1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
+    libgl1 \
+    fonts-noto-cjk \
+    tzdata \
+    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
+    && echo $TZ > /etc/timezone \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Linux-safe dependencies used by the full project (including generated pipelines).
+COPY requirements.linux.txt /tmp/requirements.linux.txt
+RUN python -m pip install --upgrade pip setuptools wheel \
+    && python -m pip install -r /tmp/requirements.linux.txt
+
 COPY . /app
 
-# 4. 根据 yml 创建纯净 conda 环境（名字叫 aircooling）
-RUN conda env create -f environment.yml
-
-# 5. 在 aircooling 环境里，安装所有的 pip 依赖包
-RUN conda run -n aircooling pip install --no-cache-dir -r requirements.txt
-
-# 6. 启动程序 (请把 main.py 替换为你实际的启动脚本名字)
-CMD ["conda", "run", "-n", "aircooling", "python", "main.py"]
+# Default entry keeps full project behavior.
+# For generated scripts, override command in `docker run`.
+CMD ["python", "DC_Energy_conservation/main.py"]
