@@ -1,0 +1,8 @@
+name: aircooling
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - ipykernel
+  - pandas
+
