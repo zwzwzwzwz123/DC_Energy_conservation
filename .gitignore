@@ -164,6 +164,10 @@ augment/
 # *.xls
 generated/103A_modeling/raw_timeseries.csv
 generated/chiller_modeling/raw_timeseries.csv
+# Generated image folders (recursive)
+generated/**/plots/
+generated/**/rawplots/
+generated/**/raw_plots/
 # ==================== 其他 ====================
 # 压缩文件
 *.zip
